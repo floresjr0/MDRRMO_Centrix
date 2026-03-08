@@ -16,11 +16,6 @@ $user = current_user();
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 
-/* ==============================================
-   MDRRMO Navigation — Light Mode (splash dark)
-   All original functions preserved
-   ============================================== */
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -56,7 +51,7 @@ html, body {
 }
 
 /* ==============================================
-   SPLASH SCREEN — DARK (original)
+   SPLASH SCREEN
    ============================================== */
 #splash {
   position: fixed;
@@ -150,7 +145,7 @@ html, body {
 .leaflet-routing-container { display: none !important; }
 
 /* ==============================================
-   TOP DIRECTION CARD — Light
+   TOP DIRECTION CARD
    ============================================== */
 #dirCard {
   position: absolute;
@@ -233,7 +228,7 @@ html, body {
 .offroute-sub  { font-size: 0.62rem; color: rgba(255,255,255,0.80); }
 
 /* ==============================================
-   COMPASS — Light
+   COMPASS
    ============================================== */
 #compassWrap {
   position: absolute;
@@ -270,7 +265,7 @@ html, body {
 }
 
 /* ==============================================
-   SPEED BUBBLE — Light
+   SPEED BUBBLE
    ============================================== */
 #speedBubble {
   position: absolute;
@@ -285,12 +280,13 @@ html, body {
   min-width: 52px;
   backdrop-filter: blur(8px);
   box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+  transition: bottom 0.35s cubic-bezier(0.16,1,0.3,1);
 }
 #speedVal  { font-size: 1.3rem; font-weight: 800; color: var(--text); line-height: 1; }
 #speedUnit { font-size: 0.58rem; color: var(--muted); }
 
 /* ==============================================
-   RECENTER BUTTON — Light
+   RECENTER BUTTON
    ============================================== */
 #recenterBtn {
   position: absolute;
@@ -307,12 +303,58 @@ html, body {
   display: flex; align-items: center; justify-content: center;
   backdrop-filter: blur(8px);
   box-shadow: 0 4px 14px rgba(0,0,0,0.10);
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s, background 0.2s, bottom 0.35s cubic-bezier(0.16,1,0.3,1);
 }
 #recenterBtn:hover { border-color: var(--accent); background: rgba(212,95,16,0.08); }
 
 /* ==============================================
-   BOTTOM PANEL — Light
+   PANEL SIDE TOGGLE BUTTON  ← NEW
+   ============================================== */
+#panelToggleBtn {
+  position: absolute;
+  /* vertically centered relative to the panel's top edge */
+  right: 0;
+  z-index: 55;
+  width: 32px;
+  height: 56px;
+  background: linear-gradient(160deg, var(--red) 0%, var(--orange) 100%);
+  border: none;
+  border-radius: 10px 0 0 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: -3px 0 14px rgba(0,0,0,0.14);
+  transition:
+    bottom 0.5s cubic-bezier(0.16,1,0.3,1),
+    background 0.25s,
+    transform 0.2s;
+  /* default: sits just above the panel handle area */
+  bottom: calc(var(--panel-show-offset, 18rem) + 2px);
+}
+#panelToggleBtn:hover {
+  background: linear-gradient(160deg, #a0220f 0%, #b84a00 100%);
+  transform: scaleX(1.12);
+}
+#panelToggleBtn:active { transform: scaleX(0.96); }
+
+/* Arrow SVG inside toggle */
+#toggleArrow {
+  width: 16px; height: 16px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+/* When panel is collapsed, rotate arrow to point up */
+#panelToggleBtn.collapsed #toggleArrow {
+  transform: rotate(180deg);
+}
+
+/* ==============================================
+   BOTTOM PANEL
    ============================================== */
 #bottomPanel {
   position: absolute;
@@ -330,16 +372,47 @@ html, body {
   max-height: 72vh;
   overflow-y: auto;
   scrollbar-width: none;
+  touch-action: none;
 }
 #bottomPanel::-webkit-scrollbar { display: none; }
 #bottomPanel.show { bottom: 0; }
+#bottomPanel.collapsed { bottom: -88%; }
+#bottomPanel.no-transition { transition: none; }
+
+/* Handle area */
+.bottom-handle-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0.3rem 0 0.5rem;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.bottom-handle-wrap:active { cursor: grabbing; }
 
 .bottom-handle {
   width: 38px; height: 4px;
-  background: rgba(0,0,0,0.12);
+  background: rgba(0,0,0,0.15);
   border-radius: 2px;
-  margin: 0 auto 0.9rem;
+  transition: background 0.2s, width 0.2s;
 }
+.bottom-handle-wrap:hover .bottom-handle {
+  background: var(--accent);
+  width: 48px;
+}
+
+.handle-hint {
+  font-size: 0.56rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+#bottomPanel.collapsed .handle-hint { opacity: 1; color: var(--accent); }
 
 #destName {
   font-size: 0.88rem;
@@ -365,7 +438,6 @@ html, body {
   margin-bottom: 0.5rem;
 }
 
-/* Center list */
 #centerList {
   margin-bottom: 1rem;
   display: flex;
@@ -399,7 +471,6 @@ html, body {
 .center-status-full      { color: var(--red-alert); }
 .center-status-closed    { color: var(--muted); }
 
-/* Mode selector */
 #modeSelector {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -424,7 +495,6 @@ html, body {
 .mode-icon { font-size: 1.1rem; }
 .mode-name { font-size: 0.60rem; font-weight: 600; color: var(--text); }
 
-/* Stats row */
 .mode-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -441,7 +511,6 @@ html, body {
 .stat-val { font-size: 1.0rem; font-weight: 800; color: var(--accent); }
 .stat-lbl { font-size: 0.57rem; color: var(--muted); margin-top: 1px; }
 
-/* Traffic legend */
 .traffic-legend {
   display: flex;
   gap: 1rem;
@@ -450,7 +519,6 @@ html, body {
 .tleg { display: flex; align-items: center; gap: 0.35rem; font-size: 0.65rem; color: var(--muted); }
 .tleg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
-/* Nav buttons */
 .nav-btn {
   width: 100%;
   padding: 0.90rem;
@@ -534,7 +602,7 @@ html, body {
 }
 
 /* ==============================================
-   ARRIVAL OVERLAY — Light
+   ARRIVAL OVERLAY
    ============================================== */
 #arrivalOverlay {
   position: fixed;
@@ -578,7 +646,7 @@ html, body {
 <body>
 <div id="app">
 
-  <!-- SPLASH — dark original -->
+  <!-- SPLASH -->
   <div id="splash">
     <div class="splash-pulse">🧭</div>
     <div class="splash-logo">MDRRMO San Ildefonso</div>
@@ -632,9 +700,20 @@ html, body {
   <!-- RECENTER -->
   <button id="recenterBtn" onclick="recenter()">⊕</button>
 
+  <!-- SIDE TOGGLE BUTTON (NEW) -->
+  <button id="panelToggleBtn" onclick="togglePanel()" title="Toggle panel">
+    <svg id="toggleArrow" viewBox="0 0 16 16">
+      <!-- Down chevron — points DOWN when panel is open (to collapse) -->
+      <polyline points="3,5 8,11 13,5"/>
+    </svg>
+  </button>
+
   <!-- BOTTOM PANEL -->
   <div id="bottomPanel">
-    <div class="bottom-handle"></div>
+    <div class="bottom-handle-wrap" id="panelHandle">
+      <div class="bottom-handle"></div>
+      <div class="handle-hint" id="handleHint">drag to hide</div>
+    </div>
 
     <div id="destName">📍 Select an evacuation center</div>
     <div id="remainDist">We will suggest the nearest available center.</div>
@@ -731,6 +810,128 @@ let selectedMode = 'walk';
 let centers = [];
 let userLoc = null;
 
+// ─── PANEL DRAG ───────────────────────────
+let panelCollapsed = false;
+let dragStartY = 0;
+let isDragging = false;
+
+/* Helper: sync the side toggle button position & state */
+function syncToggleBtn() {
+  const btn = document.getElementById('panelToggleBtn');
+  const panel = document.getElementById('bottomPanel');
+
+  if (panelCollapsed) {
+    btn.classList.add('collapsed');
+    // Panel is nearly hidden — button floats just above the tiny peek strip
+    btn.style.bottom = '5rem';
+    document.getElementById('speedBubble').style.bottom = '4.2rem';
+    document.getElementById('recenterBtn').style.bottom = '4.2rem';
+  } else {
+    btn.classList.remove('collapsed');
+    // Position button near top of the panel (just below the rounded corner)
+    const panelH = panel.offsetHeight || 300;
+    btn.style.bottom = (panelH - 30) + 'px';
+    document.getElementById('speedBubble').style.bottom = '18rem';
+    document.getElementById('recenterBtn').style.bottom = '18rem';
+  }
+}
+
+/* Click handler for the side toggle button */
+function togglePanel() {
+  snapPanel(!panelCollapsed);
+}
+
+function initPanelDrag() {
+  const panel  = document.getElementById('bottomPanel');
+  const handle = document.getElementById('panelHandle');
+  const hint   = document.getElementById('handleHint');
+
+  function snapPanel(collapsed) {
+    window.snapPanel(collapsed);
+  }
+
+  // Tap handle to expand when collapsed
+  handle.addEventListener('click', (e) => {
+    if (isDragging) return;
+    if (panelCollapsed) snapPanel(false);
+  });
+
+  // ── Touch drag ──
+  handle.addEventListener('touchstart', (e) => {
+    dragStartY = e.touches[0].clientY;
+    isDragging = false;
+    panel.classList.add('no-transition');
+  }, { passive: true });
+
+  handle.addEventListener('touchmove', (e) => {
+    const dy = e.touches[0].clientY - dragStartY;
+    if (Math.abs(dy) > 6) isDragging = true;
+    if (!isDragging) return;
+    const newBottom = panelCollapsed
+      ? Math.max(-88, Math.min(0, -(dy / window.innerHeight * 100)))
+      : Math.max(-88, Math.min(0, dy < 0 ? 0 : -(dy / window.innerHeight * 100)));
+    panel.style.bottom = newBottom + '%';
+  }, { passive: true });
+
+  handle.addEventListener('touchend', (e) => {
+    if (!isDragging) return;
+    const dy = e.changedTouches[0].clientY - dragStartY;
+    if (dy > 60) snapPanel(true);
+    else if (dy < -40) snapPanel(false);
+    else snapPanel(panelCollapsed);
+    isDragging = false;
+  }, { passive: true });
+
+  // ── Mouse drag (desktop) ──
+  handle.addEventListener('mousedown', (e) => {
+    dragStartY = e.clientY;
+    isDragging = false;
+    panel.classList.add('no-transition');
+
+    function onMove(e) {
+      const dy = e.clientY - dragStartY;
+      if (Math.abs(dy) > 6) isDragging = true;
+      if (!isDragging) return;
+      const newBottom = Math.max(-88, Math.min(0, -(dy / window.innerHeight * 100)));
+      panel.style.bottom = newBottom + '%';
+    }
+
+    function onUp(e) {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      if (!isDragging) return;
+      const dy = e.clientY - dragStartY;
+      if (dy > 60) snapPanel(true);
+      else if (dy < -40) snapPanel(false);
+      else snapPanel(panelCollapsed);
+      isDragging = false;
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+/* Global snapPanel so both drag and toggle button share the same logic */
+window.snapPanel = function(collapsed) {
+  panelCollapsed = collapsed;
+  const panel = document.getElementById('bottomPanel');
+  const hint  = document.getElementById('handleHint');
+  panel.classList.remove('no-transition');
+  if (collapsed) {
+    panel.classList.add('collapsed');
+    panel.classList.remove('show');
+    hint.textContent = 'tap to show';
+  } else {
+    panel.classList.remove('collapsed');
+    panel.classList.add('show');
+    hint.textContent = 'drag to hide';
+  }
+  panel.style.bottom = '';
+  // Sync button after transition settles
+  requestAnimationFrame(() => setTimeout(syncToggleBtn, 520));
+};
+
 // ─── INIT ─────────────────────────────────
 function initApp() {
   document.getElementById('splash').classList.add('hide');
@@ -738,7 +939,8 @@ function initApp() {
     document.getElementById('splash').style.display = 'none';
     initMap();
     initCompass();
-    document.getElementById('bottomPanel').classList.add('show');
+    initPanelDrag();
+    window.snapPanel(false); // show panel + position toggle btn
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
@@ -769,6 +971,9 @@ function initMap() {
 
   updateDestinationMarker();
   map.on('dragstart', () => { isMapLocked = false; });
+
+  // Reposition toggle button when window resizes
+  window.addEventListener('resize', syncToggleBtn);
 }
 
 // ─── CENTER SELECTION ─────────────────────
@@ -816,6 +1021,8 @@ function loadCenters() {
       listEl.appendChild(frag);
 
       chooseCenter(centers[0].id, false);
+      // Reposition toggle button now that panel content has height
+      setTimeout(syncToggleBtn, 100);
     })
     .catch(err => {
       listEl.textContent = 'Unable to load centers: ' + err.message;
