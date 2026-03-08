@@ -1102,12 +1102,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Add a circle to show approximate area (optional)
-        L.circle([defaultLat, defaultLng], {
-            color: '#D32F2F',
-            fillColor: '#FFEBEE',
-            fillOpacity: 0.2,
-            radius: 100
-        }).addTo(map);
+        // L.circle([defaultLat, defaultLng], {
+        //     color: '#D32F2F',
+        //     fillColor: '#FFEBEE',
+        //     fillOpacity: 0.2,
+        //     radius: 100
+        // }).addTo(map);
     </script>
 </body>
 </html>
