@@ -1283,7 +1283,7 @@ $activeDisaster = $disasterStmt->fetch();
                         </div>
 
                         <!-- Pending Approvals Card -->
-                        <div class="card" style="margin-top: 24px;">
+                        <!-- <div class="card" style="margin-top: 24px;">
                             <div class="card-header">
                                 <h3><i class="fas fa-clock"></i> Pending Approvals</h3>
                                 <span class="badge yellow">3 New</span>
@@ -1315,7 +1315,7 @@ $activeDisaster = $disasterStmt->fetch();
                                     <a href="#" class="pending-action">Review</a>
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
 
                     <!-- Right Column -->
