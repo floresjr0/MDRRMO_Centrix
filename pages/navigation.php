@@ -1008,7 +1008,11 @@ function loadCenters() {
         div.innerHTML = `
           <div class="center-main">
             <div class="center-name">${c.name}</div>
-            <div class="center-sub">${c.barangay}</div>
+            <div class="center-sub"> ${c.barangay}</div>
+            <div class="center-sub" style="margin-top:3px;">
+              👤 ${c.coordinator_name ?? 'Unassigned'}
+              ${c.coordinator_contact ? '&nbsp;·&nbsp;📞 ' + c.coordinator_contact : ''}
+            </div>
           </div>
           <div class="center-meta">
             <div class="center-distance">${km} km</div>
