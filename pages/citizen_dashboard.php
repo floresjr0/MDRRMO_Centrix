@@ -647,6 +647,17 @@ html, body {
         </div>
         <div class="alert-chevron">›</div>
       </div>
+      <?php if ($advice): ?>
+<div class="readybag-card">
+  <div class="readybag-icon">🎒</div>
+  <div class="readybag-content">
+    <div class="readybag-title">Ready Bag Advice</div>
+    <div class="readybag-text">
+      <?php echo htmlspecialchars($advice['message']); ?>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 
     <?php elseif ($weather && ($weather['level'] === 'high' || $weather['level'] === 'extreme')): ?>
       <div class="alert-banner alert-level-3">
@@ -671,7 +682,7 @@ html, body {
     <!-- WEATHER FORECAST -->
     <div class="section-header">
       <h2>Weather Forecast</h2>
-      <a href="#">Live Data ›</a>
+      <a href="#">Live Data </a>
     </div>
 
     <div class="weather-card">
@@ -720,7 +731,7 @@ html, body {
     <!-- ANNOUNCEMENTS -->
     <div class="section-header" id="announcements">
       <h2>Announcements</h2>
-      <a href="announcements.php">See All ›</a>
+      <!-- <a href="announcements.php">See All ›</a> -->
     </div>
 
     <?php if (!$announcements): ?>
