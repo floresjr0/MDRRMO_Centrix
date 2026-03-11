@@ -12,6 +12,7 @@ $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fullName   = trim($_POST['full_name'] ?? '');
     $email      = trim($_POST['email'] ?? '');
+    $contact = trim($_POST['contact_number'] ?? '');
     $password   = $_POST['password'] ?? '';
     $confirm    = $_POST['confirm_password'] ?? '';
     $barangayId = (int)($_POST['barangay_id'] ?? 0);
@@ -24,6 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = 'Valid email is required.';
     }
+    if ($contact === '') {
+    $errors[] = 'Contact number is required.';
+}
+
+if (!preg_match('/^09[0-9]{9}$/', $contact)) {
+    $errors[] = 'Enter a valid Philippine mobile number (e.g., 09123456789).';
+}
     if (strlen($password) < 8) {
         $errors[] = 'Password must be at least 8 characters.';
     }
@@ -58,23 +66,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt = $pdo->prepare("
             INSERT INTO users (
-                full_name,
-                email,
-                password_hash,
-                role,
-                barangay_id,
-                house_number,
-                is_email_verified,
-                otp_code_hash,
-                otp_expires_at,
-                is_active
-            ) VALUES (
-                ?, ?, ?, 'coordinator', ?, ?, 1, NULL, NULL, ?
+    full_name,
+    email,
+    contact_number,
+    password_hash,
+    role,
+    barangay_id,
+    house_number,
+    is_email_verified,
+    otp_code_hash,
+    otp_expires_at,
+    is_active
+)       VALUES (
+               ?, ?, ?, ?, 'coordinator', ?, ?, 1, NULL, NULL, ?
             )
         ");
 
         try {
-            $stmt->execute([$fullName, $email, $passwordHash, $barangayId, $houseNo, $isActive]);
+            $stmt->execute([$fullName, $email, $contact, $passwordHash, $barangayId, $houseNo, $isActive]);
             header('Location: users.php?created=coordinator');
             exit;
         } catch (Throwable $e) {
@@ -875,6 +884,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                    placeholder="Enter full name"
                                    value="<?php echo htmlspecialchars($_POST['full_name'] ?? ''); ?>">
                         </div>
+
+                        <div class="form-group">
+    <label class="form-label">
+        <i class="fas fa-phone"></i>
+        Contact Number <span class="form-required">*</span>
+    </label>
+    <input type="text" name="contact_number" required
+           class="form-control"
+           placeholder="e.g., 09123456789"
+           value="<?php echo htmlspecialchars($_POST['contact_number'] ?? ''); ?>">
+    <div class="form-hint">
+        <i class="fas fa-info-circle"></i>
+        Philippine mobile number
+    </div>
+</div>
 
                         <!-- Email -->
                         <div class="form-group">
