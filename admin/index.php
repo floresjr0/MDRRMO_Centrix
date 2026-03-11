@@ -51,6 +51,36 @@ foreach ($st as $s) {
 
 $centers = get_centers_with_occupancy();
 
+// Evacuation Summary per Center with coordinator info and demographics
+$evacSummaryStmt = $pdo->query("
+    SELECT
+        ec.id,
+        ec.name AS center_name,
+        b.name  AS barangay_name,
+        ec.status,
+        ec.max_capacity_people,
+
+        -- Coordinator info
+        u.full_name    AS coordinator_name,
+        u.contact_number AS coordinator_contact,
+
+        -- Demographics aggregated
+        COALESCE(SUM(er.adults),   0) AS total_adults,
+        COALESCE(SUM(er.children), 0) AS total_children,
+        COALESCE(SUM(er.seniors),  0) AS total_seniors,
+        COALESCE(SUM(er.pwds),     0) AS total_pwds,
+        COALESCE(SUM(er.total_members), 0) AS total_evacuees,
+        COUNT(DISTINCT er.id) AS total_families
+
+    FROM evacuation_centers ec
+    LEFT JOIN barangays b        ON b.id = ec.barangay_id
+    LEFT JOIN users u            ON u.id = ec.coordinator_user_id
+    LEFT JOIN evac_registrations er ON er.center_id = ec.id
+    GROUP BY ec.id
+    ORDER BY total_evacuees DESC
+");
+$evacSummary = $evacSummaryStmt->fetchAll();
+
 // Latest weather + active disaster for quick admin view
 // Live weather for San Ildefonso (no cron)
 $lat = 15.0828;
@@ -1398,7 +1428,129 @@ $activeDisaster = $disasterStmt->fetch();
                         </div>
                     </div>
                 </div>
+                <!-- Evacuation Centers Summary -->
+                <div class="card evac-summary-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-people-arrows"></i> Evacuation Centers Summary</h3>
+                    </div>
 
+                    <?php if (empty($evacSummary)): ?>
+                        <div >
+                            No evacuation data recorded yet.
+                        </div>
+                    <?php else: ?>
+
+                    <!-- Desktop Table -->
+                    <div class="evac-table-wrap">
+                        <table class="evac-table">
+                            <thead>
+                                <tr>
+                                    <th>Center</th>
+                                    <th>Coordinator</th>
+                                    <th><i class="fas fa-child"></i> Children</th>
+                                    <th><i class="fas fa-user"></i> Adults</th>
+                                    <th><i class="fas fa-user-clock"></i> Seniors</th>
+                                    <th><i class="fas fa-wheelchair"></i> PWD</th>
+                                    <th>Families</th>
+                                    <th>Total</th>
+                                    <th>Capacity</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($evacSummary as $row):
+                                    $pct = $row['max_capacity_people'] > 0
+                                        ? min(round(($row['total_evacuees'] / $row['max_capacity_people']) * 100), 100)
+                                        : 0;
+
+                                    $barColor = '#2E7D32';
+                                    $statusLabel = 'Available';
+                                    $statusClass = 'es-available';
+                                    if ($row['status'] === 'near_capacity') {
+                                        $barColor = '#FFC107'; $statusLabel = 'Near Cap'; $statusClass = 'es-near';
+                                    } elseif ($row['status'] === 'full') {
+                                        $barColor = '#D32F2F'; $statusLabel = 'Full'; $statusClass = 'es-full';
+                                    } elseif ($row['status'] === 'temp_shelter') {
+                                        $barColor = '#3498DB'; $statusLabel = 'Temp'; $statusClass = 'es-temp';
+                                    } elseif ($row['status'] === 'closed') {
+                                        $barColor = '#95A5A6'; $statusLabel = 'Closed'; $statusClass = 'es-closed';
+                                    }
+                                ?>
+                                <tr>
+                                    <td>
+                                        <div class="es-center-name"><?php echo htmlspecialchars($row['center_name']); ?></div>
+                                        <div class="es-center-brgy">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            <?php echo htmlspecialchars($row['barangay_name']); ?>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <?php if ($row['coordinator_name']): ?>
+                                            <div class="es-coord-name"><?php echo htmlspecialchars($row['coordinator_name']); ?></div>
+                                            <div class="es-coord-contact">
+                                                <i class="fas fa-phone-alt"></i>
+                                                <?php echo htmlspecialchars($row['coordinator_contact'] ?? '—'); ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="es-no-coord">Unassigned</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><span class="es-demo es-children"><?php echo number_format($row['total_children']); ?></span></td>
+                                    <td><span class="es-demo es-adults"><?php echo number_format($row['total_adults']); ?></span></td>
+                                    <td><span class="es-demo es-seniors"><?php echo number_format($row['total_seniors']); ?></span></td>
+                                    <td><span class="es-demo es-pwd"><?php echo number_format($row['total_pwds']); ?></span></td>
+                                    <td><span class="es-families"><?php echo number_format($row['total_families']); ?></span></td>
+                                    <td><span class="es-total"><?php echo number_format($row['total_evacuees']); ?></span></td>
+                                    <td>
+                                        <div class="es-cap-wrap">
+                                            <div class="es-cap-bar">
+                                                <div class="es-cap-fill" style="width:<?php echo $pct; ?>%; background:<?php echo $barColor; ?>;"></div>
+                                            </div>
+                                            <div class="es-cap-text">
+                                                <?php echo number_format($row['total_evacuees']); ?> / <?php echo number_format($row['max_capacity_people']); ?>
+                                                <span style="color:#95A5A6;">(<?php echo $pct; ?>%)</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="es-status-badge <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+
+                            <!-- Totals Footer Row -->
+                            <?php
+                                $grandChildren  = array_sum(array_column($evacSummary, 'total_children'));
+                                $grandAdults    = array_sum(array_column($evacSummary, 'total_adults'));
+                                $grandSeniors   = array_sum(array_column($evacSummary, 'total_seniors'));
+                                $grandPwds      = array_sum(array_column($evacSummary, 'total_pwds'));
+                                $grandFamilies  = array_sum(array_column($evacSummary, 'total_families'));
+                                $grandTotal     = array_sum(array_column($evacSummary, 'total_evacuees'));
+                                $grandCap       = array_sum(array_column($evacSummary, 'max_capacity_people'));
+                            ?>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2"><strong>TOTAL</strong></td>
+                                    <td><strong><?php echo number_format($grandChildren); ?></strong></td>
+                                    <td><strong><?php echo number_format($grandAdults); ?></strong></td>
+                                    <td><strong><?php echo number_format($grandSeniors); ?></strong></td>
+                                    <td><strong><?php echo number_format($grandPwds); ?></strong></td>
+                                    <td><strong><?php echo number_format($grandFamilies); ?></strong></td>
+                                    <td><strong><?php echo number_format($grandTotal); ?></strong></td>
+                                    <td colspan="2">
+                                        <strong><?php echo number_format($grandTotal); ?> / <?php echo number_format($grandCap); ?></strong>
+                                        <span style="color:#95A5A6; font-size:11px;">
+                                            (<?php echo $grandCap > 0 ? round(($grandTotal/$grandCap)*100) : 0; ?>% overall)
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <?php endif; ?>
+                </div>
+
+                
                 <!-- Map Card with Legend at Top Right -->
                 <div class="card" style="margin-top: 24px; padding: 0; overflow: hidden;">
                     <div class="map-container">
