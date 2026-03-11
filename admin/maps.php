@@ -277,6 +277,64 @@ foreach ($st as $s) {
             background: var(--light-red); color: var(--primary-red); border-color: var(--primary-red);
         }
 
+        /* ── Custom Map Marker Styles - Perfectly Centered ── */
+        .custom-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .marker-pin {
+            width: 30px;
+            height: 30px;
+            border-radius: 50% 50% 50% 0;
+            background: var(--primary-red);
+            position: relative;
+            transform: rotate(-45deg);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .marker-pin::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .marker-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+            z-index: 2;
+            font-size: 12px;
+            color: var(--primary-red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .marker-pin.available { background: var(--map-green); }
+        .marker-pin.near_capacity { background: var(--map-yellow); }
+        .marker-pin.full { background: var(--map-red); }
+        .marker-pin.temp_shelter { background: var(--map-blue); }
+        .marker-pin.closed { background: #95A5A6; }
+
+        .marker-pin.available .marker-icon { color: var(--map-green); }
+        .marker-pin.near_capacity .marker-icon { color: #B26A00; }
+        .marker-pin.full .marker-icon { color: var(--map-red); }
+        .marker-pin.temp_shelter .marker-icon { color: var(--map-blue); }
+        .marker-pin.closed .marker-icon { color: #95A5A6; }
+
         /* ── Right Panel ── */
         .panel-col { display: flex; flex-direction: column; gap: 24px; }
 
@@ -708,21 +766,36 @@ foreach ($st as $s) {
         fillColor:'#D32F2F', fillOpacity:.03, dashArray:'6 4'
     }).addTo(map).bindTooltip('San Ildefonso, Bulacan', { sticky: true });
 
-    /* ── Markers — same circleMarker style as index.php ── */
+    /* ── Markers — Custom Location Pin + Shelter Icon (Perfectly Centered) ── */
     const markerMap = {};
 
     if (centers.length > 0) {
         centers.forEach(c => {
-            const color = statusColor(c.status);
-            const pct   = c.max_capacity_people > 0
+            // Determine color based on status
+            const pinColor = statusColor(c.status);
+            const pct = c.max_capacity_people > 0
                 ? Math.min((c.current_occupancy / c.max_capacity_people) * 100, 100) : 0;
-            const sc    = c.status.replace(/_/g, '-');
+            
+            // Create custom div icon with perfectly centered elements
+            const customIcon = L.divIcon({
+                className: 'custom-marker',
+                html: `
+                    <div class="marker-pin ${c.status}">
+                        <i class="fas fa-home marker-icon"></i>
+                    </div>
+                `,
+                iconSize: [30, 42],
+                iconAnchor: [15, 42],
+                popupAnchor: [0, -42]
+            });
 
-            const marker = L.circleMarker([c.lat, c.lng], {
-                radius: 8, weight: 2, color: 'white', fillColor: color, fillOpacity: .9
+            const marker = L.marker([c.lat, c.lng], {
+                icon: customIcon
             }).addTo(map);
 
-            const html = `
+            const sc = c.status.replace(/_/g, '-');
+
+            const popupContent = `
                 <div class="mini-modal">
                     <div class="mini-header">
                         <h3 class="mini-title">${c.name}</h3>
@@ -748,7 +821,7 @@ foreach ($st as $s) {
                     <div class="mini-capacity">
                         <div class="mini-capacity-header"><span>Fill</span><span>${Math.round(pct)}%</span></div>
                         <div class="mini-capacity-bar">
-                            <div class="mini-capacity-fill" style="width:${pct}%;background:${color}"></div>
+                            <div class="mini-capacity-fill" style="width:${pct}%;background:${pinColor}"></div>
                         </div>
                     </div>
                     <div class="mini-footer">
@@ -761,7 +834,7 @@ foreach ($st as $s) {
                     </div>
                 </div>`;
 
-            marker.bindPopup(html, { className:'custom-popup', minWidth:200, maxWidth:200 });
+            marker.bindPopup(popupContent, { className:'custom-popup', minWidth:200, maxWidth:200 });
             marker.on('click', () => highlightCard(c.id));
             markerMap[c.id] = marker;
         });
@@ -809,7 +882,9 @@ foreach ($st as $s) {
 
             div.addEventListener('click', () => {
                 map.flyTo([c.lat, c.lng], 16, { animate: true, duration: .8 });
-                markerMap[c.id] && markerMap[c.id].openPopup();
+                if (markerMap[c.id]) {
+                    markerMap[c.id].openPopup();
+                }
                 highlightCard(c.id);
             });
             list.appendChild(div);
@@ -819,7 +894,10 @@ foreach ($st as $s) {
     function highlightCard(id) {
         document.querySelectorAll('.center-card').forEach(el => el.classList.remove('highlighted'));
         const card = document.getElementById(`card-${id}`);
-        if (card) { card.classList.add('highlighted'); card.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+        if (card) { 
+            card.classList.add('highlighted'); 
+            card.scrollIntoView({ behavior:'smooth', block:'nearest' }); 
+        }
     }
 
     function filterCards(f, btn) {
