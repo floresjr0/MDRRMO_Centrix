@@ -1099,14 +1099,14 @@ $activeDisaster = $disasterStmt->fetch();
                     </ul>
                 </div>
 
-                <div class="sidebar-section">
+                <!-- <div class="sidebar-section">
                     <div class="sidebar-section-title">Operations</div>
                     <ul class="sidebar-menu">
                         <li><a href="assistance.php" class="sidebar-link"><i class="fas fa-hand-holding-heart"></i> <span>Assistance</span></a></li>
                         <li><a href="reports.php" class="sidebar-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a></li>
                         <li><a href="announcements.php" class="sidebar-link"><i class="fas fa-bullhorn"></i> <span>Announcements</span></a></li>
                     </ul>
-                </div>
+                </div> -->
 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Monitoring</div>
@@ -1120,8 +1120,8 @@ $activeDisaster = $disasterStmt->fetch();
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Settings</div>
                     <ul class="sidebar-menu">
-                        <li><a href="profile.php" class="sidebar-link"><i class="fas fa-user-cog"></i> <span>Profile</span></a></li>
-                        <li><a href="settings.php" class="sidebar-link"><i class="fas fa-cog"></i> <span>Settings</span></a></li>
+                        <!-- <li><a href="profile.php" class="sidebar-link"><i class="fas fa-user-cog"></i> <span>Profile</span></a></li>
+                        <li><a href="settings.php" class="sidebar-link"><i class="fas fa-cog"></i> <span>Settings</span></a></li> -->
                         <li><a href="../pages/logout.php" class="sidebar-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
                     </ul>
                 </div>
@@ -1371,31 +1371,51 @@ $activeDisaster = $disasterStmt->fetch();
                             </div>
                         </div>
 
-                        <!-- Quick Stats Card -->
-                        <div class="card" style="margin-top: 24px;">
-                            <div class="card-header">
-                                <h3><i class="fas fa-chart-pie"></i> Quick Overview</h3>
-                            </div>
-                            
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                <div style="background: #FAFAFA; border-radius: 12px; padding: 12px; text-align: center;">
-                                    <div style="font-size: 20px; font-weight: 700; color: var(--map-blue);"><?php echo $summary['status_temp']; ?></div>
-                                    <div style="font-size: 11px; color: #95A5A6;">Temp Shelters</div>
-                                </div>
-                                <div style="background: #FAFAFA; border-radius: 12px; padding: 12px; text-align: center;">
-                                    <div style="font-size: 20px; font-weight: 700; color: #95A5A6;"><?php echo $summary['status_closed']; ?></div>
-                                    <div style="font-size: 11px; color: #95A5A6;">Closed</div>
-                                </div>
-                                <div style="background: #FAFAFA; border-radius: 12px; padding: 12px; text-align: center;">
-                                    <div style="font-size: 20px; font-weight: 700; color: var(--accent-yellow);">12</div>
-                                    <div style="font-size: 11px; color: #95A5A6;">Assistance</div>
-                                </div>
-                                <div style="background: #FAFAFA; border-radius: 12px; padding: 12px; text-align: center;">
-                                    <div style="font-size: 20px; font-weight: 700; color: var(--accent-yellow);">3</div>
-                                    <div style="font-size: 11px; color: #95A5A6;">Disasters</div>
-                                </div>
-                            </div>
-                        </div>
+                        <<!-- Quick Stats Card -->
+<div class="card" style="margin-top: 24px;">
+    <div class="card-header">
+        <h3><i class="fas fa-chart-pie"></i> Quick Overview</h3>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+
+        <div style="background:#FAFAFA;border-radius:12px;padding:12px;text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:var(--map-green);">
+                <?php echo $summary['status_available']; ?>
+            </div>
+            <div style="font-size:11px;color:#95A5A6;">Available</div>
+        </div>
+
+        <div style="background:#FAFAFA;border-radius:12px;padding:12px;text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:var(--map-yellow);">
+                <?php echo $summary['status_near']; ?>
+            </div>
+            <div style="font-size:11px;color:#95A5A6;">Near Capacity</div>
+        </div>
+
+        <div style="background:#FAFAFA;border-radius:12px;padding:12px;text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:var(--map-red);">
+                <?php echo $summary['status_full']; ?>
+            </div>
+            <div style="font-size:11px;color:#95A5A6;">Full</div>
+        </div>
+
+        <div style="background:#FAFAFA;border-radius:12px;padding:12px;text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:var(--map-blue);">
+                <?php echo $summary['status_temp']; ?>
+            </div>
+            <div style="font-size:11px;color:#95A5A6;">Temp Shelters</div>
+        </div>
+
+        <div style="background:#FAFAFA;border-radius:12px;padding:12px;text-align:center; grid-column: span 2;">
+            <div style="font-size:20px;font-weight:700;color:#95A5A6;">
+                <?php echo $summary['status_closed']; ?>
+            </div>
+            <div style="font-size:11px;color:#95A5A6;">Closed Centers</div>
+        </div>
+
+    </div>
+</div>
                     </div>
                 </div>
 
