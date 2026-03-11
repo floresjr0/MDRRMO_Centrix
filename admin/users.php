@@ -915,12 +915,9 @@ $user = current_user();
                                                 </span>
                                             </td>
                                             <td>
-                                                <a href="edit_user.php?id=<?php echo (int)$u['id']; ?>" class="action-btn">
+                                                <button onclick="openModal(<?php echo (int)$u['id']; ?>, '<?php echo addslashes($u['full_name']); ?>', '<?php echo addslashes($u['email']); ?>', '<?php echo $u['role']; ?>', '<?php echo $u['is_active']; ?>')" class="action-btn">
                                                     <i class="fas fa-edit"></i> Edit
-                                                </a>
-                                                <a href="reset_password.php?id=<?php echo (int)$u['id']; ?>" class="action-btn">
-                                                    <i class="fas fa-key"></i>
-                                                </a>
+                                                </button>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -932,6 +929,58 @@ $user = current_user();
                 </div>
             </div>
         </main>
+    </div>
+    <!-- Edit User Modal -->
+    <div id="editModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center;">
+        <div class="card" style="width:100%; max-width:480px; margin:20px; position:relative;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                <h3 style="font-size:16px; font-weight:700; color:#2C3E50;">Edit User</h3>
+                <button onclick="closeModal()" style="background:none; border:none; font-size:20px; color:#95A5A6; cursor:pointer;">&times;</button>
+            </div>
+
+            <form id="editForm">
+                <input type="hidden" id="editId">
+
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:12px; font-weight:600; color:#5D6D7E; display:block; margin-bottom:6px;">Full Name</label>
+                    <input type="text" id="editName" class="filter-input" style="width:100%;" required>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:12px; font-weight:600; color:#5D6D7E; display:block; margin-bottom:6px;">Email</label>
+                    <input type="email" id="editEmail" class="filter-input" style="width:100%;" required>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:12px; font-weight:600; color:#5D6D7E; display:block; margin-bottom:6px;">Role</label>
+                    <select id="editRole" class="filter-select" style="width:100%;">
+                        <option value="citizen">Citizen</option>
+                        <option value="coordinator">Coordinator</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:12px; font-weight:600; color:#5D6D7E; display:block; margin-bottom:6px;">Status</label>
+                    <select id="editActive" class="filter-select" style="width:100%;">
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:12px; font-weight:600; color:#5D6D7E; display:block; margin-bottom:6px;">New Password <span style="color:#95A5A6; font-weight:400;">(leave blank to keep current)</span></label>
+                    <input type="password" id="editPassword" class="filter-input" style="width:100%;" placeholder="••••••••">
+                </div>
+
+                <div id="editMsg" style="display:none; padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:14px;"></div>
+
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -994,6 +1043,65 @@ $user = current_user();
                 }
             }
         });
+
+        // Modal edit
+            function openModal(id, name, email, role, isActive) {
+        document.getElementById('editId').value = id;
+        document.getElementById('editName').value = name;
+        document.getElementById('editEmail').value = email;
+        document.getElementById('editRole').value = role;
+        document.getElementById('editActive').value = isActive;
+        document.getElementById('editPassword').value = '';
+        document.getElementById('editMsg').style.display = 'none';
+        const modal = document.getElementById('editModal');
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    document.getElementById('editForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const msg = document.getElementById('editMsg');
+        msg.style.display = 'none';
+
+        const body = new FormData();
+        body.append('id',       document.getElementById('editId').value);
+        body.append('full_name',document.getElementById('editName').value);
+        body.append('email',    document.getElementById('editEmail').value);
+        body.append('role',     document.getElementById('editRole').value);
+        body.append('is_active',document.getElementById('editActive').value);
+        const pw = document.getElementById('editPassword').value;
+        if (pw) body.append('password', pw);
+
+        fetch('edit_user.php', { method: 'POST', body })
+            .then(r => r.json())
+            .then(data => {
+                msg.style.display = 'block';
+                if (data.ok) {
+                    msg.style.background = '#E8F5E9';
+                    msg.style.color = '#2E7D32';
+                    msg.textContent = '✓ User updated successfully.';
+                    setTimeout(() => { closeModal(); location.reload(); }, 1200);
+                } else {
+                    msg.style.background = '#FFEBEE';
+                    msg.style.color = '#D32F2F';
+                    msg.textContent = '✗ ' + (data.error || 'Something went wrong.');
+                }
+            })
+            .catch(() => {
+                msg.style.display = 'block';
+                msg.style.background = '#FFEBEE';
+                msg.style.color = '#D32F2F';
+                msg.textContent = '✗ Network error.';
+            });
+    });
+
+    // Close modal on backdrop click
+    document.getElementById('editModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
     </script>
 </body>
 </html>
