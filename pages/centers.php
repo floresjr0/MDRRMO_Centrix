@@ -10,15 +10,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'list_available') {
         $pdo = db();
 
         $stmt = $pdo->query("
-            SELECT 
+             SELECT 
                 c.id,
                 c.name,
                 c.lat,
                 c.lng,
                 c.status,
-                b.name AS barangay
+                b.name AS barangay,
+                u.full_name      AS coordinator_name,
+                u.contact_number AS coordinator_contact
             FROM evacuation_centers c
             JOIN barangays b ON b.id = c.barangay_id
+            LEFT JOIN users u ON u.id = c.coordinator_user_id
             WHERE c.status != 'closed'
         ");
 
