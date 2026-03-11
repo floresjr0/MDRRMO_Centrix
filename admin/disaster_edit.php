@@ -752,8 +752,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Operations</div>
                     <ul class="sidebar-menu">
-                        <li><a href="assistance.php" class="sidebar-link"><i class="fas fa-hand-holding-heart"></i> <span>Assistance</span></a></li>
-                        <li><a href="reports.php" class="sidebar-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a></li>
+                        <!-- <li><a href="assistance.php" class="sidebar-link"><i class="fas fa-hand-holding-heart"></i> <span>Assistance</span></a></li> -->
+                        <!-- <li><a href="reports.php" class="sidebar-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a></li> -->
                         <li><a href="announcements.php" class="sidebar-link"><i class="fas fa-bullhorn"></i> <span>Announcements</span></a></li>
                     </ul>
                 </div>
@@ -761,7 +761,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Monitoring</div>
                     <ul class="sidebar-menu">
-                        <li><a href="weather.php" class="sidebar-link"><i class="fas fa-cloud-sun"></i> <span>Weather</span></a></li>
+                        <!-- <li><a href="weather.php" class="sidebar-link"><i class="fas fa-cloud-sun"></i> <span>Weather</span></a></li> -->
                         <li><a href="maps.php" class="sidebar-link"><i class="fas fa-map"></i> <span>Maps</span></a></li>
                         <li><a href="evacuees.php" class="sidebar-link"><i class="fas fa-people-arrows"></i> <span>Evacuees</span><span></span> <span class="sidebar-badge">8</span></a></li>
                     </ul>
@@ -770,8 +770,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Settings</div>
                     <ul class="sidebar-menu">
-                        <li><a href="profile.php" class="sidebar-link"><i class="fas fa-user-cog"></i> <span>Profile</span></a></li>
-                        <li><a href="settings.php" class="sidebar-link"><i class="fas fa-cog"></i> <span>Settings</span></a></li>
+                        <!-- <li><a href="profile.php" class="sidebar-link"><i class="fas fa-user-cog"></i> <span>Profile</span></a></li> -->
+                        <!-- <li><a href="settings.php" class="sidebar-link"><i class="fas fa-cog"></i> <span>Settings</span></a></li> -->
                         <li><a href="../pages/logout.php" class="sidebar-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
                     </ul>
                 </div>
