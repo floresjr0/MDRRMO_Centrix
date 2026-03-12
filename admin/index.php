@@ -483,9 +483,6 @@ $activeDisaster = $disasterStmt->fetch();
         .welcome-text p {
             color: #95A5A6;
             font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .date-badge {
@@ -494,9 +491,6 @@ $activeDisaster = $disasterStmt->fetch();
             padding: 4px 12px;
             border-radius: 30px;
             font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
         }
 
         /* Minimized Stat Cards */
@@ -555,12 +549,222 @@ $activeDisaster = $disasterStmt->fetch();
             letter-spacing: 0.3px;
         }
 
-        /* Two Column Layout */
-        .grid-2 {
+        /* Two Column Layout for Main Content */
+        .main-grid {
             display: grid;
-            grid-template-columns: 1.5fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 24px;
             margin-bottom: 24px;
+        }
+
+        /* Current Situation Card - Weather Style */
+        .weather-card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #EDE7E7;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .weather-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .weather-header h2 {
+            font-size: 24px;
+            font-weight: BOLD;
+            color: #2C3E50;
+        }
+
+        .weather-header span {
+            color: #95A5A6;
+            font-size: 14px;
+        }
+
+        .weather-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 20px 0;
+            
+            border-bottom: 2px solid #EDE7E7;
+        }
+
+        .weather-temp-large {
+            font-size: 72px;
+            font-weight: 700;
+            color: #2C3E50;
+            line-height: 1;
+        }
+
+        .weather-info {
+            text-align: right;
+        }
+
+        .weather-condition {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2C3E50;
+            margin-bottom: 4px;
+        }
+
+        .weather-detail {
+            color: #95A5A6;
+            font-size: 14px;
+        }
+
+        .forecast-title {
+            margin-top: -10px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2C3E50;
+            margin-bottom: 8px;
+        }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 0px;
+        }
+
+        .forecast-item {
+            text-align: center;
+            padding: 10px 4px;
+            position: relative;
+        }
+
+        .forecast-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 30px;
+            background: #EDE7E7;
+        }
+
+        .forecast-time {
+            font-size: 13px;
+            font-weight: 500;
+            color: #95A5A6;
+            margin-bottom: 6px;
+        }
+
+        .forecast-temp {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2C3E50;
+        }
+
+        /* Air Conditions Section - New */
+        .air-conditions {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px solid #EDE7E7;
+        }
+
+        .air-conditions-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2C3E50;
+            margin-bottom: 16px;
+        }
+
+        .air-conditions-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .air-condition-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .air-condition-label {
+            font-size: 13px;
+            color: #95A5A6;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .air-condition-label i {
+            color: var(--primary-red);
+            font-size: 14px;
+        }
+
+        .air-condition-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2C3E50;
+        }
+
+        .air-condition-unit {
+            font-size: 12px;
+            color: #95A5A6;
+            margin-left: 2px;
+        }
+
+        .disaster-badge {
+            margin-top: 12px;
+            margin-bottom: -6px;
+            background: var(--light-red);
+            color: var(--primary-red);
+            padding: 14px 18px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-left: 4px solid var(--primary-red);
+        }
+
+        /* Right Column */
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            height: 100%;
+        }
+
+        /* Quick Stats Cards */
+        .stats-mini-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .stat-mini-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            border: 1px solid #EDE7E7;
+        }
+
+        .stat-mini-label {
+            font-size: 12px;
+            color: #95A5A6;
+            margin-bottom: 4px;
+        }
+
+        .stat-mini-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2C3E50;
+            line-height: 1.2;
         }
 
         /* Cards */
@@ -601,101 +805,6 @@ $activeDisaster = $disasterStmt->fetch();
             font-weight: 600;
         }
 
-        .badge.yellow {
-            background: var(--light-yellow);
-            color: #B26A00;
-        }
-
-        /* Current Situation */
-        .situation-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: #FAFAFA;
-            border-radius: 16px;
-            margin-bottom: 15px;
-            border-left: 3px solid var(--primary-red);
-        }
-
-        .situation-icon {
-            width: 45px;
-            height: 45px;
-            background: white;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: var(--primary-red);
-        }
-
-        .situation-content {
-            flex: 1;
-        }
-
-        .situation-title {
-            font-weight: 600;
-            color: #2C3E50;
-            margin-bottom: 4px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .situation-desc {
-            font-size: 13px;
-            color: #95A5A6;
-        }
-
-        .level-indicator {
-            padding: 2px 8px;
-            border-radius: 30px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .level-high { background: var(--light-red); color: var(--primary-red); }
-        .level-medium { background: var(--light-yellow); color: #B26A00; }
-        .level-low { background: #E8F5E9; color: #2E7D32; }
-
-        /* Weather Widget */
-        .weather-widget {
-            background: linear-gradient(135deg, var(--primary-red) 0%, #B71C1C 100%);
-            border-radius: 16px;
-            padding: 15px;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .weather-temp {
-            font-size: 32px;
-            font-weight: 700;
-        }
-
-        .weather-details {
-            flex: 1;
-        }
-
-        .weather-condition {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .weather-stats {
-            display: flex;
-            gap: 12px;
-            font-size: 11px;
-            opacity: 0.9;
-        }
-
         /* Centers List */
         .centers-list {
             margin-top: 10px;
@@ -723,9 +832,6 @@ $activeDisaster = $disasterStmt->fetch();
         .center-info p {
             font-size: 12px;
             color: #95A5A6;
-            display: flex;
-            align-items: center;
-            gap: 4px;
         }
 
         .capacity-indicator {
@@ -752,6 +858,10 @@ $activeDisaster = $disasterStmt->fetch();
             background: var(--accent-yellow);
         }
 
+        .capacity-fill.green {
+            background: var(--map-green);
+        }
+
         .capacity-dot {
             width: 8px;
             height: 8px;
@@ -764,61 +874,127 @@ $activeDisaster = $disasterStmt->fetch();
         .dot-blue { background: var(--map-blue); }
         .dot-gray { background: #95A5A6; }
 
-        /* Pending Items */
-        .pending-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid #F0F0F0;
+        /* Evacuation Summary Table - FULLY RESTORED */
+        .evac-summary-card {
+            margin-top: 24px;
+            overflow-x: auto;
         }
 
-        .pending-avatar {
-            width: 36px;
-            height: 36px;
-            background: var(--light-red);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary-red);
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .pending-info {
-            flex: 1;
-        }
-
-        .pending-info h4 {
+        .evac-table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 13px;
+        }
+
+        .evac-table th {
+            text-align: left;
+            padding: 14px 8px;
+            background: #F8F9FA;
+            color: #5D6D7E;
             font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #EDE7E7;
+        }
+
+        .evac-table td {
+            padding: 14px 8px;
+            border-bottom: 1px solid #F0F0F0;
             color: #2C3E50;
+        }
+
+        .evac-table tfoot td {
+            background: #F8F9FA;
+            font-weight: 700;
+            border-top: 2px solid #EDE7E7;
+            color: #2C3E50;
+        }
+
+        .es-center-name {
+            font-weight: 600;
             margin-bottom: 2px;
         }
 
-        .pending-info p {
+        .es-center-brgy {
             font-size: 11px;
             color: #95A5A6;
         }
 
-        .pending-action {
-            background: var(--light-yellow);
-            color: #B26A00;
-            padding: 4px 10px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-size: 11px;
-            font-weight: 600;
+        .es-coord-name {
+            font-weight: 500;
+            margin-bottom: 2px;
         }
+
+        .es-coord-contact {
+            font-size: 10px;
+            color: #95A5A6;
+        }
+
+        .es-no-coord {
+            color: #95A5A6;
+            font-style: italic;
+            font-size: 12px;
+        }
+
+        .es-demo {
+            font-weight: 500;
+        }
+
+        .es-children { color: #3498DB; }
+        .es-adults { color: #2C3E50; }
+        .es-seniors { color: #E67E22; }
+        .es-pwd { color: #9B59B6; }
+        .es-families { color: #16A085; }
+        .es-total { font-weight: 700; color: #2C3E50; }
+
+        .es-cap-wrap {
+            min-width: 120px;
+        }
+
+        .es-cap-bar {
+            width: 100%;
+            height: 4px;
+            background: #F0F0F0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .es-cap-fill {
+            height: 100%;
+            border-radius: 10px;
+        }
+
+        .es-cap-text {
+            font-size: 11px;
+            color: #5D6D7E;
+        }
+
+        .es-status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 30px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .es-available { background: #E8F5E9; color: #2E7D32; }
+        .es-near { background: var(--light-yellow); color: #B26A00; }
+        .es-full { background: var(--light-red); color: var(--primary-red); }
+        .es-temp { background: #E3F2FD; color: #1976D2; }
+        .es-closed { background: #F5F5F5; color: #95A5A6; }
 
         /* Map Container */
         .map-container {
             position: relative;
             width: 100%;
-            height: 300px;
-            border-radius: 16px;
+            height: 350px;
+            border-radius: 20px;
             overflow: hidden;
+            margin-top: 24px;
+            border: 1px solid #EDE7E7;
         }
 
         #adminMap {
@@ -863,7 +1039,63 @@ $activeDisaster = $disasterStmt->fetch();
         .legend-color.red { background: var(--map-red); }
         .legend-color.blue { background: var(--map-blue); }
 
-        /* Ultra Minimal Modal for Map Markers - Fits Map Container */
+        /* Custom Map Marker Styles - Fixed Centering */
+        .custom-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .marker-pin {
+            width: 30px;
+            height: 30px;
+            border-radius: 50% 50% 50% 0;
+            background: var(--primary-red);
+            position: relative;
+            transform: rotate(-45deg);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .marker-pin::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .marker-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+            z-index: 2;
+            font-size: 12px;
+            color: var(--primary-red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .marker-pin.available { background: var(--map-green); }
+        .marker-pin.near_capacity { background: var(--map-yellow); }
+        .marker-pin.full { background: var(--map-red); }
+        .marker-pin.temp_shelter { background: var(--map-blue); }
+
+        .marker-pin.available .marker-icon { color: var(--map-green); }
+        .marker-pin.near_capacity .marker-icon { color: #B26A00; }
+        .marker-pin.full .marker-icon { color: var(--map-red); }
+        .marker-pin.temp_shelter .marker-icon { color: var(--map-blue); }
+
+        /* Ultra Minimal Modal for Map Markers */
         .custom-popup .leaflet-popup-content-wrapper {
             background: white;
             border-radius: 12px;
@@ -933,20 +1165,12 @@ $activeDisaster = $disasterStmt->fetch();
         }
 
         .mini-location {
-            display: flex;
-            align-items: center;
-            gap: 4px;
             color: #95A5A6;
             font-size: 9px;
             margin-bottom: 10px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-
-        .mini-location i {
-            color: var(--primary-red);
-            font-size: 8px;
         }
 
         .mini-stats {
@@ -1045,6 +1269,15 @@ $activeDisaster = $disasterStmt->fetch();
             .stats-row {
                 grid-template-columns: repeat(3, 1fr);
             }
+            .forecast-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .forecast-item:nth-child(3)::after {
+                display: none;
+            }
+            .air-conditions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 992px) {
@@ -1067,7 +1300,7 @@ $activeDisaster = $disasterStmt->fetch();
             .mobile-toggle {
                 display: block;
             }
-            .grid-2 {
+            .main-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -1092,6 +1325,20 @@ $activeDisaster = $disasterStmt->fetch();
                 right: 15px;
                 border-radius: 16px;
             }
+            .weather-main {
+                flex-direction: column;
+                text-align: center;
+                gap: 16px;
+            }
+            .weather-info {
+                text-align: center;
+            }
+            .forecast-item::after {
+                display: none;
+            }
+            .air-conditions-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -1109,7 +1356,6 @@ $activeDisaster = $disasterStmt->fetch();
                     <div class="logo-image">
                         <!-- MDRRMO Logo - Ready for image -->
                         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqukasrXgrajWG753eZaSE0F17M3XFWroASQ&s" alt="MDRRMO Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=logo-icon-fallback></span>';">
-                        <!-- Fallback icon if image doesn't exist -->
                     </div>
                     <div class="logo-text">
                         <h3>MDRRMO</h3>
@@ -1132,8 +1378,6 @@ $activeDisaster = $disasterStmt->fetch();
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Operations</div>
                     <ul class="sidebar-menu">
-                        <!-- <li><a href="assistance.php" class="sidebar-link"><i class="fas fa-hand-holding-heart"></i> <span>Assistance</span></a></li> -->
-                        <!-- <li><a href="reports.php" class="sidebar-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a></li> -->
                         <li><a href="announcements.php" class="sidebar-link"><i class="fas fa-bullhorn"></i> <span>Announcements</span></a></li>
                     </ul>
                 </div>
@@ -1141,7 +1385,6 @@ $activeDisaster = $disasterStmt->fetch();
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Monitoring</div>
                     <ul class="sidebar-menu">
-                        <!-- <li><a href="weather.php" class="sidebar-link"><i class="fas fa-cloud-sun"></i> <span>Weather</span></a></li> -->
                         <li><a href="maps.php" class="sidebar-link"><i class="fas fa-map"></i> <span>Maps</span></a></li>
                         <li><a href="evacuees.php" class="sidebar-link"><i class="fas fa-people-arrows"></i> <span>Evacuees</span> <span class="sidebar-badge"><?php echo number_format($summary['total_evacuees']); ?></span></a></li>
                     </ul>
@@ -1150,8 +1393,6 @@ $activeDisaster = $disasterStmt->fetch();
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Settings</div>
                     <ul class="sidebar-menu">
-                        <!-- <li><a href="profile.php" class="sidebar-link"><i class="fas fa-user-cog"></i> <span>Profile</span></a></li>
-                        <li><a href="settings.php" class="sidebar-link"><i class="fas fa-cog"></i> <span>Settings</span></a></li> -->
                         <li><a href="../pages/logout.php" class="sidebar-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
                     </ul>
                 </div>
@@ -1188,17 +1429,10 @@ $activeDisaster = $disasterStmt->fetch();
                 <div class="welcome-bar">
                     <div class="welcome-text">
                         <h2>Welcome back, <?php echo htmlspecialchars(explode(' ', $user['full_name'] ?? 'Admin')[0]); ?>!</h2>
-                        <p>
-                            <i class="fas fa-map-marker-alt" style="color: var(--primary-red);"></i> San Ildefonso, Bulacan
-                            <span class="date-badge">
-                                <i class="far fa-calendar"></i> <?php echo date('F j, Y'); ?>
-                            </span>
-                        </p>
+                        <p>San Ildefonso, Bulacan</p>
                     </div>
-                    <div>
-                        <span class="badge yellow">
-                            <i class="fas fa-exclamation-triangle"></i> 3 Pending Approvals
-                        </span>
+                    <div class="date-badge">
+                        <?php echo date('F j, Y'); ?>
                     </div>
                 </div>
 
@@ -1248,108 +1482,117 @@ $activeDisaster = $disasterStmt->fetch();
                     </div>
                 </div>
 
-                <!-- Two Column Layout -->
-                <div class="grid-2">
-                    <!-- Left Column -->
-                    <div>
-                        <!-- Current Situation Card -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h3><i class="fas fa-exclamation-triangle"></i> Current Situation</h3>
-                                <span class="badge">Live</span>
-                            </div>
-                            
-                            <?php if ($activeDisaster): ?>
-                            <div class="situation-item">
-                                <div class="situation-icon">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                </div>
-                                <div class="situation-content">
-                                    <div class="situation-title">
-                                        <?php echo htmlspecialchars(strtoupper($activeDisaster['type'])); ?>
-                                        <span class="level-indicator level-high">
-                                            Signal <?php echo (int)$activeDisaster['level']; ?>
-                                        </span>
-                                    </div>
-                                    <div class="situation-desc">
-                                        <?php echo htmlspecialchars($activeDisaster['title']); ?>
-                                    </div>
-                                </div>
-                            </div>
-                            <?php else: ?>
-                            <div class="situation-item" style="border-left-color: var(--map-green);">
-                                <div class="situation-icon" style="color: var(--map-green);">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                                <div class="situation-content">
-                                    <div class="situation-title">
-                                        All Clear
-                                        <span class="level-indicator level-low">Normal</span>
-                                    </div>
-                                    <div class="situation-desc">
-                                        No active disasters in San Ildefonso
-                                    </div>
-                                </div>
-                            </div>
-                            <?php endif; ?>
-
-                            <?php if ($weather): ?>
-                            <div class="weather-widget">
-                                <div class="weather-temp"><?php echo round($weather['temp_c']); ?>°</div>
-                                <div class="weather-details">
-                                    <div class="weather-condition">
-                                        <i class="fas fa-cloud-sun"></i> <?php echo htmlspecialchars($weather['condition_text']); ?>
-                                    </div>
-                                    <div class="weather-stats">
-                                        <span><i class="fas fa-thermometer-half"></i> HI: <?php echo $weather['heat_index']; ?>°C</span>
-                                        <span><i class="fas fa-tint"></i> <?php echo $weather['humidity']; ?>%</span>
-                                        <span class="level-indicator level-<?php echo $weather['level']; ?>" style="background: rgba(255,255,255,0.2); color: white;">
-                                            <?php echo ucfirst($weather['level']); ?>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <?php endif; ?>
+                <!-- Main Two Column Layout -->
+                <div class="main-grid">
+                    <!-- Left Column: Current Situation Card (Weather Style) - Full Height -->
+                    <div class="weather-card">
+                        <div class="weather-header">
+                            <h2>San Ildefonso</h2>
+                            <span>Chance of rain 50%</span>
                         </div>
 
-                        <!-- Pending Approvals Card -->
-                        <!-- <div class="card" style="margin-top: 24px;">
-                            <div class="card-header">
-                                <h3><i class="fas fa-clock"></i> Pending Approvals</h3>
-                                <span class="badge yellow">3 New</span>
+                        <!-- Hardcoded weather data for now -->
+                        <div class="weather-main">
+                            <div class="weather-temp-large">32°</div>
+                            <div class="weather-info">
+                                <div class="weather-condition">Partly Cloudy</div>
+                                <div class="weather-detail">Heat Index: 36° • Humidity: 65%</div>
                             </div>
-                            
-                            <div class="centers-list">
-                                <div class="pending-item">
-                                    <div class="pending-avatar">JD</div>
-                                    <div class="pending-info">
-                                        <h4>Juan Dela Cruz</h4>
-                                        <p>Barangay Coordinator · Brgy. San Juan</p>
-                                    </div>
-                                    <a href="#" class="pending-action">Review</a>
+                        </div>
+
+                        <div class="forecast-title">TODAY'S FORECAST</div>
+                        <div class="forecast-grid">
+                            <div class="forecast-item">
+                                <div class="forecast-time">6:00 AM</div>
+                                <div class="forecast-temp">23°</div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-time">9:00 AM</div>
+                                <div class="forecast-temp">31°</div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-time">12:00 PM</div>
+                                <div class="forecast-temp">32°</div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-time">3:00 PM</div>
+                                <div class="forecast-temp">26°</div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-time">6:00 PM</div>
+                                <div class="forecast-temp">25°</div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-time">9:00 PM</div>
+                                <div class="forecast-temp">21°</div>
+                            </div>
+                        </div>
+
+                        <!-- Air Conditions Section - No Backend Needed -->
+                        <div class="air-conditions">
+                            <div class="air-conditions-title">AIR CONDITIONS</div>
+                            <div class="air-conditions-grid">
+                                <div class="air-condition-item">
+                                    <span class="air-condition-label">
+                                        <i class="fas fa-temperature-low"></i> Real Feel
+                                    </span>
+                                    <span class="air-condition-value">32<span class="air-condition-unit">°C</span></span>
+                                    
                                 </div>
-                                <div class="pending-item">
-                                    <div class="pending-avatar">MS</div>
-                                    <div class="pending-info">
-                                        <h4>Maria Santos</h4>
-                                        <p>Evacuation Staff · Poblacion</p>
-                                    </div>
-                                    <a href="#" class="pending-action">Review</a>
+                                <div class="air-condition-item">
+                                    <span class="air-condition-label">
+                                        <i class="fas fa-wind"></i> Wind
+                                    </span>
+                                    <span class="air-condition-value">12<span class="air-condition-unit">km/h</span></span>
+                                    
                                 </div>
-                                <div class="pending-item">
-                                    <div class="pending-avatar">PR</div>
-                                    <div class="pending-info">
-                                        <h4>Pedro Reyes</h4>
-                                        <p>MSWD Officer Verification</p>
-                                    </div>
-                                    <a href="#" class="pending-action">Review</a>
+                                <div class="air-condition-item">
+                                    <span class="air-condition-label">
+                                        <i class="fas fa-droplet"></i> Chance of rain
+                                    </span>
+                                    <span class="air-condition-value">50<span class="air-condition-unit">%</span></span>
+                                    
+                                </div>
+                                <div class="air-condition-item">
+                                    <span class="air-condition-label">
+                                        <i class="fas fa-sun"></i> UV Index
+                                    </span>
+                                    <span class="air-condition-value">7<span class="air-condition-unit"></span></span>
+                                    
                                 </div>
                             </div>
-                        </div> -->
+                        </div>
+
+                        <?php if ($activeDisaster): ?>
+                        <div class="disaster-badge">
+                            <span>⚠️ Active: <?php echo htmlspecialchars(strtoupper($activeDisaster['type'])); ?> (Signal <?php echo (int)$activeDisaster['level']; ?>)</span>
+                            <span><?php echo htmlspecialchars($activeDisaster['title']); ?></span>
+                        </div>
+                        <?php endif; ?>
                     </div>
 
-                    <!-- Right Column -->
-                    <div>
+                    <!-- Right Column: Quick Stats and Centers -->
+                    <div class="right-column">
+                        <!-- Quick Stats Mini Cards -->
+                        <div class="stats-mini-grid">
+                            <div class="stat-mini-card">
+                                <div class="stat-mini-label">Available</div>
+                                <div class="stat-mini-value" style="color: var(--map-green);"><?php echo $summary['status_available']; ?></div>
+                            </div>
+                            <div class="stat-mini-card">
+                                <div class="stat-mini-label">Near Capacity</div>
+                                <div class="stat-mini-value" style="color: var(--map-yellow);"><?php echo $summary['status_near']; ?></div>
+                            </div>
+                            <div class="stat-mini-card">
+                                <div class="stat-mini-label">Full</div>
+                                <div class="stat-mini-value" style="color: var(--map-red);"><?php echo $summary['status_full']; ?></div>
+                            </div>
+                            <div class="stat-mini-card">
+                                <div class="stat-mini-label">Temp Shelters</div>
+                                <div class="stat-mini-value" style="color: var(--map-blue);"><?php echo $summary['status_temp']; ?></div>
+                            </div>
+                        </div>
+
                         <!-- Evacuation Centers Card -->
                         <div class="card">
                             <div class="card-header">
@@ -1382,7 +1625,7 @@ $activeDisaster = $disasterStmt->fetch();
                                 <div class="center-item">
                                     <div class="center-info">
                                         <h4><?php echo htmlspecialchars($center['name']); ?></h4>
-                                        <p><i class="fas fa-map-marker-alt" style="color: var(--primary-red);"></i> <?php echo htmlspecialchars($center['barangay_name']); ?></p>
+                                        <p><?php echo htmlspecialchars($center['barangay_name']); ?></p>
                                     </div>
                                     <div class="capacity-indicator">
                                         <div class="capacity-bar">
@@ -1400,77 +1643,26 @@ $activeDisaster = $disasterStmt->fetch();
                                 </a>
                             </div>
                         </div>
-
-                        <<!-- Quick Stats Card -->
-<div class="card" style="margin-top: 24px;">
-    <div class="card-header">
-        <h3><i class="fas fa-chart-pie"></i> Quick Overview</h3>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-
-        <div style="background:#FAFAFA;border-radius:12px;padding:12px;text-align:center;">
-            <div style="font-size:20px;font-weight:700;color:var(--map-green);">
-                <?php echo $summary['status_available']; ?>
-            </div>
-            <div style="font-size:11px;color:#95A5A6;">Available</div>
-        </div>
-
-        <div style="background:#FAFAFA;border-radius:12px;padding:12px;text-align:center;">
-            <div style="font-size:20px;font-weight:700;color:var(--map-yellow);">
-                <?php echo $summary['status_near']; ?>
-            </div>
-            <div style="font-size:11px;color:#95A5A6;">Near Capacity</div>
-        </div>
-
-        <div style="background:#FAFAFA;border-radius:12px;padding:12px;text-align:center;">
-            <div style="font-size:20px;font-weight:700;color:var(--map-red);">
-                <?php echo $summary['status_full']; ?>
-            </div>
-            <div style="font-size:11px;color:#95A5A6;">Full</div>
-        </div>
-
-        <div style="background:#FAFAFA;border-radius:12px;padding:12px;text-align:center;">
-            <div style="font-size:20px;font-weight:700;color:var(--map-blue);">
-                <?php echo $summary['status_temp']; ?>
-            </div>
-            <div style="font-size:11px;color:#95A5A6;">Temp Shelters</div>
-        </div>
-
-        <div style="background:#FAFAFA;border-radius:12px;padding:12px;text-align:center; grid-column: span 2;">
-            <div style="font-size:20px;font-weight:700;color:#95A5A6;">
-                <?php echo $summary['status_closed']; ?>
-            </div>
-            <div style="font-size:11px;color:#95A5A6;">Closed Centers</div>
-        </div>
-
-    </div>
-</div>
                     </div>
                 </div>
-                <!-- Evacuation Centers Summary -->
-                <div class="card evac-summary-card">
+
+                <!-- Evacuation Centers Summary - FULLY RESTORED with all columns -->
+                <?php if (!empty($evacSummary)): ?>
+                <div class="evac-summary-card card">
                     <div class="card-header">
                         <h3><i class="fas fa-people-arrows"></i> Evacuation Centers Summary</h3>
                     </div>
 
-                    <?php if (empty($evacSummary)): ?>
-                        <div >
-                            No evacuation data recorded yet.
-                        </div>
-                    <?php else: ?>
-
-                    <!-- Desktop Table -->
-                    <div class="evac-table-wrap">
+                    <div style="overflow-x: auto;">
                         <table class="evac-table">
                             <thead>
                                 <tr>
                                     <th>Center</th>
                                     <th>Coordinator</th>
-                                    <th><i class="fas fa-child"></i> Children</th>
-                                    <th><i class="fas fa-user"></i> Adults</th>
-                                    <th><i class="fas fa-user-clock"></i> Seniors</th>
-                                    <th><i class="fas fa-wheelchair"></i> PWD</th>
+                                    <th>Children</th>
+                                    <th>Adults</th>
+                                    <th>Seniors</th>
+                                    <th>PWD</th>
                                     <th>Families</th>
                                     <th>Total</th>
                                     <th>Capacity</th>
@@ -1500,7 +1692,6 @@ $activeDisaster = $disasterStmt->fetch();
                                     <td>
                                         <div class="es-center-name"><?php echo htmlspecialchars($row['center_name']); ?></div>
                                         <div class="es-center-brgy">
-                                            <i class="fas fa-map-marker-alt"></i>
                                             <?php echo htmlspecialchars($row['barangay_name']); ?>
                                         </div>
                                     </td>
@@ -1508,7 +1699,6 @@ $activeDisaster = $disasterStmt->fetch();
                                         <?php if ($row['coordinator_name']): ?>
                                             <div class="es-coord-name"><?php echo htmlspecialchars($row['coordinator_name']); ?></div>
                                             <div class="es-coord-contact">
-                                                <i class="fas fa-phone-alt"></i>
                                                 <?php echo htmlspecialchars($row['coordinator_contact'] ?? '—'); ?>
                                             </div>
                                         <?php else: ?>
@@ -1528,7 +1718,7 @@ $activeDisaster = $disasterStmt->fetch();
                                             </div>
                                             <div class="es-cap-text">
                                                 <?php echo number_format($row['total_evacuees']); ?> / <?php echo number_format($row['max_capacity_people']); ?>
-                                                <span style="color:#95A5A6;">(<?php echo $pct; ?>%)</span>
+                                                (<?php echo $pct; ?>%)
                                             </div>
                                         </div>
                                     </td>
@@ -1537,7 +1727,6 @@ $activeDisaster = $disasterStmt->fetch();
                                 <?php endforeach; ?>
                             </tbody>
 
-                            <!-- Totals Footer Row -->
                             <?php
                                 $grandChildren  = array_sum(array_column($evacSummary, 'total_children'));
                                 $grandAdults    = array_sum(array_column($evacSummary, 'total_adults'));
@@ -1558,42 +1747,36 @@ $activeDisaster = $disasterStmt->fetch();
                                     <td><strong><?php echo number_format($grandTotal); ?></strong></td>
                                     <td colspan="2">
                                         <strong><?php echo number_format($grandTotal); ?> / <?php echo number_format($grandCap); ?></strong>
-                                        <span style="color:#95A5A6; font-size:11px;">
-                                            (<?php echo $grandCap > 0 ? round(($grandTotal/$grandCap)*100) : 0; ?>% overall)
-                                        </span>
+                                        (<?php echo $grandCap > 0 ? round(($grandTotal/$grandCap)*100) : 0; ?>% overall)
                                     </td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
-
-                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
 
-                
                 <!-- Map Card with Legend at Top Right -->
-                <div class="card" style="margin-top: 24px; padding: 0; overflow: hidden;">
-                    <div class="map-container">
-                        <div id="adminMap"></div>
-                        
-                        <!-- Map Legend - Top Right -->
-                        <div class="map-legend">
-                            <div class="legend-item">
-                                <span class="legend-color green"></span>
-                                <span>A</span>
-                            </div>
-                            <div class="legend-item">
-                                <span class="legend-color yellow"></span>
-                                <span>N</span>
-                            </div>
-                            <div class="legend-item">
-                                <span class="legend-color red"></span>
-                                <span>F</span>
-                            </div>
-                            <div class="legend-item">
-                                <span class="legend-color blue"></span>
-                                <span>T</span>
-                            </div>
+                <div class="map-container">
+                    <div id="adminMap"></div>
+                    
+                    <!-- Map Legend - Top Right -->
+                    <div class="map-legend">
+                        <div class="legend-item">
+                            <span class="legend-color green"></span>
+                            <span>A</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color yellow"></span>
+                            <span>N</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color red"></span>
+                            <span>F</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color blue"></span>
+                            <span>T</span>
                         </div>
                     </div>
                 </div>
@@ -1627,7 +1810,7 @@ $activeDisaster = $disasterStmt->fetch();
             sidebar.classList.toggle('show');
         });
 
-        // Map with Ultra Minimal Modal
+        // Map with Custom Location Pin + Shelter Icon Markers - Perfectly Centered
         const centers = <?php echo json_encode(array_map(function ($c) {
             return [
                 'id' => (int)$c['id'],
@@ -1652,18 +1835,29 @@ $activeDisaster = $disasterStmt->fetch();
                 maxZoom: 20
             }).addTo(map);
 
+            // Create custom icon for each center
             centers.forEach((c) => {
-                let color = '#2E7D32'; // green - available
-                if (c.status === 'near_capacity') color = '#FFC107'; // yellow
-                else if (c.status === 'full') color = '#D32F2F'; // red
-                else if (c.status === 'temp_shelter') color = '#3498DB'; // blue
+                // Determine color based on status
+                let pinColor = '#2E7D32'; // green - available
+                if (c.status === 'near_capacity') pinColor = '#FFC107'; // yellow
+                else if (c.status === 'full') pinColor = '#D32F2F'; // red
+                else if (c.status === 'temp_shelter') pinColor = '#3498DB'; // blue
 
-                const marker = L.circleMarker([c.lat, c.lng], {
-                    radius: 8,
-                    weight: 2,
-                    color: 'white',
-                    fillColor: color,
-                    fillOpacity: 0.9
+                // Create custom div icon with perfectly centered elements
+                const customIcon = L.divIcon({
+                    className: 'custom-marker',
+                    html: `
+                        <div class="marker-pin ${c.status}">
+                            <i class="fas fa-home marker-icon"></i>
+                        </div>
+                    `,
+                    iconSize: [30, 42],
+                    iconAnchor: [15, 42],
+                    popupAnchor: [0, -42]
+                });
+
+                const marker = L.marker([c.lat, c.lng], {
+                    icon: customIcon
                 }).addTo(map);
                 
                 // Calculate capacity percentage
@@ -1681,8 +1875,7 @@ $activeDisaster = $disasterStmt->fetch();
                         </div>
                         
                         <div class="mini-location">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>${c.barangay}</span>
+                            ${c.barangay}
                         </div>
                         
                         <div class="mini-stats">
@@ -1706,16 +1899,16 @@ $activeDisaster = $disasterStmt->fetch();
                                 <span>${Math.round(capacityPercent)}%</span>
                             </div>
                             <div class="mini-capacity-bar">
-                                <div class="mini-capacity-fill" style="width: ${capacityPercent}%; background: ${color};"></div>
+                                <div class="mini-capacity-fill" style="width: ${capacityPercent}%; background: ${pinColor};"></div>
                             </div>
                         </div>
                         
                         <div class="mini-footer">
                             <a href="centers.php?id=${c.id}" class="mini-btn mini-btn-primary">
-                                <i class="fas fa-eye"></i>
+                                View
                             </a>
                             <button class="mini-btn mini-btn-secondary" onclick="alert('Directions coming soon!')">
-                                <i class="fas fa-directions"></i>
+                                Directions
                             </button>
                         </div>
                     </div>
