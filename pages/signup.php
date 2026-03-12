@@ -1344,63 +1344,63 @@ body {
     });
   }
 
-  // /* ================================================
-  //    GEOLOCATION — shared for both mobile and desktop
-  //    ================================================ */
-  // const allowedMunicipality = "San Ildefonso";
-  // const allowedProvince = "Bulacan";
+  /* ================================================
+     GEOLOCATION — shared for both mobile and desktop
+     ================================================ */
+  const allowedMunicipality = "San Ildefonso";
+  const allowedProvince = "Bulacan";
 
-  // function detectLocation() {
+  function detectLocation() {
 
-  //   if (!navigator.geolocation) {
-  //     alert("Hindi sinusuportahan ng iyong browser ang geolocation.");
-  //     return;
-  //   }
+    if (!navigator.geolocation) {
+      alert("Hindi sinusuportahan ng iyong browser ang geolocation.");
+      return;
+    }
 
-  //   navigator.geolocation.getCurrentPosition(async function(position){
+    navigator.geolocation.getCurrentPosition(async function(position){
 
-  //     const lat = position.coords.latitude;
-  //     const lon = position.coords.longitude;
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
 
-  //     // Populate hidden lat/lng for both mobile and desktop forms
-  //     document.getElementById("lat").value = lat;
-  //     document.getElementById("lng").value = lon;
-  //     document.getElementById("dt-lat").value = lat;
-  //     document.getElementById("dt-lng").value = lon;
+      // Populate hidden lat/lng for both mobile and desktop forms
+      document.getElementById("lat").value = lat;
+      document.getElementById("lng").value = lon;
+      document.getElementById("dt-lat").value = lat;
+      document.getElementById("dt-lng").value = lon;
 
-  //     // Reverse geocode using OpenStreetMap
-  //     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+      // Reverse geocode using OpenStreetMap
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
 
-  //     const res = await fetch(url);
-  //     const data = await res.json();
+      const res = await fetch(url);
+      const data = await res.json();
 
-  //     const addr = data.address;
+      const addr = data.address;
 
-  //     let municipality = addr.town || addr.city || addr.municipality || "";
-  //     let province = addr.state || "";
+      let municipality = addr.town || addr.city || addr.municipality || "";
+      let province = addr.state || "";
 
-  //     const fullAddress = data.display_name;
+      const fullAddress = data.display_name;
 
-  //     // Populate detected address for both forms
-  //     document.getElementById("address").value = fullAddress;
-  //     document.getElementById("dt-address").value = fullAddress;
+      // Populate detected address for both forms
+      document.getElementById("address").value = fullAddress;
+      document.getElementById("dt-address").value = fullAddress;
 
-  //     if (
-  //       !municipality.toLowerCase().includes("san ildefonso") ||
-  //       !province.toLowerCase().includes("bulacan")
-  //     ) {
+      if (
+        !municipality.toLowerCase().includes("san ildefonso") ||
+        !province.toLowerCase().includes("bulacan")
+      ) {
 
-  //       alert("Ang pagpaparehistro ay para lamang sa mga residente ng San Ildefonso, Bulacan.");
+        alert("Ang pagpaparehistro ay para lamang sa mga residente ng San Ildefonso, Bulacan.");
 
-  //       document.querySelector("button[type=submit]").disabled = true;
-  //     }
+        document.querySelector("button[type=submit]").disabled = true;
+      }
 
-  //   }, function(){
-  //     alert("Kailangan ang access sa lokasyon para sa pagpaparehistro.");
-  //   });
-  // }
+    }, function(){
+      alert("Kailangan ang access sa lokasyon para sa pagpaparehistro.");
+    });
+  }
 
-  // detectLocation();
+  detectLocation();
 
 </script>
 </body>
