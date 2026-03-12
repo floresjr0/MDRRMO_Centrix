@@ -6,6 +6,17 @@ require_login(); // any logged-in user can see; citizens will arrive here by def
 $user = current_user();
 $pdo  = db();
 
+// ── Current tracking state for this citizen ───────────────────
+// Used to pre-fill the navigation UI if they already have an active route.
+$trackingStmt = $pdo->prepare("
+    SELECT nt.center_id, nt.status, ec.name AS center_name
+    FROM   evac_navigation_tracking nt
+    JOIN   evacuation_centers ec ON ec.id = nt.center_id
+    WHERE  nt.user_id = ?
+");
+$trackingStmt->execute([$user['id']]);
+$currentTracking = $trackingStmt->fetch();
+
 // Latest weather snapshot
 // LIVE WEATHER DATA
 require_once __DIR__ . '/config.php';
@@ -102,6 +113,15 @@ $annStmt = $pdo->query("SELECT a.*, d.title AS disaster_title
                         ORDER BY a.is_pinned DESC, a.published_at DESC
                         LIMIT 6");
 $announcements = $annStmt->fetchAll();
+
+// Pass current tracking to JS as JSON
+$trackingJson = $currentTracking
+    ? json_encode([
+        'center_id'   => (int)$currentTracking['center_id'],
+        'status'      => $currentTracking['status'],
+        'center_name' => $currentTracking['center_name'],
+      ])
+    : 'null';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -113,8 +133,6 @@ $announcements = $annStmt->fetchAll();
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-
-
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -335,7 +353,8 @@ html, body {
 .w-stat .stat-label { font-size: 0.57rem; color: var(--muted); text-align: center; }
 
 /* ==============================================
-   EVACUATION CARD
+   EVACUATION NAVIGATION CARD
+   (replaces the old plain evac-card)
    ============================================== */
 .evac-card {
   margin: 0 0.9rem 0.5rem;
@@ -344,6 +363,62 @@ html, body {
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0,0,0,0.06);
 }
+
+/* Active navigation status strip */
+.evac-status-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.evac-status-strip.navigating {
+  background: #FFF9C4;
+  color: #7a6000;
+}
+
+.evac-status-strip.arrived {
+  background: #E8F5E9;
+  color: #2e7d32;
+}
+
+.evac-status-strip.none {
+  background: var(--bg);
+  color: var(--muted);
+}
+
+.evac-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.navigating .evac-status-dot { background: #f59e0b; animation: pulse 1.5s ease-in-out infinite; }
+.arrived   .evac-status-dot { background: #22c55e; }
+.none      .evac-status-dot { background: #9ca3af; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+.evac-cancel-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #f59e0b;
+  border-radius: 50px;
+  color: #7a6000;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.18rem 0.65rem;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background 0.15s;
+}
+.evac-cancel-btn:hover { background: #fef3c7; }
+
 .btn-nav {
   display: inline-block;
   padding: 0.5rem 1.2rem;
@@ -462,9 +537,23 @@ html, body {
   background: linear-gradient(135deg, var(--red), var(--orange));
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 16px rgba(192,57,30,0.45);
+  position: relative;
 }
 .nav-center-circle svg { width: 26px; height: 26px; fill: #fff; }
 .nav-item.nav-center span { color: var(--red); font-weight: 700; }
+
+/* Pulse badge on nav center when actively navigating */
+.nav-center-circle .nav-active-dot {
+  display: none;
+  position: absolute;
+  top: 2px; right: 2px;
+  width: 12px; height: 12px;
+  background: #f59e0b;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.nav-center-circle.is-navigating .nav-active-dot { display: block; }
 
 /* ==============================================
    RESPONSIVE — Tablet / Desktop
@@ -493,8 +582,6 @@ html, body {
 /* ==============================================
    SETTINGS SLIDE PANEL
    ============================================== */
-
-/* Dark overlay behind panel */
 .settings-overlay {
   position: fixed;
   inset: 0;
@@ -509,7 +596,6 @@ html, body {
   pointer-events: all;
 }
 
-/* Slide panel from right */
 .settings-panel {
   position: fixed;
   top: 0;
@@ -530,7 +616,6 @@ html, body {
   transform: translateX(0);
 }
 
-/* Panel header */
 .settings-header {
   display: flex;
   align-items: center;
@@ -558,12 +643,6 @@ html, body {
 }
 .settings-close:hover { background: rgba(255,255,255,0.35); }
 
-/* User info block */
-.settings-user { display: none; }
-.settings-divider { display: none; }
-.settings-items { display: none; }
-
-/* Logout button */
 .settings-logout {
   display: flex;
   align-items: center;
@@ -715,23 +794,29 @@ html, body {
       <?php endif; ?>
     </div>
 
-    <!-- EVACUATION ASSISTANCE (from original) -->
+    <!-- EVACUATION ASSISTANCE -->
     <div class="section-header">
-      <h2>Evacuation assistance</h2>
+      <h2>Evacuation Assistance</h2>
     </div>
     <div class="evac-card">
+
+      <!-- Live navigation status strip -->
+      <div class="evac-status-strip none" id="evacStatusStrip">
+        <div class="evac-status-dot"></div>
+        <span id="evacStatusText">Not currently navigating to any center.</span>
+      </div>
+
       <p style="font-size:0.80rem;color:#555;padding:0.9rem 1rem 0.4rem;">
         When available, you will be able to find the nearest evacuation center and open navigation from here.
       </p>
       <div style="padding:0 1rem 1rem;">
-        <a href="navigation.php" class="btn-nav">Open navigation prototype</a>
+        <a href="navigation.php" class="btn-nav" id="navBtn">Open navigation</a>
       </div>
     </div>
 
     <!-- ANNOUNCEMENTS -->
     <div class="section-header" id="announcements">
       <h2>Announcements</h2>
-      <!-- <a href="announcements.php">See All ›</a> -->
     </div>
 
     <?php if (!$announcements): ?>
@@ -773,8 +858,9 @@ html, body {
       <span>Alerts</span>
     </a>
     <a href="navigation.php" class="nav-item nav-center">
-      <div class="nav-center-circle">
+      <div class="nav-center-circle" id="navCircle">
         <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+        <div class="nav-active-dot" id="navActiveDot"></div>
       </div>
       <span>Evacuate</span>
     </a>
@@ -797,8 +883,6 @@ html, body {
       <span>Settings</span>
       <button class="settings-close" onclick="closeSettings()">✕</button>
     </div>
-
-    <!-- Logout -->
     <a href="logout.php" class="settings-logout">
       <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
       <span>Log Out</span>
@@ -808,18 +892,133 @@ html, body {
 </div><!-- /app-shell -->
 
 <script>
-  function openSettings() {
+// ── Navigation tracking state ─────────────────────────────────────────────
+// Seeded from PHP so the UI is correct on page load.
+const TRACK_ENDPOINT = 'citizen_track_navigation.php';
+
+// PHP seeds the current tracking state (null if none)
+let _tracking = <?php echo $trackingJson; ?>;
+
+/**
+ * Called by navigation.php (or any map page) when the citizen
+ * confirms / selects an evacuation center to navigate to.
+ *
+ * Usage from navigation.php:
+ *   window.opener?.selectEvacCenter(centerId, centerName)
+ * or via postMessage:
+ *   window.postMessage({ type: 'evac_select', center_id: 1, center_name: 'Sample' }, '*')
+ */
+function selectEvacCenter(centerId, centerName) {
+    fetch(TRACK_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'select', center_id: centerId }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            _tracking = { center_id: centerId, status: 'navigating', center_name: centerName };
+            renderTrackingUI();
+        }
+    })
+    .catch(() => { /* silent fail — tracking is best-effort */ });
+}
+
+/**
+ * Called when citizen cancels navigation (button in status strip).
+ */
+function cancelEvacNavigation() {
+    fetch(TRACK_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel' }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            _tracking = null;
+            renderTrackingUI();
+        }
+    });
+}
+
+/**
+ * Update the status strip and nav-bar indicator based on _tracking.
+ */
+function renderTrackingUI() {
+    const strip    = document.getElementById('evacStatusStrip');
+    const text     = document.getElementById('evacStatusText');
+    const circle   = document.getElementById('navCircle');
+
+    if (!_tracking || _tracking.status === 'cancelled') {
+        strip.className = 'evac-status-strip none';
+        text.textContent = 'Not currently navigating to any center.';
+        // Remove cancel button if present
+        const existing = strip.querySelector('.evac-cancel-btn');
+        if (existing) existing.remove();
+        circle.classList.remove('is-navigating');
+        return;
+    }
+
+    if (_tracking.status === 'navigating') {
+        strip.className = 'evac-status-strip navigating';
+        text.textContent = '🧭 En route to: ' + (_tracking.center_name || 'Evacuation Center');
+        circle.classList.add('is-navigating');
+
+        // Add cancel button if not already there
+        if (!strip.querySelector('.evac-cancel-btn')) {
+            const btn = document.createElement('button');
+            btn.className = 'evac-cancel-btn';
+            btn.textContent = 'Cancel';
+            btn.onclick = cancelEvacNavigation;
+            strip.appendChild(btn);
+        }
+    } else if (_tracking.status === 'arrived') {
+        strip.className = 'evac-status-strip arrived';
+        text.textContent = '✅ Arrived at: ' + (_tracking.center_name || 'Evacuation Center');
+        const existing = strip.querySelector('.evac-cancel-btn');
+        if (existing) existing.remove();
+        circle.classList.remove('is-navigating');
+    }
+}
+
+// Listen for postMessage from navigation.php (opened as new tab/window)
+window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'evac_select') {
+        selectEvacCenter(e.data.center_id, e.data.center_name);
+    }
+    if (e.data && e.data.type === 'evac_arrived') {
+        fetch(TRACK_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'arrived' }),
+        });
+        if (_tracking) {
+            _tracking.status = 'arrived';
+            renderTrackingUI();
+        }
+    }
+    if (e.data && e.data.type === 'evac_cancel') {
+        cancelEvacNavigation();
+    }
+});
+
+// ── Settings panel ────────────────────────────────────────────────────────
+function openSettings() {
     document.getElementById('settingsPanel').classList.add('open');
     document.getElementById('settingsOverlay').classList.add('open');
     document.querySelector('.app-shell').classList.add('blurred');
     document.body.style.overflow = 'hidden';
-  }
-  function closeSettings() {
+}
+function closeSettings() {
     document.getElementById('settingsPanel').classList.remove('open');
     document.getElementById('settingsOverlay').classList.remove('open');
     document.querySelector('.app-shell').classList.remove('blurred');
     document.body.style.overflow = '';
-  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+renderTrackingUI();
 </script>
 </body>
 </html>

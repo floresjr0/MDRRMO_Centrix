@@ -308,11 +308,10 @@ html, body {
 #recenterBtn:hover { border-color: var(--accent); background: rgba(212,95,16,0.08); }
 
 /* ==============================================
-   PANEL SIDE TOGGLE BUTTON  ← NEW
+   PANEL SIDE TOGGLE BUTTON
    ============================================== */
 #panelToggleBtn {
   position: absolute;
-  /* vertically centered relative to the panel's top edge */
   right: 0;
   z-index: 55;
   width: 32px;
@@ -329,7 +328,6 @@ html, body {
     bottom 0.5s cubic-bezier(0.16,1,0.3,1),
     background 0.25s,
     transform 0.2s;
-  /* default: sits just above the panel handle area */
   bottom: calc(var(--panel-show-offset, 18rem) + 2px);
 }
 #panelToggleBtn:hover {
@@ -338,7 +336,6 @@ html, body {
 }
 #panelToggleBtn:active { transform: scaleX(0.96); }
 
-/* Arrow SVG inside toggle */
 #toggleArrow {
   width: 16px; height: 16px;
   fill: none;
@@ -348,7 +345,6 @@ html, body {
   stroke-linejoin: round;
   transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
 }
-/* When panel is collapsed, rotate arrow to point up */
 #panelToggleBtn.collapsed #toggleArrow {
   transform: rotate(180deg);
 }
@@ -379,7 +375,6 @@ html, body {
 #bottomPanel.collapsed { bottom: -88%; }
 #bottomPanel.no-transition { transition: none; }
 
-/* Handle area */
 .bottom-handle-wrap {
   display: flex;
   flex-direction: column;
@@ -700,10 +695,9 @@ html, body {
   <!-- RECENTER -->
   <button id="recenterBtn" onclick="recenter()">⊕</button>
 
-  <!-- SIDE TOGGLE BUTTON (NEW) -->
+  <!-- SIDE TOGGLE BUTTON -->
   <button id="panelToggleBtn" onclick="togglePanel()" title="Toggle panel">
     <svg id="toggleArrow" viewBox="0 0 16 16">
-      <!-- Down chevron — points DOWN when panel is open (to collapse) -->
       <polyline points="3,5 8,11 13,5"/>
     </svg>
   </button>
@@ -810,25 +804,78 @@ let selectedMode = 'walk';
 let centers = [];
 let userLoc = null;
 
+// ─── TRACKING ─────────────────────────────
+// Tracks which evacuation center this citizen is navigating to.
+// Posts to citizen_track_navigation.php (same pages/ folder).
+
+let _trackedCenterId = null; // prevent duplicate calls for same center
+
+function trackSelectCenter(centerId, centerName) {
+  if (_trackedCenterId === centerId) return; // already tracked this center
+  _trackedCenterId = centerId;
+  fetch('citizen_track_navigation.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ action: 'select', center_id: centerId }),
+  }).catch(() => {}); // silent fail — tracking is best-effort
+
+  // Also notify citizen_dashboard.php if open in the background
+  if (window.opener && !window.opener.closed) {
+    try {
+      window.opener.postMessage(
+        { type: 'evac_select', center_id: centerId, center_name: centerName },
+        window.location.origin
+      );
+    } catch(e) {}
+  }
+}
+
+function trackArrived() {
+  _trackedCenterId = null;
+  fetch('citizen_track_navigation.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ action: 'arrived' }),
+  }).catch(() => {});
+
+  if (window.opener && !window.opener.closed) {
+    try { window.opener.postMessage({ type: 'evac_arrived' }, window.location.origin); } catch(e) {}
+  }
+}
+
+function trackCancel() {
+  if (_trackedCenterId === null) return; // nothing was being tracked
+  _trackedCenterId = null;
+  fetch('citizen_track_navigation.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ action: 'cancel' }),
+  }).catch(() => {});
+
+  if (window.opener && !window.opener.closed) {
+    try { window.opener.postMessage({ type: 'evac_cancel' }, window.location.origin); } catch(e) {}
+  }
+}
+
 // ─── PANEL DRAG ───────────────────────────
 let panelCollapsed = false;
 let dragStartY = 0;
 let isDragging = false;
 
-/* Helper: sync the side toggle button position & state */
 function syncToggleBtn() {
   const btn = document.getElementById('panelToggleBtn');
   const panel = document.getElementById('bottomPanel');
 
   if (panelCollapsed) {
     btn.classList.add('collapsed');
-    // Panel is nearly hidden — button floats just above the tiny peek strip
     btn.style.bottom = '5rem';
     document.getElementById('speedBubble').style.bottom = '4.2rem';
     document.getElementById('recenterBtn').style.bottom = '4.2rem';
   } else {
     btn.classList.remove('collapsed');
-    // Position button near top of the panel (just below the rounded corner)
     const panelH = panel.offsetHeight || 300;
     btn.style.bottom = (panelH - 30) + 'px';
     document.getElementById('speedBubble').style.bottom = '18rem';
@@ -836,7 +883,6 @@ function syncToggleBtn() {
   }
 }
 
-/* Click handler for the side toggle button */
 function togglePanel() {
   snapPanel(!panelCollapsed);
 }
@@ -846,17 +892,11 @@ function initPanelDrag() {
   const handle = document.getElementById('panelHandle');
   const hint   = document.getElementById('handleHint');
 
-  function snapPanel(collapsed) {
-    window.snapPanel(collapsed);
-  }
-
-  // Tap handle to expand when collapsed
   handle.addEventListener('click', (e) => {
     if (isDragging) return;
     if (panelCollapsed) snapPanel(false);
   });
 
-  // ── Touch drag ──
   handle.addEventListener('touchstart', (e) => {
     dragStartY = e.touches[0].clientY;
     isDragging = false;
@@ -882,7 +922,6 @@ function initPanelDrag() {
     isDragging = false;
   }, { passive: true });
 
-  // ── Mouse drag (desktop) ──
   handle.addEventListener('mousedown', (e) => {
     dragStartY = e.clientY;
     isDragging = false;
@@ -912,7 +951,6 @@ function initPanelDrag() {
   });
 }
 
-/* Global snapPanel so both drag and toggle button share the same logic */
 window.snapPanel = function(collapsed) {
   panelCollapsed = collapsed;
   const panel = document.getElementById('bottomPanel');
@@ -928,7 +966,6 @@ window.snapPanel = function(collapsed) {
     hint.textContent = 'drag to hide';
   }
   panel.style.bottom = '';
-  // Sync button after transition settles
   requestAnimationFrame(() => setTimeout(syncToggleBtn, 520));
 };
 
@@ -940,7 +977,7 @@ function initApp() {
     initMap();
     initCompass();
     initPanelDrag();
-    window.snapPanel(false); // show panel + position toggle btn
+    window.snapPanel(false);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
@@ -971,8 +1008,6 @@ function initMap() {
 
   updateDestinationMarker();
   map.on('dragstart', () => { isMapLocked = false; });
-
-  // Reposition toggle button when window resizes
   window.addEventListener('resize', syncToggleBtn);
 }
 
@@ -1024,8 +1059,8 @@ function loadCenters() {
       listEl.innerHTML = '';
       listEl.appendChild(frag);
 
+      // Auto-select nearest center — this also fires the first tracking call
       chooseCenter(centers[0].id, false);
-      // Reposition toggle button now that panel content has height
       setTimeout(syncToggleBtn, 100);
     })
     .catch(err => {
@@ -1033,6 +1068,7 @@ function loadCenters() {
     });
 }
 
+// ─── CHOOSE CENTER (tracking added here) ──
 function chooseCenter(centerId, speakIt = true) {
   const center = centers.find(c => c.id === centerId);
   if (!center) return;
@@ -1043,10 +1079,18 @@ function chooseCenter(centerId, speakIt = true) {
   document.getElementById('destName').textContent =
     `📍 ${center.name} (${center.barangay})`;
 
-  updateDestinationMarker();
+  // Highlight selected item in list
+  document.querySelectorAll('.center-item').forEach(el => el.classList.remove('selected'));
+  const items = document.querySelectorAll('.center-item');
+  const idx = centers.findIndex(c => c.id === centerId);
+  if (items[idx]) items[idx].classList.add('selected');
 
+  updateDestinationMarker();
   if (userLoc) updatePreview(userLoc.lat, userLoc.lon);
   if (speakIt) speak('Destination set to ' + center.name);
+
+  // ── TRACKING: record that this citizen intends to go to this center ──
+  trackSelectCenter(center.id, center.name);
 }
 
 function updateDestinationMarker() {
@@ -1120,6 +1164,7 @@ function startNavigation() {
   });
 }
 
+// ─── STOP NAVIGATION (tracking: cancel) ───
 function stopNavigation() {
   isNavigating = false;
   if (watchId) navigator.geolocation.clearWatch(watchId);
@@ -1135,6 +1180,9 @@ function stopNavigation() {
   document.getElementById('stepDist').textContent = 'Calculating…';
   document.getElementById('etaMin').textContent = '--';
   currentStepIdx = 0; isOffRoute = false; routeCoords = []; routeInstructions = [];
+
+  // ── TRACKING: citizen manually stopped, mark as cancelled ──
+  trackCancel();
 }
 
 // ─── POSITION UPDATE ──────────────────────
@@ -1357,9 +1405,13 @@ function reroute(lat, lon) {
   speak('Route updated.');
 }
 
-// ─── ARRIVAL ──────────────────────────────
+// ─── ARRIVAL (tracking: arrived) ──────────
 function onArrival() {
   speak(`You have arrived! Great ${MODES[selectedMode].label.toLowerCase()}!`);
+
+  // ── TRACKING: citizen reached the center ──
+  trackArrived();
+
   stopNavigation();
   document.getElementById('arrivalOverlay').classList.add('show');
 }
