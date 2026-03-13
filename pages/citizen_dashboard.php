@@ -6,17 +6,6 @@ require_login(); // any logged-in user can see; citizens will arrive here by def
 $user = current_user();
 $pdo  = db();
 
-// ── Current tracking state for this citizen ───────────────────
-// Used to pre-fill the navigation UI if they already have an active route.
-$trackingStmt = $pdo->prepare("
-    SELECT nt.center_id, nt.status, ec.name AS center_name
-    FROM   evac_navigation_tracking nt
-    JOIN   evacuation_centers ec ON ec.id = nt.center_id
-    WHERE  nt.user_id = ?
-");
-$trackingStmt->execute([$user['id']]);
-$currentTracking = $trackingStmt->fetch();
-
 // Latest weather snapshot
 // LIVE WEATHER DATA
 require_once __DIR__ . '/config.php';
@@ -113,15 +102,6 @@ $annStmt = $pdo->query("SELECT a.*, d.title AS disaster_title
                         ORDER BY a.is_pinned DESC, a.published_at DESC
                         LIMIT 6");
 $announcements = $annStmt->fetchAll();
-
-// Pass current tracking to JS as JSON
-$trackingJson = $currentTracking
-    ? json_encode([
-        'center_id'   => (int)$currentTracking['center_id'],
-        'status'      => $currentTracking['status'],
-        'center_name' => $currentTracking['center_name'],
-      ])
-    : 'null';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -156,27 +136,12 @@ html, body {
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
 }
 
-/* ── APP SHELL ── */
-.app-shell {
-  width: 100%;
-  max-width: 480px;
-  height: 100vh;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-  position: relative;
-  overflow: hidden;
-}
-
-/* ==============================================
-   TOP BAR
-   ============================================== */
+/* ============================================================
+   SHARED TOP BAR (used on both mobile and desktop)
+   ============================================================ */
 .topbar {
-  flex-shrink: 0;
   height: var(--topbar-h);
   background: var(--white);
   display: flex;
@@ -185,6 +150,8 @@ html, body {
   gap: 0.7rem;
   border-bottom: 1px solid var(--border);
   z-index: 50;
+  position: sticky;
+  top: 0;
 }
 
 .topbar-logo {
@@ -217,35 +184,217 @@ html, body {
   text-overflow: ellipsis;
 }
 
-.topbar-avatar {
-  width: 32px; height: 32px;
+/* Hamburger button */
+.hamburger-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.hamburger-btn:hover { background: var(--bg); }
+.hamburger-btn span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+.hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; }
+.hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.topbar-date {
+  font-size: 0.60rem;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   DRAWER SIDEBAR (shared mobile + desktop)
+   ============================================================ */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.sidebar-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.sidebar-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 270px;
+  height: 100%;
+  background: var(--white);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 6px 0 32px rgba(0,0,0,0.18);
+  overflow-y: auto;
+}
+.sidebar-drawer.open { transform: translateX(0); }
+
+.drawer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--red), var(--orange));
+}
+.drawer-logo {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+}
+.drawer-logo img { width: 100%; height: 100%; object-fit: cover; }
+.drawer-logo svg { width: 22px; height: 22px; fill: #fff; }
+.drawer-brand-text { min-width: 0; }
+.drawer-brand-title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+}
+.drawer-brand-sub {
+  font-size: 0.58rem;
+  color: rgba(255,255,255,0.75);
+  margin-top: 1px;
+}
+
+.drawer-user {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+.drawer-avatar {
+  width: 36px; height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--red), var(--orange));
   display: flex; align-items: center; justify-content: center;
   color: #fff;
-  font-size: 0.75rem;
+  font-size: 0.80rem;
   font-weight: 700;
   flex-shrink: 0;
-  cursor: pointer;
-  text-decoration: none;
+}
+.drawer-user-info { min-width: 0; }
+.drawer-username {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.drawer-barangay {
+  font-size: 0.60rem;
+  color: var(--muted);
 }
 
-/* ==============================================
-   SCROLLABLE CONTENT
-   ============================================== */
+.drawer-nav {
+  flex: 1;
+  padding: 0.75rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.drawer-nav-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  padding: 0.6rem 0.8rem 0.2rem;
+}
+.drawer-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font);
+}
+.drawer-nav-item:hover { background: #f5f5f5; color: var(--text); }
+.drawer-nav-item.active {
+  background: #fdecea;
+  color: var(--red);
+  font-weight: 700;
+}
+.drawer-nav-item svg { width: 18px; height: 18px; fill: currentColor; flex-shrink: 0; }
+
+.drawer-footer {
+  padding: 0.8rem 0.7rem;
+  border-top: 1px solid var(--border);
+}
+.drawer-logout {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  background: #fff0f0;
+  color: var(--red);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid #ffd0d0;
+  transition: background 0.15s;
+}
+.drawer-logout:hover { background: #ffe0e0; }
+.drawer-logout svg { width: 16px; height: 16px; fill: var(--red); flex-shrink: 0; }
+
+/* ============================================================
+   MOBILE LAYOUT
+   ============================================================ */
+.mobile-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
 .page-scroll {
   flex: 1;
-  overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
   padding-bottom: calc(var(--navbar-h) + 0.5rem);
 }
-.page-scroll::-webkit-scrollbar { display: none; }
 
-/* ==============================================
-   ALERT BANNER
-   ============================================== */
+/* ── ALERT BANNER ── */
 .alert-banner {
   margin: 0.7rem 0.9rem;
   border-radius: 10px;
@@ -275,9 +424,32 @@ html, body {
 .alert-typhoon  { background: #e07020; color: #fff; }
 .alert-none     { background: #E8F5E9; color: #1b5e20; }
 
-/* ==============================================
-   SECTION HEADER
-   ============================================== */
+/* ── READY BAG CARD (mobile) ── */
+.readybag-card {
+  margin: 0 0.9rem 0.5rem;
+  background: #fff8e1;
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  border: 1px solid #ffe082;
+}
+.readybag-icon { font-size: 1.4rem; flex-shrink: 0; }
+.readybag-content { flex: 1; min-width: 0; }
+.readybag-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #5d4037;
+  margin-bottom: 0.25rem;
+}
+.readybag-text {
+  font-size: 0.68rem;
+  color: #795548;
+  line-height: 1.5;
+}
+
+/* ── SECTION HEADER ── */
 .section-header {
   display: flex;
   align-items: center;
@@ -292,9 +464,7 @@ html, body {
   text-decoration: none;
 }
 
-/* ==============================================
-   WEATHER CARD
-   ============================================== */
+/* ── WEATHER CARD ── */
 .weather-card {
   margin: 0 0.9rem 0.5rem;
   background: var(--white);
@@ -352,10 +522,7 @@ html, body {
 .w-stat .stat-val  { font-size: 0.80rem; font-weight: 700; color: var(--text); }
 .w-stat .stat-label { font-size: 0.57rem; color: var(--muted); text-align: center; }
 
-/* ==============================================
-   EVACUATION NAVIGATION CARD
-   (replaces the old plain evac-card)
-   ============================================== */
+/* ── EVACUATION CARD ── */
 .evac-card {
   margin: 0 0.9rem 0.5rem;
   background: var(--white);
@@ -363,62 +530,6 @@ html, body {
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0,0,0,0.06);
 }
-
-/* Active navigation status strip */
-.evac-status-strip {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.55rem 0.9rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  border-bottom: 1px solid var(--border);
-}
-
-.evac-status-strip.navigating {
-  background: #FFF9C4;
-  color: #7a6000;
-}
-
-.evac-status-strip.arrived {
-  background: #E8F5E9;
-  color: #2e7d32;
-}
-
-.evac-status-strip.none {
-  background: var(--bg);
-  color: var(--muted);
-}
-
-.evac-status-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.navigating .evac-status-dot { background: #f59e0b; animation: pulse 1.5s ease-in-out infinite; }
-.arrived   .evac-status-dot { background: #22c55e; }
-.none      .evac-status-dot { background: #9ca3af; }
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(0.8); }
-}
-
-.evac-cancel-btn {
-  margin-left: auto;
-  background: none;
-  border: 1px solid #f59e0b;
-  border-radius: 50px;
-  color: #7a6000;
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 0.18rem 0.65rem;
-  cursor: pointer;
-  font-family: var(--font);
-  transition: background 0.15s;
-}
-.evac-cancel-btn:hover { background: #fef3c7; }
-
 .btn-nav {
   display: inline-block;
   padding: 0.5rem 1.2rem;
@@ -433,9 +544,7 @@ html, body {
 }
 .btn-nav:hover { filter: brightness(1.08); }
 
-/* ==============================================
-   ANNOUNCEMENTS
-   ============================================== */
+/* ── ANNOUNCEMENTS ── */
 .ann-list {
   margin: 0 0.9rem 0.5rem;
   background: var(--white);
@@ -493,16 +602,12 @@ html, body {
 .badge-disaster { background: #FFCDD2; color: #7a0000; }
 .ann-empty { padding: 1.5rem; text-align: center; font-size: 0.78rem; color: var(--muted); }
 
-/* ==============================================
-   BOTTOM NAV BAR
-   ============================================== */
+/* ── BOTTOM NAV ── */
 .bottom-nav {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
+  left: 0;
+  right: 0;
   height: var(--navbar-h);
   background: var(--white);
   border-top: 1px solid var(--border);
@@ -537,164 +642,211 @@ html, body {
   background: linear-gradient(135deg, var(--red), var(--orange));
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 16px rgba(192,57,30,0.45);
-  position: relative;
 }
 .nav-center-circle svg { width: 26px; height: 26px; fill: #fff; }
 .nav-item.nav-center span { color: var(--red); font-weight: 700; }
 
-/* Pulse badge on nav center when actively navigating */
-.nav-center-circle .nav-active-dot {
-  display: none;
-  position: absolute;
-  top: 2px; right: 2px;
-  width: 12px; height: 12px;
-  background: #f59e0b;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-.nav-center-circle.is-navigating .nav-active-dot { display: block; }
-
-/* ==============================================
-   RESPONSIVE — Tablet / Desktop
-   ============================================== */
-@media (min-width: 600px) {
-  body { background: #1c0600; overflow: auto; }
-  html { overflow: auto; }
-  .app-shell {
-    margin: 2rem auto;
+/* ============================================================
+   DESKTOP LAYOUT — 1024px+
+   ============================================================ */
+@media (min-width: 1024px) {
+  html, body {
+    overflow: auto;
+    background: #f0ede8;
     height: auto;
-    min-height: 90vh;
-    border-radius: 26px;
-    overflow: hidden;
-    box-shadow: 0 30px 90px rgba(0,0,0,0.55);
   }
-  .page-scroll { overflow-y: auto; }
-  .bottom-nav {
+
+  .mobile-shell { display: none; }
+
+  .desktop-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Desktop topbar replaces mobile topbar */
+  .desktop-topbar {
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    height: 64px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
     position: sticky;
-    bottom: 0;
-    left: auto;
-    transform: none;
-    border-radius: 0 0 26px 26px;
+    top: 0;
+    z-index: 50;
+    gap: 1rem;
   }
-}
-
-/* ==============================================
-   SETTINGS SLIDE PANEL
-   ============================================== */
-.settings-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.45);
-  z-index: 200;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-.settings-overlay.open {
-  opacity: 1;
-  pointer-events: all;
-}
-
-.settings-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 78%;
-  max-width: 300px;
-  height: 100%;
-  background: var(--white);
-  z-index: 300;
-  display: flex;
-  flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: -6px 0 32px rgba(0,0,0,0.18);
-  overflow-y: auto;
-}
-.settings-panel.open {
-  transform: translateX(0);
-}
-
-.settings-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.1rem 1.2rem 0.9rem;
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(135deg, var(--red), var(--orange));
-}
-.settings-header span {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.02em;
-}
-.settings-close {
-  background: rgba(255,255,255,0.2);
-  border: none;
-  color: #fff;
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  font-size: 0.75rem;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.2s;
-}
-.settings-close:hover { background: rgba(255,255,255,0.35); }
-
-.settings-logout {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 0.9rem 1.2rem;
-  margin: 0.8rem 1rem;
-  border-radius: 10px;
-  background: #fff0f0;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 0.15s;
-  border: 1px solid #ffd0d0;
-}
-.settings-logout:hover { background: #ffe0e0; }
-.settings-logout svg {
-  width: 20px; height: 20px;
-  fill: var(--red);
-  flex-shrink: 0;
-}
-.settings-logout span {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--red);
-}
-
-.app-shell.blurred .page-scroll,
-.app-shell.blurred .topbar,
-.app-shell.blurred .bottom-nav {
-  filter: blur(3px);
-  transition: filter 0.3s ease;
-}
-.page-scroll, .topbar, .bottom-nav {
-  transition: filter 0.3s ease;
-}
-@media (min-width: 600px) {
-  .settings-overlay,
-  .settings-panel {
-    position: absolute;
+  .desktop-topbar-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-left: 0.5rem;
   }
+  .desktop-topbar-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .desktop-topbar-sub {
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+  .desktop-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .desktop-date-chip {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.68rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* Desktop content */
+  .desktop-content {
+    flex: 1;
+    padding: 1.5rem 2rem;
+  }
+  .desktop-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .desktop-col-left { display: flex; flex-direction: column; gap: 1.25rem; }
+  .desktop-col-right { display: flex; flex-direction: column; gap: 1.25rem; }
+
+  .desktop-card {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .desktop-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.2rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .desktop-card-header h2 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .desktop-card-header a {
+    font-size: 0.68rem;
+    color: var(--red);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .desktop-card-body { padding: 1rem 1.2rem; }
+
+  .desktop-alert-wrap { display: flex; flex-direction: column; gap: 0.5rem; }
+  .desktop-alert-wrap .alert-banner { margin: 0; border-radius: 10px; }
+
+  /* Ready bag inside desktop card */
+  .desktop-readybag {
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+    background: #fff8e1;
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid #ffe082;
+  }
+  .desktop-readybag-icon { font-size: 1.4rem; flex-shrink: 0; }
+  .desktop-readybag-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #5d4037;
+    margin-bottom: 0.2rem;
+  }
+  .desktop-readybag-text {
+    font-size: 0.68rem;
+    color: #795548;
+    line-height: 1.5;
+  }
+
+  .desktop-weather-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    align-items: start;
+  }
+  .desktop-evac-body { padding: 1rem 1.2rem; }
+  .desktop-ann-list { margin: 0; box-shadow: none; border-radius: 0; }
+}
+
+/* Hide desktop wrapper on mobile */
+@media (max-width: 1023px) {
+  .desktop-wrapper { display: none; }
+  .bottom-nav { display: flex; }
 }
 
 </style>
 </head>
 <body>
 
-<div class="app-shell">
+<!-- ============================================================
+     SHARED DRAWER SIDEBAR (works for both mobile & desktop)
+     ============================================================ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="sidebar-drawer" id="sidebarDrawer">
+  <div class="drawer-brand">
+    <div class="drawer-logo">
+      <img src="../img/mdrrmo.png" alt="MDRRMO" onerror="this.style.display='none'">
+      <svg viewBox="0 0 24 24"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"/></svg>
+    </div>
+    <div class="drawer-brand-text">
+      <div class="drawer-brand-title">MDRRMO</div>
+      <div class="drawer-brand-sub">San Ildefonso, Bulacan</div>
+    </div>
+  </div>
 
-  <!-- TOP BAR -->
+  <nav class="drawer-nav">
+    <div class="drawer-nav-label">Menu</div>
+    <a href="citizen_dashboard.php" class="drawer-nav-item active">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      Dashboard
+    </a>
+    <a href="#current-alerts" class="drawer-nav-item" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+      Alerts
+    </a>
+    <a href="navigation.php" class="drawer-nav-item">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+      Evacuation
+    </a>
+    <a href="#announcements" class="drawer-nav-item" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>
+      Announcements
+    </a>
+  </nav>
+
+  <div class="drawer-footer">
+    <a href="logout.php" class="drawer-logout">
+      <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+      Log Out
+    </a>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     MOBILE LAYOUT
+     ============================================================ -->
+<div class="mobile-shell">
+
   <header class="topbar">
     <div class="topbar-logo">
-      <img src="../img/mdrrmo.png" alt="MDRRMO"
-           onerror="this.style.display='none'">
+      <img src="../img/mdrrmo.png" alt="MDRRMO" onerror="this.style.display='none'">
       <svg viewBox="0 0 24 24"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"/></svg>
     </div>
     <div class="topbar-info">
@@ -705,7 +857,6 @@ html, body {
     </div>
   </header>
 
-  <!-- SCROLLABLE CONTENT -->
   <div class="page-scroll">
 
     <!-- ALERT BANNER -->
@@ -726,17 +877,16 @@ html, body {
         </div>
         <div class="alert-chevron">›</div>
       </div>
+
       <?php if ($advice): ?>
-<div class="readybag-card">
-  <div class="readybag-icon">🎒</div>
-  <div class="readybag-content">
-    <div class="readybag-title">Ready Bag Advice</div>
-    <div class="readybag-text">
-      <?php echo htmlspecialchars($advice['message']); ?>
-    </div>
-  </div>
-</div>
-<?php endif; ?>
+        <div class="readybag-card">
+          <div class="readybag-icon">🎒</div>
+          <div class="readybag-content">
+            <div class="readybag-title">Ready Bag Advice</div>
+            <div class="readybag-text"><?php echo htmlspecialchars($advice['message']); ?></div>
+          </div>
+        </div>
+      <?php endif; ?>
 
     <?php elseif ($weather && ($weather['level'] === 'high' || $weather['level'] === 'extreme')): ?>
       <div class="alert-banner alert-level-3">
@@ -747,7 +897,6 @@ html, body {
         </div>
         <div class="alert-chevron">›</div>
       </div>
-
     <?php else: ?>
       <div class="alert-banner alert-none">
         <div class="alert-icon">✅</div>
@@ -758,12 +907,11 @@ html, body {
       </div>
     <?php endif; ?>
 
-    <!-- WEATHER FORECAST -->
+    <!-- WEATHER -->
     <div class="section-header">
       <h2>Weather Forecast</h2>
-      <a href="#">Live Data </a>
+      <a href="#">Live Data</a>
     </div>
-
     <div class="weather-card">
       <?php if ($weather): ?>
         <div class="weather-main">
@@ -794,23 +942,14 @@ html, body {
       <?php endif; ?>
     </div>
 
-    <!-- EVACUATION ASSISTANCE -->
-    <div class="section-header">
-      <h2>Evacuation Assistance</h2>
-    </div>
+    <!-- EVACUATION -->
+    <div class="section-header"><h2>Evacuation assistance</h2></div>
     <div class="evac-card">
-
-      <!-- Live navigation status strip -->
-      <div class="evac-status-strip none" id="evacStatusStrip">
-        <div class="evac-status-dot"></div>
-        <span id="evacStatusText">Not currently navigating to any center.</span>
-      </div>
-
       <p style="font-size:0.80rem;color:#555;padding:0.9rem 1rem 0.4rem;">
         When available, you will be able to find the nearest evacuation center and open navigation from here.
       </p>
       <div style="padding:0 1rem 1rem;">
-        <a href="navigation.php" class="btn-nav" id="navBtn">Open navigation</a>
+        <a href="navigation.php" class="btn-nav">Open navigation prototype</a>
       </div>
     </div>
 
@@ -818,7 +957,6 @@ html, body {
     <div class="section-header" id="announcements">
       <h2>Announcements</h2>
     </div>
-
     <?php if (!$announcements): ?>
       <div class="ann-list"><div class="ann-empty">No announcements yet.</div></div>
     <?php else: ?>
@@ -828,17 +966,11 @@ html, body {
             <div class="ann-dot <?php echo $a['is_pinned'] ? 'pinned' : ''; ?>"></div>
             <div class="ann-body">
               <div class="ann-title">
-                <?php if ($a['is_pinned']): ?>
-                  <span class="badge">PINNED</span>
-                <?php endif; ?>
-                <?php if ($a['disaster_title']): ?>
-                  <span class="badge badge-disaster"><?php echo htmlspecialchars($a['disaster_title']); ?></span>
-                <?php endif; ?>
+                <?php if ($a['is_pinned']): ?><span class="badge">PINNED</span><?php endif; ?>
+                <?php if ($a['disaster_title']): ?><span class="badge badge-disaster"><?php echo htmlspecialchars($a['disaster_title']); ?></span><?php endif; ?>
                 <?php echo htmlspecialchars($a['title']); ?>
               </div>
-              <div class="ann-preview">
-                <?php echo htmlspecialchars(mb_substr($a['body'], 0, 200)); ?>
-              </div>
+              <div class="ann-preview"><?php echo htmlspecialchars(mb_substr($a['body'], 0, 200)); ?></div>
             </div>
           </div>
         <?php endforeach; ?>
@@ -847,7 +979,7 @@ html, body {
 
   </div><!-- /page-scroll -->
 
-  <!-- BOTTOM NAV BAR -->
+  <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
     <a href="citizen_dashboard.php" class="nav-item active">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -858,9 +990,8 @@ html, body {
       <span>Alerts</span>
     </a>
     <a href="navigation.php" class="nav-item nav-center">
-      <div class="nav-center-circle" id="navCircle">
+      <div class="nav-center-circle">
         <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
-        <div class="nav-active-dot" id="navActiveDot"></div>
       </div>
       <span>Evacuate</span>
     </a>
@@ -868,157 +999,197 @@ html, body {
       <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>
       <span>Updates</span>
     </a>
-    <button class="nav-item" onclick="openSettings()">
-      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.04 7.04 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.47.41l-.36 2.54a7.04 7.04 0 0 0-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94L2.86 14.52a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.3.59.22l2.39-.96c.5.36 1.04.67 1.62.94l.36 2.54c.06.28.31.41.47.41h3.84c.27 0 .49-.2.48-.41l.36-2.54a7 7 0 0 0 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg>
-      <span>Setting</span>
+    <button class="nav-item" onclick="openSidebar()">
+      <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+      <span>Menu</span>
     </button>
   </nav>
 
-  <!-- SETTINGS OVERLAY -->
-  <div class="settings-overlay" id="settingsOverlay" onclick="closeSettings()"></div>
+</div><!-- /mobile-shell -->
 
-  <!-- SETTINGS SLIDE PANEL -->
-  <div class="settings-panel" id="settingsPanel">
-    <div class="settings-header">
-      <span>Settings</span>
-      <button class="settings-close" onclick="closeSettings()">✕</button>
+
+<!-- ============================================================
+     DESKTOP LAYOUT — 1024px+
+     ============================================================ -->
+<div class="desktop-wrapper">
+
+  <!-- Desktop Top Bar with Hamburger on right -->
+  <header class="desktop-topbar">
+    <div class="drawer-logo" style="width:38px;height:38px;background:#eee;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <img src="../img/mdrrmo.png" alt="MDRRMO" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;">
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--red);"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"/></svg>
     </div>
-    <a href="logout.php" class="settings-logout">
-      <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-      <span>Log Out</span>
-    </a>
-  </div>
+    <div class="desktop-topbar-center">
+      <div class="desktop-topbar-title">Citizen Dashboard</div>
+      <div class="desktop-topbar-sub">Welcome back, <?php echo htmlspecialchars($user['full_name'] ?? 'Citizen'); ?></div>
+    </div>
+    <div class="desktop-topbar-right">
+      <div class="desktop-date-chip"><?php echo date('l, F j, Y'); ?></div>
+      <button class="hamburger-btn" id="desktopHamburger" onclick="openSidebar()" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
 
-</div><!-- /app-shell -->
+  <div class="desktop-content">
+    <div class="desktop-grid">
+
+      <!-- LEFT COLUMN -->
+      <div class="desktop-col-left">
+
+        <!-- ACTIVE STATUS -->
+        <div class="desktop-card">
+          <div class="desktop-card-header"><h2>Active Status</h2></div>
+          <div class="desktop-card-body desktop-alert-wrap">
+            <?php if ($activeDisaster): ?>
+              <div class="alert-banner alert-typhoon">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-text">
+                  <div class="alert-title">
+                    <?php echo htmlspecialchars(ucfirst($activeDisaster['type'])); ?>
+                    Signal#<?php echo (int)$activeDisaster['level']; ?> Active
+                  </div>
+                  <div class="alert-sub">
+                    <?php
+                      $lvlLabel = ['1'=>'Low','2'=>'Moderate','3'=>'High','4'=>'Extreme'];
+                      echo ($lvlLabel[(string)(int)$activeDisaster['level']] ?? 'Moderate') . ' risk level · Click for full details';
+                    ?>
+                  </div>
+                </div>
+                <div class="alert-chevron">›</div>
+              </div>
+              <?php if ($advice): ?>
+                <div class="desktop-readybag">
+                  <div class="desktop-readybag-icon">🎒</div>
+                  <div>
+                    <div class="desktop-readybag-title">Ready Bag Advice</div>
+                    <div class="desktop-readybag-text"><?php echo htmlspecialchars($advice['message']); ?></div>
+                  </div>
+                </div>
+              <?php endif; ?>
+            <?php elseif ($weather && ($weather['level'] === 'high' || $weather['level'] === 'extreme')): ?>
+              <div class="alert-banner alert-level-3">
+                <div class="alert-icon">🌡️</div>
+                <div class="alert-text">
+                  <div class="alert-title">HEAT ALERT — Heat Index: <?php echo round($weather['heat_index']); ?>°C</div>
+                  <div class="alert-sub">Stay hydrated and avoid outdoor activities</div>
+                </div>
+                <div class="alert-chevron">›</div>
+              </div>
+            <?php else: ?>
+              <div class="alert-banner alert-none">
+                <div class="alert-icon">✅</div>
+                <div class="alert-text">
+                  <div class="alert-title">No active disaster at this time</div>
+                  <div class="alert-sub">Stay prepared and monitor updates</div>
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
+
+        <!-- WEATHER -->
+        <div class="desktop-card">
+          <div class="desktop-card-header">
+            <h2>Weather Forecast</h2>
+            <a href="#">Live Data</a>
+          </div>
+          <div class="desktop-card-body">
+            <?php if ($weather): ?>
+              <div class="desktop-weather-grid">
+                <div>
+                  <div class="weather-main" style="margin-bottom:0;">
+                    <div class="weather-icon">🌤️</div>
+                    <div class="weather-temp-block">
+                      <div class="weather-temp"><?php echo round($weather['temp_c']); ?><sup>°C</sup></div>
+                      <div class="weather-desc"><?php echo htmlspecialchars($weather['condition_text']); ?></div>
+                      <div class="weather-location">San Ildefonso, Bulacan</div>
+                    </div>
+                    <div class="weather-risk status-<?php echo $weather['level']; ?>">
+                      <?php echo strtoupper($weather['level']); ?>
+                    </div>
+                  </div>
+                </div>
+                <div class="weather-stats" style="align-content:start;">
+                  <div class="w-stat">
+                    <div class="stat-icon">💧</div>
+                    <div class="stat-val"><?php echo $weather['humidity']; ?> %</div>
+                    <div class="stat-label">Humidity</div>
+                  </div>
+                  <div class="w-stat">
+                    <div class="stat-icon">🌡️</div>
+                    <div class="stat-val"><?php echo round($weather['heat_index'], 1); ?>°</div>
+                    <div class="stat-label">Heat Index</div>
+                  </div>
+                </div>
+              </div>
+            <?php else: ?>
+              <p style="font-size:0.82rem;color:#888;text-align:center;padding:1rem 0;">No weather data available.</p>
+            <?php endif; ?>
+          </div>
+        </div>
+
+        <!-- EVACUATION -->
+        <div class="desktop-card">
+          <div class="desktop-card-header"><h2>Evacuation Assistance</h2></div>
+          <div class="desktop-evac-body">
+            <p style="font-size:0.82rem;color:#555;margin-bottom:0.9rem;">
+              When available, you will be able to find the nearest evacuation center and open navigation from here.
+            </p>
+            <a href="navigation.php" class="btn-nav">Open Navigation Prototype</a>
+          </div>
+        </div>
+
+      </div><!-- /desktop-col-left -->
+
+      <!-- RIGHT COLUMN — ANNOUNCEMENTS -->
+      <div class="desktop-col-right">
+        <div class="desktop-card">
+          <div class="desktop-card-header" id="announcements">
+            <h2>Announcements</h2>
+          </div>
+          <?php if (!$announcements): ?>
+            <div class="ann-empty">No announcements yet.</div>
+          <?php else: ?>
+            <div class="desktop-ann-list ann-list">
+              <?php foreach ($announcements as $a): ?>
+                <div class="ann-item">
+                  <div class="ann-dot <?php echo $a['is_pinned'] ? 'pinned' : ''; ?>"></div>
+                  <div class="ann-body">
+                    <div class="ann-title">
+                      <?php if ($a['is_pinned']): ?><span class="badge">PINNED</span><?php endif; ?>
+                      <?php if ($a['disaster_title']): ?><span class="badge badge-disaster"><?php echo htmlspecialchars($a['disaster_title']); ?></span><?php endif; ?>
+                      <?php echo htmlspecialchars($a['title']); ?>
+                    </div>
+                    <div class="ann-preview"><?php echo htmlspecialchars(mb_substr($a['body'], 0, 200)); ?></div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+
+    </div><!-- /desktop-grid -->
+  </div><!-- /desktop-content -->
+
+</div><!-- /desktop-wrapper -->
+
 
 <script>
-// ── Navigation tracking state ─────────────────────────────────────────────
-// Seeded from PHP so the UI is correct on page load.
-const TRACK_ENDPOINT = 'citizen_track_navigation.php';
-
-// PHP seeds the current tracking state (null if none)
-let _tracking = <?php echo $trackingJson; ?>;
-
-/**
- * Called by navigation.php (or any map page) when the citizen
- * confirms / selects an evacuation center to navigate to.
- *
- * Usage from navigation.php:
- *   window.opener?.selectEvacCenter(centerId, centerName)
- * or via postMessage:
- *   window.postMessage({ type: 'evac_select', center_id: 1, center_name: 'Sample' }, '*')
- */
-function selectEvacCenter(centerId, centerName) {
-    fetch(TRACK_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'select', center_id: centerId }),
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.ok) {
-            _tracking = { center_id: centerId, status: 'navigating', center_name: centerName };
-            renderTrackingUI();
-        }
-    })
-    .catch(() => { /* silent fail — tracking is best-effort */ });
-}
-
-/**
- * Called when citizen cancels navigation (button in status strip).
- */
-function cancelEvacNavigation() {
-    fetch(TRACK_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'cancel' }),
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.ok) {
-            _tracking = null;
-            renderTrackingUI();
-        }
-    });
-}
-
-/**
- * Update the status strip and nav-bar indicator based on _tracking.
- */
-function renderTrackingUI() {
-    const strip    = document.getElementById('evacStatusStrip');
-    const text     = document.getElementById('evacStatusText');
-    const circle   = document.getElementById('navCircle');
-
-    if (!_tracking || _tracking.status === 'cancelled') {
-        strip.className = 'evac-status-strip none';
-        text.textContent = 'Not currently navigating to any center.';
-        // Remove cancel button if present
-        const existing = strip.querySelector('.evac-cancel-btn');
-        if (existing) existing.remove();
-        circle.classList.remove('is-navigating');
-        return;
-    }
-
-    if (_tracking.status === 'navigating') {
-        strip.className = 'evac-status-strip navigating';
-        text.textContent = '🧭 En route to: ' + (_tracking.center_name || 'Evacuation Center');
-        circle.classList.add('is-navigating');
-
-        // Add cancel button if not already there
-        if (!strip.querySelector('.evac-cancel-btn')) {
-            const btn = document.createElement('button');
-            btn.className = 'evac-cancel-btn';
-            btn.textContent = 'Cancel';
-            btn.onclick = cancelEvacNavigation;
-            strip.appendChild(btn);
-        }
-    } else if (_tracking.status === 'arrived') {
-        strip.className = 'evac-status-strip arrived';
-        text.textContent = '✅ Arrived at: ' + (_tracking.center_name || 'Evacuation Center');
-        const existing = strip.querySelector('.evac-cancel-btn');
-        if (existing) existing.remove();
-        circle.classList.remove('is-navigating');
-    }
-}
-
-// Listen for postMessage from navigation.php (opened as new tab/window)
-window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'evac_select') {
-        selectEvacCenter(e.data.center_id, e.data.center_name);
-    }
-    if (e.data && e.data.type === 'evac_arrived') {
-        fetch(TRACK_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'arrived' }),
-        });
-        if (_tracking) {
-            _tracking.status = 'arrived';
-            renderTrackingUI();
-        }
-    }
-    if (e.data && e.data.type === 'evac_cancel') {
-        cancelEvacNavigation();
-    }
-});
-
-// ── Settings panel ────────────────────────────────────────────────────────
-function openSettings() {
-    document.getElementById('settingsPanel').classList.add('open');
-    document.getElementById('settingsOverlay').classList.add('open');
-    document.querySelector('.app-shell').classList.add('blurred');
+  function openSidebar() {
+    document.getElementById('sidebarDrawer').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('open');
+    // Animate hamburger buttons
+    document.querySelectorAll('.hamburger-btn').forEach(btn => btn.classList.add('open'));
     document.body.style.overflow = 'hidden';
-}
-function closeSettings() {
-    document.getElementById('settingsPanel').classList.remove('open');
-    document.getElementById('settingsOverlay').classList.remove('open');
-    document.querySelector('.app-shell').classList.remove('blurred');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebarDrawer').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+    document.querySelectorAll('.hamburger-btn').forEach(btn => btn.classList.remove('open'));
     document.body.style.overflow = '';
-}
-
-// ── Init ──────────────────────────────────────────────────────────────────
-renderTrackingUI();
+  }
 </script>
 </body>
 </html>
