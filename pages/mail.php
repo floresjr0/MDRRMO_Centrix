@@ -15,10 +15,10 @@ require __DIR__ . '/../vendor/autoload.php';
  */
 function send_otp_email(string $toEmail, string $toName, string $otp): bool
 {
-    // Placeholder implementation: for now, write OTP to a log file so you can test flows
-    $logLine = sprintf("[%s] OTP for %s (%s): %s\n", date('Y-m-d H:i:s'), $toName, $toEmail, $otp);
-    file_put_contents(__DIR__ . '/otp_test.log', $logLine, FILE_APPEND);
-    return true;
+    // // Placeholder implementation: for now, write OTP to a log file so you can test flows
+    // $logLine = sprintf("[%s] OTP for %s (%s): %s\n", date('Y-m-d H:i:s'), $toName, $toEmail, $otp);
+    // file_put_contents(__DIR__ . '/otp_test.log', $logLine, FILE_APPEND);
+    // return true;
 
     
     // Uncomment and configure this block when PHPMailer is available.
