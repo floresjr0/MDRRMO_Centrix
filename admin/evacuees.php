@@ -19,6 +19,7 @@ $demo = $pdo->query("
     FROM evac_registrations
 ")->fetch();
 
+// All centers (including closed) — closed ones greyed out
 $evacSummary = $pdo->query("
     SELECT
         ec.id,
@@ -40,7 +41,9 @@ $evacSummary = $pdo->query("
     LEFT JOIN users u                ON u.id  = ec.coordinator_user_id
     LEFT JOIN evac_registrations er  ON er.center_id = ec.id
     GROUP BY ec.id
-    ORDER BY total_evacuees DESC
+    ORDER BY
+        CASE ec.status WHEN 'closed' THEN 1 ELSE 0 END ASC,
+        total_evacuees DESC
 ")->fetchAll();
 
 $barangaySummary = $pdo->query("
@@ -73,6 +76,32 @@ $recentRegs = $pdo->query("
     JOIN users u               ON u.id  = er.created_by
     ORDER BY er.created_at DESC
     LIMIT 20
+")->fetchAll();
+
+// Archive history — grouped by archive batch (label + archived_at date)
+$archiveBatches = $pdo->query("
+    SELECT
+        archive_label,
+        disaster_id,
+        archived_at,
+        archived_by,
+        COUNT(*)              AS total_families,
+        SUM(total_members)    AS total_evacuees,
+        SUM(adults)           AS total_adults,
+        SUM(children)         AS total_children,
+        SUM(seniors)          AS total_seniors,
+        SUM(pwds)             AS total_pwds,
+        u.full_name           AS archived_by_name
+    FROM evac_registrations_archive era
+    LEFT JOIN users u ON u.id = era.archived_by
+    GROUP BY archive_label, disaster_id, DATE(archived_at), archived_by
+    ORDER BY archived_at DESC
+")->fetchAll();
+
+// Ongoing disasters for the archive modal dropdown
+$disasters = $pdo->query("
+    SELECT id, title, type, level FROM disasters
+    ORDER BY status = 'ongoing' DESC, started_at DESC
 ")->fetchAll();
 
 $grandChildren = array_sum(array_column($evacSummary, 'total_children'));
@@ -463,6 +492,170 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
             .top-nav { padding: 0 16px; }
             .user-role, .user-name + .user-role { display: none; }
         }
+
+               /* ── Archive Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.45);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 32px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.2);
+        }
+        .modal-box h3 {
+            margin: 0 0 6px;
+            font-size: 18px;
+            color: #1a1a2e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .modal-box p {
+            margin: 0 0 20px;
+            font-size: 13px;
+            color: #666;
+        }
+        .modal-box label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+        .modal-box input,
+        .modal-box select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 13.5px;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+            transition: border-color .2s;
+        }
+        .modal-box input:focus,
+        .modal-box select:focus {
+            outline: none;
+            border-color: #C0392B;
+        }
+        .modal-warning {
+            background: #FFF3CD;
+            border: 1px solid #FFD700;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 12.5px;
+            color: #7D6608;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .btn-cancel {
+            padding: 9px 20px;
+            border: 1.5px solid #ddd;
+            background: #fff;
+            border-radius: 8px;
+            font-size: 13.5px;
+            cursor: pointer;
+            color: #555;
+        }
+        .btn-archive {
+            padding: 9px 20px;
+            background: #C0392B;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-archive:hover { background: #a93226; }
+ 
+        /* ── Closed center row ── */
+        tr.row-closed td {
+            opacity: .45;
+            background: #f8f8f8 !important;
+        }
+        tr.row-closed .center-name { text-decoration: line-through; }
+        .chip-closed {
+            background: #e0e0e0;
+            color: #888;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+ 
+        /* ── Archive history card ── */
+        .archive-batch {
+            border: 1px solid #f0f0f0;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            background: #fafafa;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .archive-batch-label {
+            font-weight: 700;
+            font-size: 14px;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+        .archive-batch-meta {
+            font-size: 12px;
+            color: #888;
+        }
+        .archive-batch-demos {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .archive-total {
+            font-size: 22px;
+            font-weight: 800;
+            color: #C0392B;
+        }
+        .archive-total-lbl {
+            font-size: 11px;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+ 
+        /* Flash messages */
+        .flash {
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .flash-success { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
+        .flash-error   { background: #FEECEC; color: #C0392B; border: 1px solid #F5A5A5; }
+
     </style>
 </head>
 <body>
@@ -486,7 +679,6 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                 </div>
             </div>
         </div>
-
         <div class="sidebar-content">
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Main</div>
@@ -524,7 +716,6 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
 
     <!-- Main Content -->
     <main class="main-content" id="mainContent">
-
         <div class="top-nav">
             <div class="page-title">
                 <button class="mobile-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
@@ -543,6 +734,27 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
 
         <div class="dashboard">
 
+            <!-- Flash Messages -->
+            <?php if (isset($_GET['archived'])): ?>
+            <div class="flash flash-success">
+                <i class="fas fa-check-circle"></i>
+                Successfully archived <strong><?php echo (int)$_GET['archived']; ?></strong> registration(s)
+                under <strong><?php echo htmlspecialchars($_GET['label'] ?? ''); ?></strong>.
+                All centers have been reset to Available.
+            </div>
+            <?php elseif (isset($_GET['error'])): ?>
+            <div class="flash flash-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <?php
+                    $errors = [
+                        'label_required' => 'Archive label is required.',
+                        'archive_failed' => 'Archive failed. Please try again or check the server logs.',
+                    ];
+                    echo $errors[$_GET['error']] ?? 'An unknown error occurred.';
+                ?>
+            </div>
+            <?php endif; ?>
+
             <!-- Welcome Bar -->
             <div class="welcome-bar">
                 <div class="welcome-text">
@@ -553,17 +765,23 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                         <span class="date-badge"><i class="far fa-calendar"></i><?php echo date('F j, Y'); ?></span>
                     </p>
                 </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
                     <a href="maps.php" style="text-decoration:none">
                         <span class="badge blue" style="padding:6px 14px;cursor:pointer"><i class="fas fa-map"></i> View Map</span>
                     </a>
                     <a href="centers.php" style="text-decoration:none">
                         <span class="badge" style="padding:6px 14px;cursor:pointer"><i class="fas fa-list"></i> Centers</span>
                     </a>
+                    <?php if ($totalEvacuees > 0): ?>
+                    <button onclick="document.getElementById('archiveModal').classList.add('active')"
+                            style="padding:8px 16px;background:#C0392B;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+                        <i class="fas fa-archive"></i> Archive & Reset
+                    </button>
+                    <?php endif; ?>
                 </div>
             </div>
 
-            <!-- Stat Cards — identical sizing to index.php -->
+            <!-- Stat Cards -->
             <div class="stats-row">
                 <div class="stat-card">
                     <div class="stat-icon-small"><i class="fas fa-people-arrows"></i></div>
@@ -609,7 +827,7 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                 </div>
             </div>
 
-            <!-- Capacity Overview — using index.php quick stats style -->
+            <!-- Capacity Overview -->
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fas fa-chart-pie"></i> Overall Capacity Overview</h3>
@@ -635,7 +853,7 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                 </div>
             </div>
 
-            <!-- Centers Summary Table -->
+            <!-- Centers Summary Table (closed = greyed out) -->
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fas fa-building"></i> Evacuation Centers Summary</h3>
@@ -675,18 +893,22 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                         </thead>
                         <tbody>
                         <?php foreach ($evacSummary as $row):
+                            $isClosed = ($row['status'] === 'closed');
                             $pct = $row['max_capacity_people'] > 0
                                 ? min(round(($row['total_evacuees'] / $row['max_capacity_people']) * 100), 100) : 0;
                             $barColor = '#2E7D32'; $statusLabel = 'Available'; $statusClass = 'st-available';
-                            if ($row['status'] === 'near_capacity') { $barColor='#FFC107'; $statusLabel='Near Cap'; $statusClass='st-near'; }
-                            elseif ($row['status'] === 'full')       { $barColor='#D32F2F'; $statusLabel='Full';    $statusClass='st-full'; }
-                            elseif ($row['status'] === 'temp_shelter'){ $barColor='#3498DB'; $statusLabel='Temp';  $statusClass='st-temp'; }
-                            elseif ($row['status'] === 'closed')     { $barColor='#95A5A6'; $statusLabel='Closed'; $statusClass='st-closed'; }
+                            if ($isClosed)                           { $barColor='#bbb';    $statusLabel='Closed';   $statusClass='st-closed'; }
+                            elseif ($row['status']==='near_capacity'){ $barColor='#FFC107'; $statusLabel='Near Cap'; $statusClass='st-near'; }
+                            elseif ($row['status']==='full')         { $barColor='#D32F2F'; $statusLabel='Full';     $statusClass='st-full'; }
+                            elseif ($row['status']==='temp_shelter') { $barColor='#3498DB'; $statusLabel='Temp';     $statusClass='st-temp'; }
                         ?>
-                        <tr data-status="<?php echo $row['status']; ?>">
+                        <tr data-status="<?php echo $row['status']; ?>" class="<?php echo $isClosed ? 'row-closed' : ''; ?>">
                             <td>
                                 <div class="center-name"><?php echo htmlspecialchars($row['center_name']); ?></div>
                                 <div class="center-brgy"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($row['barangay_name']); ?></div>
+                                <?php if ($isClosed): ?>
+                                    <span class="chip-closed">Closed — not accepting evacuees</span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <?php if ($row['coordinator_name']): ?>
@@ -696,12 +918,12 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                                     <span style="color:#95A5A6;font-style:italic;font-size:12px">Unassigned</span>
                                 <?php endif; ?>
                             </td>
-                            <td><span class="chip chip-child"><?php echo number_format($row['total_children']); ?></span></td>
-                            <td><span class="chip chip-adult"><?php echo number_format($row['total_adults']); ?></span></td>
-                            <td><span class="chip chip-senior"><?php echo number_format($row['total_seniors']); ?></span></td>
-                            <td><span class="chip chip-pwd"><?php echo number_format($row['total_pwds']); ?></span></td>
+                            <td><span class="chip <?php echo $isClosed ? '' : 'chip-child'; ?>"><?php echo number_format($row['total_children']); ?></span></td>
+                            <td><span class="chip <?php echo $isClosed ? '' : 'chip-adult'; ?>"><?php echo number_format($row['total_adults']); ?></span></td>
+                            <td><span class="chip <?php echo $isClosed ? '' : 'chip-senior'; ?>"><?php echo number_format($row['total_seniors']); ?></span></td>
+                            <td><span class="chip <?php echo $isClosed ? '' : 'chip-pwd'; ?>"><?php echo number_format($row['total_pwds']); ?></span></td>
                             <td><strong><?php echo number_format($row['total_families']); ?></strong></td>
-                            <td><span class="chip chip-total"><?php echo number_format($row['total_evacuees']); ?></span></td>
+                            <td><span class="chip <?php echo $isClosed ? '' : 'chip-total'; ?>"><?php echo number_format($row['total_evacuees']); ?></span></td>
                             <td>
                                 <div class="cap-wrap">
                                     <div class="cap-bar">
@@ -778,10 +1000,7 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                                 <th>Family Head</th>
                                 <th>Evacuation Center</th>
                                 <th>Barangay</th>
-                                <th>C</th>
-                                <th>A</th>
-                                <th>S</th>
-                                <th>P</th>
+                                <th>C</th><th>A</th><th>S</th><th>P</th>
                                 <th>Total</th>
                                 <th>Registered By</th>
                                 <th>Date / Time</th>
@@ -819,8 +1038,114 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                 <?php endif; ?>
             </div>
 
+           <!-- ── Archive History ── -->
+<div class="card">
+    <!-- Updated Card Header with Print All button -->
+    <div class="card-header">
+        <h3><i class="fas fa-archive"></i> Archive History</h3>
+        <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge"><?php echo count($archiveBatches); ?> Batches</span>
+            <?php if (!empty($archiveBatches)): ?>
+            <a href="print_archive.php"
+               target="_blank"
+               style="padding:6px 13px;background:#1A5276;color:#fff;border-radius:7px;font-size:12px;font-weight:600;
+                      text-decoration:none;display:inline-flex;align-items:center;gap:5px">
+                <i class="fas fa-print"></i> Print All
+            </a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <?php if (empty($archiveBatches)): ?>
+        <div class="empty-state">
+            <i class="fas fa-box-open"></i>
+            <p>No archives yet. Use "Archive & Reset" after a disaster to save records here.</p>
+        </div>
+    <?php else: ?>
+        <?php foreach ($archiveBatches as $batch): ?>
+        <!-- Updated archive-batch with individual Print button -->
+        <div class="archive-batch">
+            <div>
+                <div class="archive-batch-label">
+                    <i class="fas fa-folder" style="color:#C0392B;margin-right:6px"></i>
+                    <?php echo htmlspecialchars($batch['archive_label']); ?>
+                </div>
+                <div class="archive-batch-meta">
+                    Archived <?php echo date('F j, Y g:i A', strtotime($batch['archived_at'])); ?>
+                    by <?php echo htmlspecialchars($batch['archived_by_name'] ?? 'Admin'); ?>
+                </div>
+                <div class="archive-batch-demos" style="margin-top:8px">
+                    <span class="chip chip-child"><?php echo number_format($batch['total_children']); ?> C</span>
+                    <span class="chip chip-adult"><?php echo number_format($batch['total_adults']); ?> A</span>
+                    <span class="chip chip-senior"><?php echo number_format($batch['total_seniors']); ?> S</span>
+                    <span class="chip chip-pwd"><?php echo number_format($batch['total_pwds']); ?> P</span>
+                    <span style="font-size:12px;color:#888"><?php echo number_format($batch['total_families']); ?> families</span>
+                </div>
+            </div>
+
+            <!-- Right side: Total + Individual Print button -->
+            <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                <div>
+                    <div class="archive-total"><?php echo number_format($batch['total_evacuees']); ?></div>
+                    <div class="archive-total-lbl">Evacuees</div>
+                </div>
+                
+                <!-- Individual Print Button -->
+                <a href="print_archive.php?label=<?php echo urlencode($batch['archive_label']); ?>"
+                   target="_blank"
+                   title="Print this batch"
+                   style="padding:5px 12px;background:#EBF5FB;color:#1A5276;border:1px solid #AED6F1;
+                          border-radius:6px;font-size:11.5px;font-weight:600;text-decoration:none;
+                          display:inline-flex;align-items:center;gap:5px">
+                    <i class="fas fa-print"></i> Print
+                </a>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</div>
+
         </div><!-- /dashboard -->
     </main>
+</div>
+
+<!-- ── Archive Modal ── -->
+<div class="modal-overlay" id="archiveModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-archive" style="color:#C0392B"></i> Archive & Reset Evacuees</h3>
+        <p>This will move all current registrations to the archive and reset all evacuation centers to <strong>Available</strong>.</p>
+
+        <div class="modal-warning">
+            <i class="fas fa-exclamation-triangle" style="margin-top:2px"></i>
+            <span>This action cannot be undone. Make sure the disaster event has ended before archiving.</span>
+        </div>
+
+        <form method="POST" action="archive_evacuees.php">
+            <label for="archive_label">Archive Label <span style="color:#C0392B">*</span></label>
+            <input type="text" id="archive_label" name="archive_label"
+                   placeholder="e.g. Typhoon Bagyong Nonoy – March 2026" required>
+
+            <label for="disaster_id">Link to Disaster (optional)</label>
+            <select name="disaster_id" id="disaster_id">
+                <option value="">— None —</option>
+                <?php foreach ($disasters as $d): ?>
+                <option value="<?php echo (int)$d['id']; ?>">
+                    <?php echo htmlspecialchars(ucfirst($d['type']) . ' – ' . $d['title'] . ' (Signal ' . $d['level'] . ')'); ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel"
+                        onclick="document.getElementById('archiveModal').classList.remove('active')">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-archive">
+                    <i class="fas fa-archive"></i> Archive Now
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
@@ -837,6 +1162,11 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
         icon.className = sidebar.classList.contains('collapsed') ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
     });
     mobileToggle.addEventListener('click', () => sidebar.classList.toggle('show'));
+
+    // Close modal on overlay click
+    document.getElementById('archiveModal').addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('active');
+    });
 
     // Centers table filter
     const searchInput  = document.getElementById('centerSearch');
@@ -855,7 +1185,7 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
     searchInput.addEventListener('input', filterTable);
     statusFilter.addEventListener('change', filterTable);
 
-    // Recent search
+    // Recent registrations search
     const recentSearch = document.getElementById('recentSearch');
     if (recentSearch) {
         const recentBody = document.querySelector('#recentTable tbody');

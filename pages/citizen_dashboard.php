@@ -15,7 +15,20 @@ $lon = 120.9417;
 
 $url = "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=" . WEATHER_API_KEY . "&units=metric";
 
-$response = @file_get_contents($url);
+// ── Weather cache — fetch from OWM max once every 10 minutes ──
+$cacheFile = sys_get_temp_dir() . '/mdrrmo_weather.json';
+$cacheTTL  = 600; // 10 minutes
+
+if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTTL) {
+    $response = file_get_contents($cacheFile);
+} else {
+    $response = @file_get_contents($url);
+    if ($response !== false) {
+        file_put_contents($cacheFile, $response);
+    }
+}
+
+
 $weather = null;
 
 if ($response !== false) {

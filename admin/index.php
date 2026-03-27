@@ -1485,22 +1485,22 @@ $activeDisaster = $disasterStmt->fetch();
                 <!-- Main Two Column Layout -->
                 <div class="main-grid">
                     <!-- Left Column: Current Situation Card (Weather Style) - Full Height -->
-                    <div class="weather-card">
+                    <!-- <div class="weather-card">
                         <div class="weather-header">
                             <h2>San Ildefonso</h2>
                             <span>Chance of rain 50%</span>
-                        </div>
+                        </div> -->
 
                         <!-- Hardcoded weather data for now -->
-                        <div class="weather-main">
+                        <!-- <div class="weather-main">
                             <div class="weather-temp-large">32°</div>
                             <div class="weather-info">
                                 <div class="weather-condition">Partly Cloudy</div>
                                 <div class="weather-detail">Heat Index: 36° • Humidity: 65%</div>
                             </div>
-                        </div>
+                        </div> -->
 
-                        <div class="forecast-title">TODAY'S FORECAST</div>
+                        <!-- <div class="forecast-title">TODAY'S FORECAST</div>
                         <div class="forecast-grid">
                             <div class="forecast-item">
                                 <div class="forecast-time">6:00 AM</div>
@@ -1526,9 +1526,9 @@ $activeDisaster = $disasterStmt->fetch();
                                 <div class="forecast-time">9:00 PM</div>
                                 <div class="forecast-temp">21°</div>
                             </div>
-                        </div>
+                        </div> -->
 
-                        <!-- Air Conditions Section - No Backend Needed -->
+                        <!-- Air Conditions Section - No Backend Needed
                         <div class="air-conditions">
                             <div class="air-conditions-title">AIR CONDITIONS</div>
                             <div class="air-conditions-grid">
@@ -1561,7 +1561,7 @@ $activeDisaster = $disasterStmt->fetch();
                                     
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
 
                         <?php if ($activeDisaster): ?>
                         <div class="disaster-badge">
