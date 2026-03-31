@@ -9,6 +9,7 @@ $user = current_user();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MDRRMO Navigation</title>
+<link rel="stylesheet" href="../asset/css/usernavigation.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,638 +17,11 @@ $user = current_user();
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --accent:    #d45f10;
-  --red:       #c0391e;
-  --red-dark:  #8c2a10;
-  --orange:    #d45f10;
-  --green:     #18a850;
-  --yellow:    #b07800;
-  --red-alert: #d01030;
-  --bg:        #f4f4f2;
-  --surface:   #ffffff;
-  --surface2:  #f0eeeb;
-  --text:      #1a1410;
-  --muted:     #7a7068;
-  --border:    #ddd8d0;
-  --font:      'Poppins', sans-serif;
-}
-
-html, body {
-  width: 100%; height: 100%;
-  overflow: hidden;
-  background: var(--bg);
-  font-family: var(--font);
-  -webkit-font-smoothing: antialiased;
-  color: var(--text);
-}
-
-#app {
-  width: 100%; height: 100vh;
-  position: relative;
-  overflow: hidden;
-}
-
-/* ==============================================
-   SPLASH SCREEN
-   ============================================== */
-#splash {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  background:
-    radial-gradient(ellipse 70% 55% at 80% 15%, rgba(180,80,10,0.75) 0%, transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='64' viewBox='0 0 56 64'%3E%3Cpolygon points='28,2 54,16 54,48 28,62 2,48 2,16' fill='none' stroke='rgba(255,255,255,0.06)' stroke-width='1.2'/%3E%3C/svg%3E") repeat top left / 56px 64px,
-    linear-gradient(155deg, #5c1800 0%, #3a0e02 50%, #0d0400 100%);
-  transition: opacity 0.5s ease;
-}
-#splash.hide { opacity: 0; pointer-events: none; }
-
-.splash-pulse {
-  font-size: 4rem;
-  animation: sealDrop 0.9s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;
-  margin-bottom: 1rem;
-}
-@keyframes sealDrop {
-  0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
-  100% { transform: scale(1) rotate(0deg);   opacity: 1; }
-}
-
-.splash-logo {
-  font-family: var(--font);
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: #fff;
-  text-shadow: 0 3px 18px rgba(0,0,0,0.4);
-  animation: titleRise 0.7s cubic-bezier(0.25,0.46,0.45,0.94) 0.5s both;
-}
-.splash-sub {
-  font-size: 0.80rem;
-  font-weight: 400;
-  color: rgba(255,255,255,0.55);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-top: 0.3rem;
-  animation: titleRise 0.7s cubic-bezier(0.25,0.46,0.45,0.94) 0.65s both;
-}
-@keyframes titleRise {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.splash-btn {
-  margin-top: 2.5rem;
-  padding: 0.85rem 2.4rem;
-  border: none;
-  border-radius: 50px;
-  background: linear-gradient(135deg, var(--red) 0%, var(--orange) 100%);
-  color: #fff;
-  font-family: var(--font);
-  font-size: 0.90rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  box-shadow: 0 6px 24px rgba(192,57,30,0.45);
-  animation: titleRise 0.6s ease 1s both;
-  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
-  position: relative;
-  overflow: hidden;
-}
-.splash-btn::before {
-  content: '';
-  position: absolute;
-  top: 0; left: -80%;
-  width: 55%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
-  transform: skewX(-18deg);
-  transition: left 0.55s ease;
-}
-.splash-btn:hover::before { left: 160%; }
-.splash-btn:hover  { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(192,57,30,0.55); filter: brightness(1.08); }
-.splash-btn:active { transform: translateY(0); }
-
-/* ==============================================
-   MAP
-   ============================================== */
-#map {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-}
-.leaflet-routing-container { display: none !important; }
-
-/* ==============================================
-   TOP DIRECTION CARD
-   ============================================== */
-#dirCard {
-  position: absolute;
-  top: -120px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
-  width: calc(100% - 2rem);
-  max-width: 460px;
-  background: rgba(255,255,255,0.97);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 18px;
-  padding: 0.75rem 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-  transition: top 0.4s cubic-bezier(0.16,1,0.3,1);
-}
-#dirCard.show { top: 0.8rem; }
-
-#turnArrowBox {
-  width: 52px; height: 52px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent), #0099cc);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-  transition: background 0.3s;
-}
-#turnArrowSvg path, #turnArrowSvg circle { stroke: #fff; fill: none; }
-#turnArrowSvg circle:last-child { fill: #fff; }
-
-.dir-info { flex: 1; min-width: 0; }
-#turnInstruction {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-#stepDist { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
-
-#etaBadge {
-  text-align: center;
-  background: rgba(0,0,0,0.05);
-  border-radius: 10px;
-  padding: 0.4rem 0.7rem;
-  flex-shrink: 0;
-}
-#etaMin  { font-size: 1.3rem; font-weight: 800; color: var(--accent); line-height: 1; }
-#etaLabel { font-size: 0.58rem; color: var(--muted); }
-
-/* ==============================================
-   OFF-ROUTE BANNER
-   ============================================== */
-#offrouteBanner {
-  position: absolute;
-  top: 5rem;
-  left: 50%;
-  transform: translate(-50%, -20px);
-  z-index: 60;
-  background: linear-gradient(135deg, #e01030, #a00018);
-  border-radius: 50px;
-  padding: 0.55rem 1.2rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 4px 20px rgba(220,16,48,0.35);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s, transform 0.3s;
-}
-#offrouteBanner.show { opacity: 1; transform: translate(-50%, 0); pointer-events: all; }
-.offroute-icon { font-size: 1rem; }
-.offroute-text { font-size: 0.80rem; font-weight: 700; color: #fff; }
-.offroute-sub  { font-size: 0.62rem; color: rgba(255,255,255,0.80); }
-
-/* ==============================================
-   COMPASS
-   ============================================== */
-#compassWrap {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-#compassRing {
-  width: 46px; height: 46px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.96);
-  border: 1.5px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.10);
-  transition: border-color 0.2s;
-}
-#compassRing:hover { border-color: var(--accent); }
-#compassNeedle {
-  font-size: 1.3rem;
-  display: inline-block;
-  transition: transform 0.15s ease-out;
-}
-#compassLabel {
-  font-size: 0.58rem;
-  font-weight: 700;
-  color: var(--muted);
-  letter-spacing: 0.05em;
-}
-
-/* ==============================================
-   SPEED BUBBLE
-   ============================================== */
-#speedBubble {
-  position: absolute;
-  bottom: 18rem;
-  left: 1rem;
-  z-index: 40;
-  background: rgba(255,255,255,0.96);
-  border: 1.5px solid var(--border);
-  border-radius: 14px;
-  padding: 0.5rem 0.7rem;
-  text-align: center;
-  min-width: 52px;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.10);
-  transition: bottom 0.35s cubic-bezier(0.16,1,0.3,1);
-}
-#speedVal  { font-size: 1.3rem; font-weight: 800; color: var(--text); line-height: 1; }
-#speedUnit { font-size: 0.58rem; color: var(--muted); }
-
-/* ==============================================
-   RECENTER BUTTON
-   ============================================== */
-#recenterBtn {
-  position: absolute;
-  bottom: 18rem;
-  right: 1rem;
-  z-index: 40;
-  width: 46px; height: 46px;
-  border-radius: 50%;
-  border: 1.5px solid var(--border);
-  background: rgba(255,255,255,0.96);
-  color: var(--text);
-  font-size: 1.4rem;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.10);
-  transition: border-color 0.2s, background 0.2s, bottom 0.35s cubic-bezier(0.16,1,0.3,1);
-}
-#recenterBtn:hover { border-color: var(--accent); background: rgba(212,95,16,0.08); }
-
-/* ==============================================
-   PANEL SIDE TOGGLE BUTTON
-   ============================================== */
-#panelToggleBtn {
-  position: absolute;
-  right: 0;
-  z-index: 55;
-  width: 32px;
-  height: 56px;
-  background: linear-gradient(160deg, var(--red) 0%, var(--orange) 100%);
-  border: none;
-  border-radius: 10px 0 0 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: -3px 0 14px rgba(0,0,0,0.14);
-  transition:
-    bottom 0.5s cubic-bezier(0.16,1,0.3,1),
-    background 0.25s,
-    transform 0.2s;
-  bottom: calc(var(--panel-show-offset, 18rem) + 2px);
-}
-#panelToggleBtn:hover {
-  background: linear-gradient(160deg, #a0220f 0%, #b84a00 100%);
-  transform: scaleX(1.12);
-}
-#panelToggleBtn:active { transform: scaleX(0.96); }
-
-#toggleArrow {
-  width: 16px; height: 16px;
-  fill: none;
-  stroke: #fff;
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-}
-#panelToggleBtn.collapsed #toggleArrow {
-  transform: rotate(180deg);
-}
-
-/* ==============================================
-   BOTTOM PANEL
-   ============================================== */
-#bottomPanel {
-  position: absolute;
-  bottom: -100%;
-  left: 0; right: 0;
-  z-index: 40;
-  background: rgba(255,255,255,0.99);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-radius: 24px 24px 0 0;
-  border-top: 1px solid rgba(0,0,0,0.07);
-  padding: 0.6rem 1.2rem 1.4rem;
-  box-shadow: 0 -8px 40px rgba(0,0,0,0.10);
-  transition: bottom 0.5s cubic-bezier(0.16,1,0.3,1);
-  max-height: 72vh;
-  overflow-y: auto;
-  scrollbar-width: none;
-  touch-action: none;
-}
-#bottomPanel::-webkit-scrollbar { display: none; }
-#bottomPanel.show { bottom: 0; }
-#bottomPanel.collapsed { bottom: -88%; }
-#bottomPanel.no-transition { transition: none; }
-
-.bottom-handle-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 0.3rem 0 0.5rem;
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.bottom-handle-wrap:active { cursor: grabbing; }
-
-.bottom-handle {
-  width: 38px; height: 4px;
-  background: rgba(0,0,0,0.15);
-  border-radius: 2px;
-  transition: background 0.2s, width 0.2s;
-}
-.bottom-handle-wrap:hover .bottom-handle {
-  background: var(--accent);
-  width: 48px;
-}
-
-.handle-hint {
-  font-size: 0.56rem;
-  font-weight: 600;
-  color: var(--muted);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-#bottomPanel.collapsed .handle-hint { opacity: 1; color: var(--accent); }
-
-#destName {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 0.2rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-#remainDist {
-  font-size: 0.70rem;
-  color: var(--muted);
-  margin-bottom: 0.9rem;
-}
-
-.mode-label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  margin-bottom: 0.5rem;
-}
-
-#centerList {
-  margin-bottom: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  max-height: 160px;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-#centerList::-webkit-scrollbar { display: none; }
-
-.center-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.65rem 0.9rem;
-  background: var(--surface2);
-  border-radius: 12px;
-  border: 1.5px solid transparent;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-}
-.center-item:hover,
-.center-item.selected { border-color: var(--accent); background: rgba(212,95,16,0.07); }
-.center-name { font-size: 0.78rem; font-weight: 600; color: var(--text); }
-.center-sub  { font-size: 0.62rem; color: var(--muted); margin-top: 1px; }
-.center-meta { text-align: right; flex-shrink: 0; }
-.center-distance { font-size: 0.72rem; font-weight: 700; color: var(--accent); }
-.center-status { font-size: 0.58rem; font-weight: 700; text-transform: uppercase; margin-top: 2px; }
-.center-status-available { color: var(--green); }
-.center-status-full      { color: var(--red-alert); }
-.center-status-closed    { color: var(--muted); }
-
-#modeSelector {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.4rem;
-  margin-bottom: 0.8rem;
-}
-.mode-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.55rem 0.3rem;
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface2);
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-  font-family: var(--font);
-}
-.mode-btn.active { border-color: var(--accent); background: rgba(212,95,16,0.09); }
-.mode-btn:hover  { border-color: rgba(212,95,16,0.4); }
-.mode-icon { font-size: 1.1rem; }
-.mode-name { font-size: 0.60rem; font-weight: 600; color: var(--text); }
-
-.mode-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.4rem;
-  margin-bottom: 0.8rem;
-}
-.stat-chip {
-  background: var(--surface2);
-  border-radius: 10px;
-  padding: 0.55rem 0.4rem;
-  text-align: center;
-  border: 1px solid var(--border);
-}
-.stat-val { font-size: 1.0rem; font-weight: 800; color: var(--accent); }
-.stat-lbl { font-size: 0.57rem; color: var(--muted); margin-top: 1px; }
-
-.traffic-legend {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 0.9rem;
-}
-.tleg { display: flex; align-items: center; gap: 0.35rem; font-size: 0.65rem; color: var(--muted); }
-.tleg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-.nav-btn {
-  width: 100%;
-  padding: 0.90rem;
-  border: none;
-  border-radius: 50px;
-  font-family: var(--font);
-  font-size: 0.90rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
-  margin-top: 0.4rem;
-}
-#startBtn {
-  background: linear-gradient(135deg, var(--red) 0%, var(--orange) 100%);
-  color: #fff;
-  box-shadow: 0 6px 22px rgba(192,57,30,0.28);
-}
-#startBtn:hover  { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(192,57,30,0.40); filter: brightness(1.06); }
-#startBtn:active { transform: translateY(0); }
-
-#stopBtn {
-  background: rgba(208,16,48,0.08);
-  color: var(--red-alert);
-  border: 1.5px solid rgba(208,16,48,0.25);
-  display: none;
-}
-#stopBtn:hover { background: rgba(208,16,48,0.15); }
-
-/* ==============================================
-   USER / DEST MAP MARKERS
-   ============================================== */
-.user-dot-wrap {
-  position: relative;
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-}
-.user-halo {
-  position: absolute;
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(212,95,16,0.25) 0%, transparent 70%);
-  animation: halo 2s ease-in-out infinite;
-}
-@keyframes halo {
-  0%,100% { transform: scale(1); opacity: 0.6; }
-  50%      { transform: scale(1.4); opacity: 0.2; }
-}
-.user-dot {
-  position: absolute;
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  background: var(--accent);
-  border: 2.5px solid #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  z-index: 2;
-}
-.user-pip {
-  position: absolute;
-  top: 2px;
-  width: 6px; height: 10px;
-  background: rgba(255,255,255,0.85);
-  border-radius: 3px;
-  z-index: 3;
-  clip-path: polygon(50% 0%,100% 100%,0% 100%);
-}
-
-.dest-pin-head {
-  width: 38px; height: 38px;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  background: linear-gradient(135deg, var(--red), var(--orange));
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.20);
-}
-.dest-pin-icon {
-  transform: rotate(45deg);
-  font-size: 1.1rem;
-}
-
-/* ==============================================
-   ARRIVAL OVERLAY
-   ============================================== */
-#arrivalOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 500;
-  background: rgba(244,244,242,0.90);
-  backdrop-filter: blur(6px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s ease;
-}
-#arrivalOverlay.show { opacity: 1; pointer-events: all; }
-
-.arrival-emoji  { font-size: 4rem; animation: sealDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) both; }
-.arrival-title  { font-size: 2rem; font-weight: 800; color: var(--text); }
-.arrival-sub    { font-size: 0.85rem; color: var(--muted); }
-.arrival-close  {
-  margin-top: 1.2rem;
-  padding: 0.75rem 2rem;
-  border: none;
-  border-radius: 50px;
-  background: linear-gradient(135deg, var(--red), var(--orange));
-  color: #fff;
-  font-family: var(--font);
-  font-size: 0.90rem;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 6px 22px rgba(192,57,30,0.28);
-  transition: filter 0.15s;
-}
-.arrival-close:hover { filter: brightness(1.08); }
-
 </style>
 </head>
 
 <body>
 <div id="app">
-
-  <!-- SPLASH -->
-  <div id="splash">
-    <div class="splash-pulse">🧭</div>
-    <div class="splash-logo">MDRRMO San Ildefonso</div>
-    <div class="splash-sub">Evacuation Navigation</div>
-    <button class="splash-btn" onclick="initApp()">GET STARTED</button>
-  </div>
 
   <!-- MAP -->
   <div id="map"></div>
@@ -671,12 +45,24 @@ html, body {
 
   <!-- OFF-ROUTE BANNER -->
   <div id="offrouteBanner">
-    <div class="offroute-icon">⚠️</div>
+    <!-- Warning triangle SVG icon (white, inline) -->
+    <svg class="offroute-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 2L15 14H1L8 2Z" stroke="#fff" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+      <line x1="8" y1="7" x2="8" y2="10" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="8" cy="12.5" r="0.75" fill="#fff"/>
+    </svg>
     <div>
       <div class="offroute-text">Off Route!</div>
       <div class="offroute-sub">Recalculating…</div>
     </div>
   </div>
+
+  <!-- BACK TO DASHBOARD -->
+  <a id="backBtn" href="citizen_dashboard.php" title="Back to Dashboard">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 3L5 8L10 13" stroke="#d45f10" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </a>
 
   <!-- COMPASS -->
   <div id="compassWrap">
@@ -692,8 +78,16 @@ html, body {
     <div id="speedUnit">km/h</div>
   </div>
 
-  <!-- RECENTER -->
-  <button id="recenterBtn" onclick="recenter()">⊕</button>
+  <!-- RECENTER — dark orange SVG crosshair icon -->
+  <button id="recenterBtn" onclick="recenter()" title="Recenter map">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="11" cy="11" r="4" stroke="#d45f10" stroke-width="1.8"/>
+      <line x1="11" y1="1" x2="11" y2="5"  stroke="#d45f10" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="11" y1="17" x2="11" y2="21" stroke="#d45f10" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="1"  y1="11" x2="5"  y2="11" stroke="#d45f10" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="17" y1="11" x2="21" y2="11" stroke="#d45f10" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+  </button>
 
   <!-- SIDE TOGGLE BUTTON -->
   <button id="panelToggleBtn" onclick="togglePanel()" title="Toggle panel">
@@ -709,7 +103,14 @@ html, body {
       <div class="handle-hint" id="handleHint">drag to hide</div>
     </div>
 
-    <div id="destName">📍 Select an evacuation center</div>
+    <!-- Location pin: dark orange SVG icon -->
+    <div id="destName" style="display:flex;align-items:center;gap:6px;">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <path d="M7 1C4.79 1 3 2.79 3 5c0 3.25 4 8 4 8s4-4.75 4-8c0-2.21-1.79-4-4-4Z" fill="#d45f10"/>
+        <circle cx="7" cy="5" r="1.5" fill="#fff"/>
+      </svg>
+      <span>Select an evacuation center</span>
+    </div>
     <div id="remainDist">We will suggest the nearest available center.</div>
 
     <div class="mode-label">Evacuation Centers (nearest first)</div>
@@ -717,20 +118,78 @@ html, body {
 
     <div class="mode-label">Travel Mode</div>
     <div id="modeSelector">
+
+      <!-- Walk: distinct pedestrian figure — body + swinging arm + stride legs -->
       <button class="mode-btn active" data-mode="walk" onclick="selectMode('walk')">
-        <span class="mode-icon">🚶</span>
+        <div class="mode-icon">
+          <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Head -->
+            <circle cx="12" cy="3.5" r="1.8" fill="#d45f10"/>
+            <!-- Torso leaning forward -->
+            <line x1="12" y1="5.3" x2="10.5" y2="10.5" stroke="#d45f10" stroke-width="1.6" stroke-linecap="round"/>
+            <!-- Left arm swinging back -->
+            <line x1="11.2" y1="7" x2="14.5" y2="9.5" stroke="#d45f10" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- Right arm swinging forward -->
+            <line x1="11" y1="7.5" x2="8" y2="9" stroke="#d45f10" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- Left leg stepping forward -->
+            <line x1="10.5" y1="10.5" x2="8" y2="15" stroke="#d45f10" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="8" y1="15" x2="6.5" y2="18.5" stroke="#d45f10" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- Right leg pushing back -->
+            <line x1="10.5" y1="10.5" x2="13" y2="15" stroke="#d45f10" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="13" y1="15" x2="14.5" y2="18" stroke="#d45f10" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
         <span class="mode-name">Walk</span>
       </button>
+
+      <!-- Bike: bicycle SVG icon, dark orange -->
       <button class="mode-btn" data-mode="bike" onclick="selectMode('bike')">
-        <span class="mode-icon">🚲</span>
+        <div class="mode-icon">
+          <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="5.5" cy="15.5" r="3.5" stroke="#d45f10" stroke-width="1.6"/>
+            <circle cx="16.5" cy="15.5" r="3.5" stroke="#d45f10" stroke-width="1.6"/>
+            <path d="M5.5 15.5L9 9H13L16.5 15.5H9" stroke="#d45f10" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="13" cy="6.5" r="1.5" fill="#d45f10"/>
+          </svg>
+        </div>
         <span class="mode-name">Bike</span>
       </button>
+
+      <!-- Motorcycle: distinct moto shape — low seat, raised handlebars, exhaust pipe -->
       <button class="mode-btn" data-mode="moto" onclick="selectMode('moto')">
-        <span class="mode-icon">🏍️</span>
+        <div class="mode-icon">
+          <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Rear wheel -->
+            <circle cx="4.5" cy="15.5" r="3" stroke="#d45f10" stroke-width="1.5"/>
+            <!-- Front wheel -->
+            <circle cx="17.5" cy="15.5" r="3" stroke="#d45f10" stroke-width="1.5"/>
+            <!-- Front fork -->
+            <line x1="17.5" y1="12.5" x2="16" y2="8.5" stroke="#d45f10" stroke-width="1.4" stroke-linecap="round"/>
+            <!-- Handlebar -->
+            <line x1="14.5" y1="8" x2="18" y2="8" stroke="#d45f10" stroke-width="1.6" stroke-linecap="round"/>
+            <!-- Main frame / tank -->
+            <path d="M7 12.5 L10 8 L14.5 8.5 L16 12.5" stroke="#d45f10" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <!-- Seat -->
+            <line x1="7" y1="12.5" x2="13" y2="12.5" stroke="#d45f10" stroke-width="2" stroke-linecap="round"/>
+            <!-- Rear swing-arm to rear wheel -->
+            <line x1="7" y1="12.5" x2="4.5" y2="12.5" stroke="#d45f10" stroke-width="1.4" stroke-linecap="round"/>
+            <!-- Exhaust pipe (low, pointing back) -->
+            <path d="M7 14 Q5 15 3 16.5" stroke="#d45f10" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.7"/>
+          </svg>
+        </div>
         <span class="mode-name">Moto</span>
       </button>
+
+      <!-- Car: car SVG icon, dark orange -->
       <button class="mode-btn" data-mode="car" onclick="selectMode('car')">
-        <span class="mode-icon">🚗</span>
+        <div class="mode-icon">
+          <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 14H18M4 14V17M18 14V17M4 14L6 9H16L18 14" stroke="#d45f10" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="6.5" cy="17" r="1.5" stroke="#d45f10" stroke-width="1.4"/>
+            <circle cx="15.5" cy="17" r="1.5" stroke="#d45f10" stroke-width="1.4"/>
+            <path d="M7.5 9L8.5 6H13.5L14.5 9" stroke="#d45f10" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
         <span class="mode-name">Car</span>
       </button>
     </div>
@@ -756,16 +215,38 @@ html, body {
       <div class="tleg"><div class="tleg-dot" style="background:#d01030"></div>Jammed</div>
     </div>
 
-    <button id="startBtn" class="nav-btn" onclick="startNavigation()">🚀 START NAVIGATION</button>
-    <button id="stopBtn" class="nav-btn" onclick="stopNavigation()">■ END NAVIGATION</button>
+    <!-- START button: dark orange rocket SVG icon -->
+    <button id="startBtn" class="nav-btn" onclick="startNavigation()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2C10 2 13 3.5 13 8C13 11 11 13.5 8 14C5 13.5 3 11 3 8C3 3.5 6 2 8 2Z" stroke="#fff" stroke-width="1.4" fill="none"/>
+        <path d="M8 2L9.5 5.5H12.5L10 7.5L11 11L8 9L5 11L6 7.5L3.5 5.5H6.5L8 2Z" fill="#fff" opacity="0.9"/>
+      </svg>
+      START NAVIGATION
+    </button>
+    <!-- STOP button: square stop SVG icon -->
+    <button id="stopBtn" class="nav-btn" onclick="stopNavigation()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="10" height="10" rx="2" fill="#d01030"/>
+      </svg>
+      END NAVIGATION
+    </button>
   </div>
 
   <!-- ARRIVAL -->
   <div id="arrivalOverlay">
-    <div class="arrival-emoji">🎉</div>
+    <!-- Arrival: checkmark SVG icon, dark orange -->
+    <svg class="arrival-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="30" fill="rgba(212,95,16,0.12)" stroke="#d45f10" stroke-width="2.5"/>
+      <path d="M18 33L28 43L46 22" stroke="#d45f10" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
     <div class="arrival-title">Arrived!</div>
     <div class="arrival-sub">You've reached your destination</div>
-    <button class="arrival-close" onclick="closeArrival()">Done</button>
+    <button class="arrival-close" onclick="closeArrival()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 7h10M7 2l5 5-5 5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Done
+    </button>
   </div>
 
 </div>
@@ -971,33 +452,30 @@ window.snapPanel = function(collapsed) {
 
 // ─── INIT ─────────────────────────────────
 function initApp() {
-  document.getElementById('splash').classList.add('hide');
-  setTimeout(() => {
-    document.getElementById('splash').style.display = 'none';
-    initMap();
-    initCompass();
-    initPanelDrag();
-    window.snapPanel(false);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          userLoc = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-          updatePreview(userLoc.lat, userLoc.lon);
-          loadCenters();
-        },
-        err => {
-          document.getElementById('centerList').textContent =
-            'Unable to get your location: ' + err.message;
-          loadCenters();
-        },
-        { enableHighAccuracy: true }
-      );
-    } else {
-      document.getElementById('centerList').textContent =
-        'Geolocation not supported on this device.';
-      loadCenters();
-    }
-  }, 600);
+  // Splash removed: map and UI initializes immediately
+  initMap();
+  initCompass();
+  initPanelDrag();
+  window.snapPanel(false);
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        userLoc = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+        updatePreview(userLoc.lat, userLoc.lon);
+        loadCenters();
+      },
+      err => {
+        document.getElementById('centerList').textContent =
+          'Unable to get your location: ' + err.message;
+        loadCenters();
+      },
+      { enableHighAccuracy: true }
+    );
+  } else {
+    document.getElementById('centerList').textContent =
+      'Geolocation not supported on this device.';
+    loadCenters();
+  }
 }
 
 function initMap() {
@@ -1044,9 +522,13 @@ function loadCenters() {
           <div class="center-main">
             <div class="center-name">${c.name}</div>
             <div class="center-sub"> ${c.barangay}</div>
-            <div class="center-sub" style="margin-top:3px;">
-              👤 ${c.coordinator_name ?? 'Unassigned'}
-              ${c.coordinator_contact ? '&nbsp;·&nbsp;📞 ' + c.coordinator_contact : ''}
+            <div class="center-sub" style="margin-top:3px;color:var(--accent);display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+                <circle cx="6" cy="4" r="2.2" stroke="#d45f10" stroke-width="1.3"/>
+                <path d="M1.5 10.5C1.5 8.57 3.57 7 6 7s4.5 1.57 4.5 3.5" stroke="#d45f10" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+              </svg>
+              ${c.coordinator_name ?? 'Unassigned'}
+              ${c.coordinator_contact ? `&nbsp;·&nbsp;<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;"><path d="M2 2.5C2 2.5 3 4.5 4.5 6S9.5 10 9.5 10l1-1.5-1.5-1.5-1 1C7.5 8 5 5.5 4.5 4.5l1-1L4 2 2 2.5Z" stroke="#d45f10" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg> ` + c.coordinator_contact : ''}
             </div>
           </div>
           <div class="center-meta">
@@ -1076,8 +558,14 @@ function chooseCenter(centerId, speakIt = true) {
   destLon = center.lng;
   destName = center.name;
 
-  document.getElementById('destName').textContent =
-    `📍 ${center.name} (${center.barangay})`;
+  // Update destName with SVG pin icon + text (matches the inline SVG in HTML)
+  document.getElementById('destName').innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+      <path d="M7 1C4.79 1 3 2.79 3 5c0 3.25 4 8 4 8s4-4.75 4-8c0-2.21-1.79-4-4-4Z" fill="#d45f10"/>
+      <circle cx="7" cy="5" r="1.5" fill="#fff"/>
+    </svg>
+    <span>${center.name} (${center.barangay})</span>
+  `;
 
   // Highlight selected item in list
   document.querySelectorAll('.center-item').forEach(el => el.classList.remove('selected'));
@@ -1095,9 +583,16 @@ function chooseCenter(centerId, speakIt = true) {
 
 function updateDestinationMarker() {
   if (!map) return;
+  // Destination pin uses a school SVG icon (dark orange tones) instead of emoji
   const destIcon = L.divIcon({
     className: '',
-    html: `<div class="dest-pin-head"><span class="dest-pin-icon">🏫</span></div>`,
+    html: `<div class="dest-pin-head">
+             <svg class="dest-pin-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+               <rect x="3" y="9" width="14" height="9" rx="1" stroke="#fff" stroke-width="1.4" fill="none"/>
+               <path d="M1 10L10 4L19 10" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+               <rect x="8" y="13" width="4" height="5" rx="0.5" stroke="#fff" stroke-width="1.2" fill="none"/>
+             </svg>
+           </div>`,
     iconSize: [32, 40], iconAnchor: [16, 40]
   });
   if (destMarker) {
@@ -1155,9 +650,9 @@ function startNavigation() {
   isNavigating = true;
   document.querySelectorAll('.mode-btn').forEach(b => { b.style.opacity='0.45'; b.style.pointerEvents='none'; });
   document.getElementById('startBtn').style.display = 'none';
-  document.getElementById('stopBtn').style.display = 'block';
+  document.getElementById('stopBtn').style.display = 'flex';
   document.getElementById('dirCard').classList.add('show');
-  document.getElementById('turnInstruction').textContent = `${MODES[selectedMode].icon} Getting location…`;
+  document.getElementById('turnInstruction').textContent = `Getting location…`;
 
   watchId = navigator.geolocation.watchPosition(onPosition, onGeoError, {
     enableHighAccuracy: true, maximumAge: 0, timeout: 8000
@@ -1172,7 +667,7 @@ function stopNavigation() {
   clearLayers();
 
   document.querySelectorAll('.mode-btn').forEach(b => { b.style.opacity='1'; b.style.pointerEvents='auto'; });
-  document.getElementById('startBtn').style.display = 'block';
+  document.getElementById('startBtn').style.display = 'flex';
   document.getElementById('stopBtn').style.display = 'none';
   document.getElementById('dirCard').classList.remove('show');
   document.getElementById('offrouteBanner').classList.remove('show');
@@ -1447,6 +942,9 @@ function getBearing(lat1, lon1, lat2, lon2) {
 function onGeoError(err) {
   document.getElementById('turnInstruction').textContent = '⚠ ' + err.message;
 }
+
+// Start application immediately
+initApp();
 </script>
 </body>
 </html>
