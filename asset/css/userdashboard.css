@@ -661,7 +661,17 @@ body {
 
 .nav-item.nav-center { position: relative; top: -16px; }
 
-/* ─── EVACUATION FAB WITH SMOOTH PHYSICS ────────────────── */
+/* ─── EVACUATION FAB — PHYSICS-BASED HOLD-TO-CONFIRM ────────
+   Redesigned with:
+   • Multi-layer fluid ripple spreading from button origin
+   • Pressure wave rings that emanate outward progressively
+   • Particle burst on release (JS-spawned DOM nodes)
+   • Spring-physics easing on all transforms
+   • Smooth momentum-based cancel collapse
+   • Haptic-like visual micro-pulses during hold
+   ─────────────────────────────────────────────────────────── */
+
+/* FAB circle */
 .nav-center-circle {
   width: 54px;
   height: 54px;
@@ -675,12 +685,56 @@ body {
   overflow: visible;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.08s cubic-bezier(0.1, 1.2, 0.4, 1), box-shadow 0.2s ease;
+  will-change: transform, box-shadow;
   cursor: pointer;
+  transition: transform 0.06s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease;
 }
 
-.nav-center-circle:active { transform: scale(0.92); box-shadow: 0 2px 12px rgba(192,57,30,.6); }
+/* Press-down depress */
+.nav-center-circle.pressing {
+  transform: scale(0.91);
+  box-shadow: 0 2px 10px rgba(192,57,30,.55);
+}
 
+/* Micro heartbeat pulse during hold */
+.nav-center-circle.beating {
+  animation: fab-heartbeat 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes fab-heartbeat {
+  0%   { transform: scale(0.91); }
+  45%  { transform: scale(0.97); }
+  70%  { transform: scale(0.89); }
+  100% { transform: scale(0.91); }
+}
+
+/* Completion bounce */
+.nav-center-circle.done {
+  animation: fab-done 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes fab-done {
+  0%   { transform: scale(0.91); box-shadow: 0 2px 10px rgba(192,57,30,.55); }
+  55%  { transform: scale(1.18); box-shadow: 0 12px 36px rgba(192,57,30,.7); }
+  100% { transform: scale(1.0);  box-shadow: 0 6px 20px rgba(192,57,30,.4); }
+}
+
+/* Shake on early release */
+.nav-center-circle.shake {
+  animation: fab-shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes fab-shake {
+  0%,100% { transform: rotate(0deg) scale(1); }
+  15%     { transform: rotate(-5deg) scale(1.04); }
+  30%     { transform: rotate(5deg) scale(1.04); }
+  45%     { transform: rotate(-4deg) scale(1.02); }
+  60%     { transform: rotate(4deg) scale(1.02); }
+  75%     { transform: rotate(-2deg) scale(1); }
+}
+
+/* FAB icon */
 .nav-center-circle svg {
   width: 26px;
   height: 26px;
@@ -688,62 +742,97 @@ body {
   position: relative;
   z-index: 4;
   pointer-events: none;
-  transition: transform 0.12s ease-out;
+  transition: transform 0.15s ease-out;
 }
 
-/* Ring progress indicator */
+/* Conic ring progress — sits around the FAB */
 .evac-fab-ring {
   position: absolute;
   inset: -5px;
   border-radius: 50%;
   z-index: 3;
   pointer-events: none;
-  background: conic-gradient(rgba(255,215,150,.98) calc(var(--pct,0) * 1%), rgba(192,57,30,.6) calc(var(--pct,0) * 1%));
-  -webkit-mask: radial-gradient(circle, transparent 62%, black 63%);
-  mask: radial-gradient(circle, transparent 62%, black 63%);
+  /* conic-gradient rotated so it starts at the top (−90deg) */
+  background: conic-gradient(
+    from -90deg,
+    rgba(255,215,130,1) 0deg,
+    rgba(255,150,60,1) calc(var(--pct, 0) * 3.6deg),
+    rgba(192,57,30,.35) calc(var(--pct, 0) * 3.6deg)
+  );
+  -webkit-mask: radial-gradient(circle, transparent 60%, black 61%);
+  mask:         radial-gradient(circle, transparent 60%, black 61%);
   opacity: 0;
-  transition: opacity 0.08s linear;
+  transition: opacity 0.12s ease;
 }
 
-.nav-center-circle.holding .evac-fab-ring { opacity: 1; }
+.nav-center-circle.pressing .evac-fab-ring { opacity: 1; }
 
-/* Dark Ripple Circle with organic scaling */
-.evac-ripple-circle {
+/* ── FLUID RIPPLE SYSTEM ──────────────────────────────────── */
+
+/* Primary ink-blot fill layer */
+.evac-ripple-primary {
   position: fixed;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, rgba(180,45,20,0.98) 0%, rgba(100,25,12,0.88) 45%, rgba(60,15,5,0.55) 70%, transparent 100%);
   pointer-events: none;
-  z-index: 9998;
-  transform: scale(0);
-  opacity: 0;
+  z-index: 9990;
+  /* Rich dark-red radial that fades at the edges — feels liquid */
+  background: radial-gradient(
+    circle at 38% 34%,
+    rgba(210, 55, 25, 1)    0%,
+    rgba(170, 38, 16, 0.97) 28%,
+    rgba(110, 22, 10, 0.88) 55%,
+    rgba(60,  12,  5, 0.60) 76%,
+    transparent             100%
+  );
   will-change: transform, opacity;
-  transition: transform 0.65s cubic-bezier(0.19, 1, 0.32, 1.1), opacity 0.45s ease-out;
-}
-
-.evac-ripple-circle.spreading {
-  transform: scale(1);
-  opacity: 0.92;
-}
-
-.evac-ripple-circle.collapsing {
-  transition: transform 0.5s cubic-bezier(0.68, -0.2, 0.32, 1.2), opacity 0.4s ease;
   transform: scale(0);
   opacity: 0;
 }
 
+/* Secondary slower shimmer ring behind the primary */
+.evac-ripple-shimmer {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9989;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(240, 100, 40, 0.45) 0%,
+    rgba(200, 60,  20, 0.25) 45%,
+    transparent              72%
+  );
+  will-change: transform, opacity;
+  transform: scale(0);
+  opacity: 0;
+}
+
+/* Pressure wave rings — CSS-only, spawned by JS */
+.evac-wave-ring {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9991;
+  border: 2px solid rgba(255, 165, 70, 0.7);
+  transform: scale(0);
+  opacity: 0;
+  box-sizing: border-box;
+}
+
+/* Evacuating label + icon overlay */
 .evac-ripple-icon {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) scale(0.6);
+  transform: translate(-50%, -50%) scale(0.5);
   z-index: 9999;
   pointer-events: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   opacity: 0;
-  transition: opacity 0.18s ease, transform 0.45s cubic-bezier(0.34, 1.3, 0.64, 1);
+  transition: opacity 0.2s ease,
+              transform 0.5s cubic-bezier(0.34, 1.38, 0.64, 1);
 }
 
 .evac-ripple-icon.visible {
@@ -752,51 +841,28 @@ body {
 }
 
 .evac-ripple-icon svg {
-  width: 62px;
-  height: 62px;
+  width: 64px;
+  height: 64px;
   fill: #fff;
-  filter: drop-shadow(0 8px 28px rgba(0,0,0,.5));
-  animation: icon-pulse 0.5s ease-in-out 2;
+  filter: drop-shadow(0 6px 22px rgba(0,0,0,.45));
 }
 
 .evac-ripple-icon span {
-  font-size: .86rem;
+  font-size: .84rem;
   font-weight: 800;
-  letter-spacing: .12em;
+  letter-spacing: .14em;
   text-transform: uppercase;
   color: #fff;
-  text-shadow: 0 2px 12px rgba(0,0,0,.45);
-  background: linear-gradient(135deg, rgba(192,57,30,.9), rgba(224,112,32,.9));
-  backdrop-filter: blur(12px);
-  padding: 5px 24px;
+  text-shadow: 0 2px 10px rgba(0,0,0,.4);
+  background: rgba(0,0,0,.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 5px 26px;
   border-radius: 60px;
-  border: 1px solid rgba(255,210,110,.7);
+  border: 1px solid rgba(255,200,100,.5);
 }
 
-@keyframes icon-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.14); }
-}
-
-/* Shake on early release */
-@keyframes evac-shake {
-  0%,100% { transform: translateX(0) rotate(0deg); }
-  20% { transform: translateX(-6px) rotate(-3deg); }
-  40% { transform: translateX(6px) rotate(3deg); }
-  60% { transform: translateX(-3px) rotate(-1.5deg); }
-}
-
-.nav-center-circle.shake { animation: evac-shake 0.38s cubic-bezier(.36,.07,.19,.97); }
-
-/* Completion pulse */
-@keyframes evac-done-pulse {
-  0% { box-shadow: 0 6px 20px rgba(192,57,30,.5); transform: scale(1); }
-  40% { box-shadow: 0 0 0 18px rgba(224,112,32,.55), 0 8px 32px rgba(192,57,30,.7); transform: scale(1.1); }
-  100% { box-shadow: 0 6px 20px rgba(192,57,30,.5); transform: scale(1); }
-}
-
-.nav-center-circle.done { animation: evac-done-pulse 0.6s cubic-bezier(0.2, 1.1, 0.4, 1) forwards; }
-
+/* Hint tooltip above FAB */
 .evac-hint {
   position: absolute;
   bottom: calc(100% + 10px);
@@ -805,14 +871,14 @@ body {
   background: linear-gradient(135deg, rgba(192,57,30,.96), rgba(224,112,32,.96));
   backdrop-filter: blur(12px);
   color: #fff;
-  font-size: .6rem;
+  font-size: .60rem;
   font-weight: 700;
   white-space: nowrap;
   padding: .35rem 1rem;
   border-radius: 28px;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.2s, transform 0.2s cubic-bezier(.2,.9,.4,1.2);
+  transition: opacity 0.22s, transform 0.22s cubic-bezier(.2,.9,.4,1.2);
   border: 1px solid rgba(255,200,100,.6);
   z-index: 110;
   letter-spacing: .3px;
@@ -828,7 +894,6 @@ body {
   border-top-color: rgba(224,112,32,.96);
 }
 
-.nav-center-circle.holding ~ .evac-hint,
 .nav-item.nav-center.hint-show .evac-hint {
   opacity: 1;
   transform: translateX(-50%) translateY(0);

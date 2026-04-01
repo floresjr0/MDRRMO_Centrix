@@ -342,6 +342,7 @@ $wx_ptcls = $wx_particles[$wx_cat] ?? $wx_particles['sunny'];
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+
 </style>
 </head>
 <body>
@@ -376,7 +377,7 @@ $wx_ptcls = $wx_particles[$wx_cat] ?? $wx_particles['sunny'];
   </nav>
   <div class="drawer-footer">
     <a href="logout.php" class="drawer-logout">
-      <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>Log Out
+      <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h4V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>Log Out
     </a>
   </div>
 </div>
@@ -491,7 +492,7 @@ $wx_ptcls = $wx_particles[$wx_cat] ?? $wx_particles['sunny'];
 
   </div>
 
-  <!-- BOTTOM NAVIGATION WITH SMOOTH EVACUATION BUTTON -->
+  <!-- BOTTOM NAVIGATION -->
   <nav class="bottom-nav">
     <a href="citizen_dashboard.php" class="nav-item active">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -502,7 +503,7 @@ $wx_ptcls = $wx_particles[$wx_cat] ?? $wx_particles['sunny'];
       <span>Alerts</span>
     </a>
 
-    <!-- EVACUATION FAB WITH SMOOTH PHYSICS AND REALISTIC ANIMATION -->
+    <!-- EVACUATION FAB — Hold 2 seconds to confirm evacuation -->
     <div class="nav-item nav-center" id="evacNavItem">
       <div class="nav-center-circle" id="evacFab">
         <div class="evac-fab-ring" id="evacRing"></div>
@@ -525,8 +526,11 @@ $wx_ptcls = $wx_particles[$wx_cat] ?? $wx_particles['sunny'];
   </nav>
 </div>
 
-<!-- RIPPLE EFFECT ELEMENTS -->
-<div class="evac-ripple-circle" id="evacRipple"></div>
+<!-- FLUID RIPPLE LAYERS (positioned by JS at runtime) -->
+<div class="evac-ripple-primary"  id="evacRipplePrimary"></div>
+<div class="evac-ripple-shimmer"  id="evacRippleShimmer"></div>
+
+<!-- EVACUATING OVERLAY ICON -->
 <div class="evac-ripple-icon" id="evacRippleIcon">
   <svg viewBox="0 0 24 24">
     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
@@ -652,7 +656,7 @@ $wx_ptcls = $wx_particles[$wx_cat] ?? $wx_particles['sunny'];
 </div>
 
 <script>
-// Sidebar functions
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
 function openSidebar() {
   document.getElementById('sidebarDrawer').classList.add('open');
   document.getElementById('sidebarOverlay').classList.add('open');
@@ -668,156 +672,297 @@ function closeSidebar() {
 }
 
 /* ============================================================
-   SMOOTH EVACUATION BUTTON WITH PHYSICS AND REALISTIC ANIMATION
+   EVACUATION FAB — FAST HOLD-TO-CONFIRM WITH SPREADING RIPPLE
    ============================================================ */
-(function() {
-  const HOLD_MS = 2000;          // 2 seconds hold required
-  const DESTINATION = 'navigation.php';
-  
+(function () {
+  'use strict';
+
+  const HOLD_MS = 1500; // 1.5 seconds hold
+  const DEST = 'navigation.php';
+
   const fab = document.getElementById('evacFab');
   const ring = document.getElementById('evacRing');
   const hint = document.getElementById('evacHint');
   const navItem = document.getElementById('evacNavItem');
-  const ripple = document.getElementById('evacRipple');
-  const rippleIcon = document.getElementById('evacRippleIcon');
-  
+  const primary = document.getElementById('evacRipplePrimary');
+  const shimmer = document.getElementById('evacRippleShimmer');
+  const overlayIcon = document.getElementById('evacRippleIcon');
+
   if (!fab) return;
-  
-  let holding = false;
-  let completed = false;
-  let startTime = 0;
+
+  let isHolding = false;
+  let isCompleted = false;
   let animationFrame = null;
+  let startTime = 0;
+  let rawProgress = 0;
+
+  // NEW EVACUATION ICON (Shelter/Location icon) - FIXED VERSION
+  const evacIconSVG = `<svg viewBox="0 0 24 24" width="26" height="26" fill="white" style="width:26px;height:26px;">
+    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+    <circle cx="12" cy="9" r="2.5" fill="white"/>
+  </svg>`;
+
+  // NEW OVERLAY ICON (Same shelter icon, bigger)
+  const overlayIconSVG = `<svg viewBox="0 0 24 24" width="64" height="64" fill="white" style="width:64px;height:64px;">
+    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+    <circle cx="12" cy="9" r="2.5" fill="white"/>
+  </svg>`;
+
+  // FORCE UPDATE the FAB icon - remove all children and add new SVG
+  while (fab.firstChild) {
+    fab.removeChild(fab.firstChild);
+  }
+  // Add the ring back first
+  const ringDiv = document.createElement('div');
+  ringDiv.className = 'evac-fab-ring';
+  ringDiv.id = 'evacRing';
+  fab.appendChild(ringDiv);
+  // Add the new icon
+  fab.insertAdjacentHTML('beforeend', evacIconSVG);
   
-  // Position ripple circle dynamically based on button location
-  function positionRipple() {
-    const rect = fab.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const maxDist = Math.hypot(
+  // Update the ring reference
+  const newRing = document.getElementById('evacRing');
+  
+  // Update overlay icon
+  if (overlayIcon) {
+    while (overlayIcon.firstChild) {
+      overlayIcon.removeChild(overlayIcon.firstChild);
+    }
+    overlayIcon.insertAdjacentHTML('beforeend', overlayIconSVG);
+    const overlaySpan = document.createElement('span');
+    overlaySpan.textContent = 'EVACUATING';
+    overlayIcon.appendChild(overlaySpan);
+  }
+
+  let cx, cy, maxRadius, primaryDiam, shimmerDiam;
+
+  function measureGeometry() {
+    const r = fab.getBoundingClientRect();
+    cx = r.left + r.width / 2;
+    cy = r.top + r.height / 2;
+    maxRadius = Math.hypot(
       Math.max(cx, window.innerWidth - cx),
       Math.max(cy, window.innerHeight - cy)
-    );
-    const diameter = maxDist * 2 * 1.2;
-    ripple.style.width = diameter + 'px';
-    ripple.style.height = diameter + 'px';
-    ripple.style.left = (cx - diameter / 2) + 'px';
-    ripple.style.top = (cy - diameter / 2) + 'px';
+    ) * 1.18;
+    primaryDiam = maxRadius * 2;
+    shimmerDiam = maxRadius * 2.5;
   }
-  
-  // Reset ripple effect
-  function resetRipple() {
-    ripple.classList.remove('spreading', 'collapsing');
-    ripple.style.transform = 'scale(0)';
-    ripple.style.opacity = '0';
-    rippleIcon.classList.remove('visible');
+
+  function positionLayer(el, diam) {
+    if (!el) return;
+    el.style.width = diam + 'px';
+    el.style.height = diam + 'px';
+    el.style.left = (cx - diam / 2) + 'px';
+    el.style.top = (cy - diam / 2) + 'px';
+    el.style.transition = 'none';
+    el.style.transform = 'scale(0)';
+    el.style.opacity = '0';
   }
-  
-  // Update progress ring and ripple scale
-  function updateProgress(pct) {
-    const currentProgress = Math.min(pct, 100);
-    ring.style.setProperty('--pct', currentProgress);
-    const t = currentProgress / 100;
-    const eased = 1 - Math.pow(1 - t, 2);
-    const scale = eased * 0.48;
-    const alpha = Math.min(t / 0.55, 0.85);
-    ripple.style.transform = `scale(${scale})`;
-    ripple.style.opacity = String(alpha);
+
+  function springEase(t) {
+    return 1 - Math.pow(1 - t, 2.8);
   }
-  
-  // Animate progress frame by frame
-  function animateProgress() {
-    if (!holding) return;
-    const elapsed = Date.now() - startTime;
-    const pct = (elapsed / HOLD_MS) * 100;
-    updateProgress(pct);
-    if (pct >= 100) {
-      completeHold();
-    } else {
-      animationFrame = requestAnimationFrame(animateProgress);
+
+  function updatePrimaryRipple(t) {
+    if (!primary) return;
+    const eased = springEase(t);
+    const scale = eased * 1.02;
+    const opacity = Math.min(t / 0.15, 1);
+    primary.style.transform = `scale(${scale})`;
+    primary.style.opacity = opacity.toFixed(3);
+  }
+
+  function updateShimmerRipple(t) {
+    if (!shimmer) return;
+    const lagged = Math.max(0, t - 0.05);
+    const eased = springEase(lagged);
+    const scale = eased * 0.92;
+    const opacity = Math.min(lagged / 0.20, 0.72);
+    shimmer.style.transform = `scale(${scale})`;
+    shimmer.style.opacity = opacity.toFixed(3);
+  }
+
+  function resetLayers() {
+    if (primary) {
+      primary.style.transition = 'none';
+      primary.style.transform = 'scale(0)';
+      primary.style.opacity = '0';
+    }
+    if (shimmer) {
+      shimmer.style.transition = 'none';
+      shimmer.style.transform = 'scale(0)';
+      shimmer.style.opacity = '0';
     }
   }
-  
-  // Start holding action
-  function beginHold(e) {
-    if (completed) return;
+
+  function updateRing(percent) {
+    const currentRing = document.getElementById('evacRing');
+    if (currentRing) {
+      currentRing.style.setProperty('--pct', Math.min(percent, 100));
+    }
+  }
+
+  function startHold(e) {
     e.preventDefault();
-    holding = true;
-    completed = false;
-    startTime = Date.now();
-    fab.classList.add('holding');
-    hint.textContent = 'Keep holding...';
-    positionRipple();
-    resetRipple();
-    updateProgress(0);
-    animationFrame = requestAnimationFrame(animateProgress);
-  }
-  
-  // Complete the hold - trigger evacuation
-  function completeHold() {
-    if (!holding || completed) return;
-    holding = false;
-    completed = true;
-    if (animationFrame) cancelAnimationFrame(animationFrame);
-    fab.classList.remove('holding');
-    fab.classList.add('done');
-    hint.textContent = 'Evacuating...';
     
-    updateProgress(100);
+    if (isCompleted) return;
     
-    // Spread the ripple fully
-    ripple.style.transition = 'transform 0.7s cubic-bezier(0.2, 0.96, 0.38, 1.08), opacity 0.45s ease-out';
-    ripple.style.transform = 'scale(1)';
-    ripple.style.opacity = '1';
-    ripple.classList.add('spreading');
+    // Reset everything for new tap
+    isHolding = true;
+    isCompleted = false;
+    rawProgress = 0;
     
-    // Show evacuating icon
-    setTimeout(() => rippleIcon.classList.add('visible'), 100);
-    
-    // Navigate to evacuation page
-    setTimeout(() => { window.location.href = DESTINATION; }, 620);
-  }
-  
-  // Cancel hold (user released too early)
-  function cancelHold() {
-    if (!holding || completed) return;
-    const elapsed = Date.now() - startTime;
-    holding = false;
-    if (animationFrame) cancelAnimationFrame(animationFrame);
-    fab.classList.remove('holding');
-    ring.style.setProperty('--pct', 0);
+    // Reset text to "Hold to evacuate" on EVERY new tap
     hint.textContent = 'Hold to evacuate';
     
-    if (elapsed > 150) {
-      ripple.style.transition = 'transform 0.5s cubic-bezier(0.68, -0.2, 0.32, 1.2), opacity 0.4s ease';
-      ripple.style.transform = 'scale(0)';
-      ripple.style.opacity = '0';
-      ripple.classList.add('collapsing');
-      setTimeout(() => resetRipple(), 500);
+    // Remove any existing classes
+    fab.classList.remove('done', 'shake');
+    fab.classList.add('pressing');
+    updateRing(0);
+    
+    // Reset scale
+    fab.style.transform = '';
+    
+    // Measure and position ripple layers
+    measureGeometry();
+    if (primary) positionLayer(primary, primaryDiam);
+    if (shimmer) positionLayer(shimmer, shimmerDiam);
+    
+    startTime = Date.now();
+    
+    function updateProgress() {
+      if (!isHolding) return;
       
-      // Add shake effect if held for a moment but not enough
-      if (elapsed > 300) {
-        fab.classList.add('shake');
-        fab.addEventListener('animationend', () => fab.classList.remove('shake'), { once: true });
+      const elapsed = Date.now() - startTime;
+      const target = Math.min(elapsed / HOLD_MS, 1);
+      
+      // Smooth progress
+      rawProgress += (target - rawProgress) * 0.15;
+      const percent = rawProgress * 100;
+      
+      updateRing(percent);
+      
+      // Update spreading ripples
+      updatePrimaryRipple(rawProgress);
+      updateShimmerRipple(rawProgress);
+      
+      // Scale the FAB button
+      const scale = 0.91 + (rawProgress * 0.12);
+      fab.style.transform = `scale(${scale})`;
+      
+      // Change text to "Evacuating…" at 40% progress
+      if (rawProgress >= 0.4 && hint.textContent !== 'Evacuating…') {
+        hint.textContent = 'Evacuating…';
       }
-    } else {
-      resetRipple();
+      
+      if (target >= 1 && rawProgress > 0.97) {
+        completeHold();
+      } else {
+        animationFrame = requestAnimationFrame(updateProgress);
+      }
     }
+    
+    // Cancel any existing animation
+    if (animationFrame) {
+      cancelAnimationFrame(animationFrame);
+    }
+    
+    animationFrame = requestAnimationFrame(updateProgress);
   }
   
-  // Event listeners for touch and mouse
-  fab.addEventListener('touchstart', beginHold, { passive: false });
+  function cancelHold(e) {
+    if (!isHolding || isCompleted) return;
+    
+    const elapsed = Date.now() - startTime;
+    isHolding = false;
+    
+    if (animationFrame) {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    }
+    
+    fab.classList.remove('pressing');
+    updateRing(0);
+    fab.style.transform = '';
+    
+    // Reset text back to "Hold to evacuate" for next tap
+    hint.textContent = 'Hold to evacuate';
+    
+    // Fade out ripples
+    if (primary) {
+      primary.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+      primary.style.transform = 'scale(0)';
+      primary.style.opacity = '0';
+    }
+    if (shimmer) {
+      shimmer.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+      shimmer.style.transform = 'scale(0)';
+      shimmer.style.opacity = '0';
+    }
+    
+    // Shake effect on cancel (if held for a bit)
+    if (elapsed > 200) {
+      fab.classList.add('shake');
+      setTimeout(() => fab.classList.remove('shake'), 300);
+    }
+    
+    // Reset layers after animation
+    setTimeout(() => {
+      resetLayers();
+    }, 300);
+  }
+  
+  function completeHold() {
+    if (isCompleted) return;
+    
+    isHolding = false;
+    isCompleted = true;
+    
+    if (animationFrame) {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    }
+    
+    // Final ripple burst
+    if (primary) {
+      primary.style.transition = 'transform 0.45s cubic-bezier(0.19,1,0.28,1.08), opacity 0.35s ease';
+      primary.style.transform = 'scale(1.04)';
+      primary.style.opacity = '1';
+    }
+    if (shimmer) {
+      shimmer.style.transition = 'transform 0.6s cubic-bezier(0.19,1,0.28,1.08), opacity 0.45s ease';
+      shimmer.style.transform = 'scale(1.0)';
+      shimmer.style.opacity = '0.75';
+    }
+    
+    fab.classList.remove('pressing');
+    fab.classList.add('done');
+    updateRing(100);
+    hint.textContent = 'Evacuating…';
+    
+    // Show overlay icon instantly
+    overlayIcon.classList.add('visible');
+    
+    // Navigate after short delay
+    setTimeout(() => {
+      window.location.href = DEST;
+    }, 350);
+  }
+  
+  // Event listeners
+  fab.addEventListener('touchstart', startHold, { passive: false });
   fab.addEventListener('touchend', cancelHold);
   fab.addEventListener('touchcancel', cancelHold);
-  fab.addEventListener('mousedown', beginHold);
+  fab.addEventListener('mousedown', startHold);
   document.addEventListener('mouseup', cancelHold);
   fab.addEventListener('contextmenu', (e) => e.preventDefault());
-  window.addEventListener('resize', () => { if (!holding && !completed) positionRipple(); });
   
-  // Show hint animation on first load
+  // First visit hint animation
   setTimeout(() => {
     navItem.classList.add('hint-show');
-    setTimeout(() => navItem.classList.remove('hint-show'), 2800);
-  }, 800);
+    setTimeout(() => navItem.classList.remove('hint-show'), 1600);
+  }, 900);
+  
 })();
 </script>
 </body>
