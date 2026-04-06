@@ -260,6 +260,12 @@ foreach ($disasters as $d) {
                                                         <i class="fas fa-stop"></i>
                                                     </a>
                                                 <?php endif; ?>
+                                                <a href="disaster_delete.php?id=<?php echo (int)$d['id']; ?>"
+                                                class="action-btn"
+                                                style="color: #95A5A6;"
+                                                onclick="return confirm('Delete this disaster?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
