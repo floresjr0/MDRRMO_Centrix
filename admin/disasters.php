@@ -22,7 +22,7 @@ foreach ($disasters as $d) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Disasters & Events | MDRRMO San Ildefonso</title>
+    <title>Disasters| MDRRMO San Ildefonso</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
@@ -827,7 +827,7 @@ foreach ($disasters as $d) {
                     <button class="mobile-toggle" id="mobileToggle">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1>Disasters & Events</h1>
+                    <h1>Disasters</h1>
                 </div>
 
                 <div class="user-menu">

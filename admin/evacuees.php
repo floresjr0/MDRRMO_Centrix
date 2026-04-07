@@ -89,6 +89,7 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
     <meta charset="UTF-8">
     <title>Evacuees | MDRRMO San Ildefonso</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< Updated upstream
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
         * {
@@ -464,6 +465,10 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
             .user-role, .user-name + .user-role { display: none; }
         }
     </style>
+=======
+    <link rel="stylesheet" href="../asset/css/admin_evacuees.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+>>>>>>> Stashed changes
 </head>
 <body>
 <div class="app-wrapper">
@@ -819,6 +824,113 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                 <?php endif; ?>
             </div>
 
+<<<<<<< Updated upstream
+=======
+            <!-- ── Archive History ── REDESIGNED PROFESSIONAL SECTION -->
+            <div class="card archive-history-section">
+                <div class="card-header">
+                    <h3><i class="fas fa-archive"></i> Archive History</h3>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <span class="badge"><?php echo count($archiveBatches); ?> Batches</span>
+                        <?php if (!empty($archiveBatches)): ?>
+                        <a href="print_archive.php"
+                           target="_blank"
+                           class="btn-print-batch" 
+                           style="background:#1A5276;border-color:#1A5276;color:#fff">
+                            <i class="fas fa-print"></i> Print All
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <?php if (empty($archiveBatches)): ?>
+                    <div class="archive-empty-state">
+                        <i class="fas fa-box-open"></i>
+                        <p>No archives yet. Use "Archive & Reset" after a disaster to save records here.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="archive-timeline">
+                        <?php foreach ($archiveBatches as $batch): ?>
+                        <div class="archive-batch-item">
+                            <div class="archive-batch-card">
+                                <!-- Card Header with Label and Icon -->
+                                <div class="archive-card-header">
+                                    <div class="archive-label-group">
+                                        <div class="archive-icon">
+                                            <i class="fas fa-folder-open"></i>
+                                        </div>
+                                        <div class="archive-title">
+                                            <h4><?php echo htmlspecialchars($batch['archive_label']); ?></h4>
+                                            <p>
+                                                <span><i class="fas fa-calendar-alt"></i> Archived on <?php echo date('F j, Y', strtotime($batch['archived_at'])); ?></span>
+                                                <span><i class="fas fa-clock"></i> <?php echo date('g:i A', strtotime($batch['archived_at'])); ?></span>
+                                                <span><i class="fas fa-user-check"></i> by <?php echo htmlspecialchars($batch['archived_by_name'] ?? 'System'); ?></span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Stats Grid - Key Metrics -->
+                                <div class="archive-stats-grid">
+                                    <div class="archive-stat">
+                                        <div class="archive-stat-value stat-children"><?php echo number_format($batch['total_children']); ?></div>
+                                        <div class="archive-stat-label">Children</div>
+                                    </div>
+                                    <div class="archive-stat">
+                                        <div class="archive-stat-value stat-adults"><?php echo number_format($batch['total_adults']); ?></div>
+                                        <div class="archive-stat-label">Adults</div>
+                                    </div>
+                                    <div class="archive-stat">
+                                        <div class="archive-stat-value stat-seniors"><?php echo number_format($batch['total_seniors']); ?></div>
+                                        <div class="archive-stat-label">Seniors</div>
+                                    </div>
+                                    <div class="archive-stat">
+                                        <div class="archive-stat-value stat-pwds"><?php echo number_format($batch['total_pwds']); ?></div>
+                                        <div class="archive-stat-label">PWDs</div>
+                                    </div>
+                                    <div class="archive-stat">
+                                        <div class="archive-stat-value stat-families"><?php echo number_format($batch['total_families']); ?></div>
+                                        <div class="archive-stat-label">Families</div>
+                                    </div>
+                                </div>
+
+                                <!-- Demographics Chips + Total Evacuees Summary -->
+                                <div class="archive-demographics">
+                                    <div class="demographics-chips">
+                                        <span class="archive-chip archive-chip-child"><i class="fas fa-child"></i> <?php echo number_format($batch['total_children']); ?> Children</span>
+                                        <span class="archive-chip archive-chip-adult"><i class="fas fa-user"></i> <?php echo number_format($batch['total_adults']); ?> Adults</span>
+                                        <span class="archive-chip archive-chip-senior"><i class="fas fa-user-clock"></i> <?php echo number_format($batch['total_seniors']); ?> Seniors</span>
+                                        <span class="archive-chip archive-chip-pwd"><i class="fas fa-wheelchair"></i> <?php echo number_format($batch['total_pwds']); ?> PWDs</span>
+                                        <span class="archive-chip archive-chip-family"><i class="fas fa-home"></i> <?php echo number_format($batch['total_families']); ?> Families</span>
+                                    </div>
+                                    <div class="archive-summary-total">
+                                        <span class="total-number"><?php echo number_format($batch['total_evacuees']); ?></span>
+                                        <span class="total-label">Total Evacuees</span>
+                                    </div>
+                                </div>
+
+                                <!-- Card Footer with Meta & Print Button -->
+                                <div class="archive-card-footer">
+                                    <div class="archive-meta">
+                                        <span><i class="fas fa-tag"></i> Batch ID: <?php echo substr(md5($batch['archive_label']), 0, 8); ?></span>
+                                        <?php if (!empty($batch['disaster_id'])): ?>
+                                        <span><i class="fas fa-exclamation-triangle"></i> Linked to Disaster ID: <?php echo (int)$batch['disaster_id']; ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <a href="print_archive.php?label=<?php echo urlencode($batch['archive_label']); ?>"
+                                       target="_blank"
+                                       class="btn-print-batch">
+                                        <i class="fas fa-print"></i> Print Batch Report
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+>>>>>>> Stashed changes
         </div><!-- /dashboard -->
     </main>
 </div>
