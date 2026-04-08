@@ -25,25 +25,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $terms      = isset($_POST['terms']);
 
     if ($fullName === '') {
-        $errors[] = 'Kailangan ang buong pangalan.';
+        $errors[] = 'Full name is required.';
     }
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Kailangan ng wastong email.';
+        $errors[] = 'A valid email is required.';
     }
     if (strlen($password) < 8) {
-        $errors[] = 'Ang password ay dapat hindi bababa sa 8 karakter.';
+        $errors[] = 'Password must be at least 8 characters.';
     }
     if ($password !== $confirm) {
-        $errors[] = 'Hindi magkatugma ang mga password.';
+        $errors[] = 'Passwords do not match.';
     }
     if (!$barangayId) {
-        $errors[] = 'Pakipili ang iyong barangay sa San Ildefonso.';
+        $errors[] = 'Please select your barangay in San Ildefonso.';
     }
     if ($houseNo === '') {
-        $errors[] = 'Kailangan ang numero ng bahay.';
+        $errors[] = 'House number is required.';
     }
     if (!$terms) {
-        $errors[] = 'Kailangan mong sumang-ayon sa mga tuntunin.';
+        $errors[] = 'You must agree to the terms.';
     }
 
     if (!$errors) {
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("SELECT id FROM barangays WHERE id = ? AND is_active = 1");
         $stmt->execute([$barangayId]);
         if (!$stmt->fetch()) {
-            $errors[] = 'Ang napiling barangay ay hindi wasto para sa San Ildefonso.';
+            $errors[] = 'The selected barangay is not valid for San Ildefonso.';
         }
     }
 
@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->execute([$email]);
         if ($stmt->fetch()) {
-            $errors[] = 'Mayroon nang account na may ganitong email.';
+            $errors[] = 'An account with this email already exists.';
         }
     }
 
@@ -85,13 +85,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } catch (Throwable $e) {
             $pdo->rollBack();
-            $errors[] = 'Hindi nagawa ang account. Pakisubukang muli.';
+            $errors[] = 'Account creation failed. Please try again.';
         }
     }
 }
 ?>
 <!DOCTYPE html>
-<html lang="tl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Sign Up - MDRRMO San Ildefonso</title>
@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div class="hero-headline" id="heroHeadline">
-      Gumawa ng<br>Account
+      Create an<br>Account
     </div>
   </div>
 
@@ -150,10 +150,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <form method="post" class="auth-form" id="signupForm">
 
-        <div class="section-divider"><span>Personal na Impormasyon</span></div>
+        <div class="section-divider"><span>Personal Information</span></div>
 
         <div class="field">
-          <label class="field-label" for="full_name">Buong Pangalan <span class="req">*</span></label>
+          <label class="field-label" for="full_name">Full Name <span class="req">*</span></label>
           <input type="text" id="full_name" name="full_name" required
                  placeholder="Juan Dela Cruz"
                  value="<?php echo htmlspecialchars($_POST['full_name'] ?? ''); ?>">
@@ -163,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <label class="field-label" for="barangay_id">Barangay <span class="req">*</span></label>
           <div class="select-wrap">
             <select id="barangay_id" name="barangay_id" required>
-              <option value="">Piliin ang Barangay</option>
+              <option value="">Select Barangay</option>
               <?php foreach ($barangays as $b): ?>
                 <option value="<?php echo (int)$b['id']; ?>"
                   <?php echo isset($_POST['barangay_id']) && (int)$_POST['barangay_id'] === (int)$b['id'] ? 'selected' : ''; ?>>
@@ -175,22 +175,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div class="field">
-          <label class="field-label" for="house_number">Numero ng Bahay <span class="req">*</span></label>
+          <label class="field-label" for="house_number">House Number <span class="req">*</span></label>
           <input type="text" id="house_number" name="house_number" required
-                 placeholder="hal. 123"
+                 placeholder="e.g. 123"
                  value="<?php echo htmlspecialchars($_POST['house_number'] ?? ''); ?>">
         </div>
 
         <div class="field">
-          <label class="field-label" for="address">Nakitang Tirahan</label>
+          <label class="field-label" for="address">Detected Address</label>
           <input type="text" id="address" name="detected_address" readonly
-                 placeholder="Kinukuha ang lokasyon...">
+                 placeholder="Getting location...">
         </div>
 
         <input type="hidden" id="lat">
         <input type="hidden" id="lng">
 
-        <div class="section-divider" style="margin-top:0.5rem;"><span>Impormasyon ng Account</span></div>
+        <div class="section-divider" style="margin-top:0.5rem;"><span>Account Information</span></div>
 
         <div class="field">
           <label class="field-label" for="email">Email <span class="req">*</span></label>
@@ -202,13 +202,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="field">
           <label class="field-label" for="password">Password <span class="req">*</span></label>
           <input type="password" id="password" name="password" required minlength="8"
-                 placeholder="Hindi bababa sa 8 karakter">
+                 placeholder="At least 8 characters">
         </div>
 
         <div class="field">
-          <label class="field-label" for="confirm_password">Kumpirmahin ang Password <span class="req">*</span></label>
+          <label class="field-label" for="confirm_password">Confirm Password <span class="req">*</span></label>
           <input type="password" id="confirm_password" name="confirm_password" required minlength="8"
-                 placeholder="Ulitin ang password">
+                 placeholder="Repeat password">
         </div>
 
         <!-- Terms checkbox -->
@@ -216,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <input type="checkbox" name="terms" id="terms" value="1"
                  <?php echo isset($_POST['terms']) ? 'checked' : ''; ?>>
           <label for="terms">
-            Kinukumpirma ko na ako ay residente ng San Ildefonso, Bulacan at sumasang-ayon sa patakaran ng MDRRMO ukol sa datos.
+            I confirm that I am a resident of San Ildefonso, Bulacan and agree to MDRRMO's data policy.
           </label>
         </div>
 
@@ -224,8 +224,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div class="card-footer">
-      <button type="submit" form="signupForm" class="btn-signup">Mag-sign Up</button>
-      <p class="login-link">May account na? <a href="../index.php">Mag-login</a></p>
+      <button type="submit" form="signupForm" class="btn-signup">Sign Up</button>
+      <p class="login-link">Already have an account? <a href="../index.php">Login</a></p>
     </div>
 
   </div><!-- /card -->
@@ -286,9 +286,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="dt-form-scroll">
 
         <div class="dt-form-header">
-          <div class="dt-welcome">Sumali sa Komunidad</div>
-          <div class="dt-form-title">Gumawa ng<br>Account</div>
-          <div class="dt-form-subtitle">Mag-rehistro bilang residente ng San Ildefonso, Bulacan<br>para manatiling handa at may kaalaman.</div>
+          <div class="dt-welcome">Join the Community</div>
+          <div class="dt-form-title">Create an<br>Account</div>
+          <div class="dt-form-subtitle">Register as a resident of San Ildefonso, Bulacan<br>to stay prepared and informed.</div>
         </div>
 
         <?php if ($errors): ?>
@@ -303,12 +303,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <form method="post" id="dtSignupForm">
 
-          <div class="dt-section-divider"><span>Personal na Impormasyon</span></div>
+          <div class="dt-section-divider"><span>Personal Information</span></div>
 
           <div class="dt-fields-grid">
 
             <div class="dt-field dt-field-full">
-              <label for="dt-full_name">Buong Pangalan *</label>
+              <label for="dt-full_name">Full Name *</label>
               <input type="text" id="dt-full_name" name="full_name" required
                      placeholder="Juan Dela Cruz"
                      value="<?php echo htmlspecialchars($_POST['full_name'] ?? ''); ?>">
@@ -318,7 +318,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <label for="dt-barangay_id">Barangay *</label>
               <div class="dt-select-wrap">
                 <select id="dt-barangay_id" name="barangay_id" required>
-                  <option value="">Piliin ang Barangay</option>
+                  <option value="">Select Barangay</option>
                   <?php foreach ($barangays as $b): ?>
                     <option value="<?php echo (int)$b['id']; ?>"
                       <?php echo isset($_POST['barangay_id']) && (int)$_POST['barangay_id'] === (int)$b['id'] ? 'selected' : ''; ?>>
@@ -330,16 +330,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="dt-field">
-              <label for="dt-house_number">Numero ng Bahay *</label>
+              <label for="dt-house_number">House Number *</label>
               <input type="text" id="dt-house_number" name="house_number" required
-                     placeholder="hal. 123"
+                     placeholder="e.g. 123"
                      value="<?php echo htmlspecialchars($_POST['house_number'] ?? ''); ?>">
             </div>
 
             <div class="dt-field dt-field-full">
-              <label for="dt-address">Nakitang Tirahan</label>
+              <label for="dt-address">Detected Address</label>
               <input type="text" id="dt-address" name="detected_address" readonly
-                     placeholder="Kinukuha ang lokasyon...">
+                     placeholder="Getting location...">
             </div>
 
           </div><!-- /.dt-fields-grid -->
@@ -347,7 +347,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <input type="hidden" id="dt-lat">
           <input type="hidden" id="dt-lng">
 
-          <div class="dt-section-divider" style="margin-top:8px;"><span>Impormasyon ng Account</span></div>
+          <div class="dt-section-divider" style="margin-top:8px;"><span>Account Information</span></div>
 
           <div class="dt-fields-grid">
 
@@ -361,13 +361,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="dt-field">
               <label for="dt-password">Password *</label>
               <input type="password" id="dt-password" name="password" required minlength="8"
-                     placeholder="Hindi bababa sa 8 karakter">
+                     placeholder="At least 8 characters">
             </div>
 
             <div class="dt-field">
-              <label for="dt-confirm_password">Kumpirmahin ang Password *</label>
+              <label for="dt-confirm_password">Confirm Password *</label>
               <input type="password" id="dt-confirm_password" name="confirm_password" required minlength="8"
-                     placeholder="Ulitin ang password">
+                     placeholder="Repeat password">
             </div>
 
           </div><!-- /.dt-fields-grid -->
@@ -377,7 +377,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="checkbox" name="terms" id="dt-terms" value="1"
                    <?php echo isset($_POST['terms']) ? 'checked' : ''; ?>>
             <label for="dt-terms">
-              Kinukumpirma ko na ako ay residente ng San Ildefonso, Bulacan at sumasang-ayon sa patakaran ng MDRRMO ukol sa datos.
+              I confirm that I am a resident of San Ildefonso, Bulacan and agree to MDRRMO's data policy.
             </label>
           </div>
 
@@ -386,8 +386,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <!-- Fixed footer -->
       <div class="dt-card-footer">
-        <button type="submit" form="dtSignupForm" class="dt-btn-signup">Gumawa ng Account</button>
-        <p class="dt-login-link">May account na? <a href="../index.php">Mag-login</a></p>
+        <button type="submit" form="dtSignupForm" class="dt-btn-signup">Create Account</button>
+        <p class="dt-login-link">Already have an account? <a href="../index.php">Login</a></p>
       </div>
 
     </div><!-- /.dt-card-right -->
@@ -488,7 +488,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   // function detectLocation() {
 
   //   if (!navigator.geolocation) {
-  //     alert("Hindi sinusuportahan ng iyong browser ang geolocation.");
+  //     alert("Geolocation is not supported by your browser.");
   //     return;
   //   }
 
@@ -525,13 +525,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   //       !province.toLowerCase().includes("bulacan")
   //     ) {
 
-  //       alert("Ang pagpaparehistro ay para lamang sa mga residente ng San Ildefonso, Bulacan.");
+  //       alert("Registration is only allowed for residents of San Ildefonso, Bulacan.");
 
   //       document.querySelector("button[type=submit]").disabled = true;
   //     }
 
   //   }, function(){
-  //     alert("Kailangan ang access sa lokasyon para sa pagpaparehistro.");
+  //     alert("Location access is required for registration.");
   //   });
   // }
 
