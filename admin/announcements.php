@@ -263,7 +263,7 @@ foreach ($announcements as $a) {
                                                 <a href="announcement_delete.php?id=<?php echo (int)$a['id']; ?>" 
                                                    class="action-btn" 
                                                    onclick="return confirm('Delete this announcement?')"
-                                                   style="color: #95A5A6;">
+                                                   style="color: #D32F2F;">
                                                     <i class="fas fa-trash"></i>
                                                 </a>
                                             </td>

@@ -262,7 +262,7 @@ foreach ($disasters as $d) {
                                                 <?php endif; ?>
                                                 <a href="disaster_delete.php?id=<?php echo (int)$d['id']; ?>"
                                                 class="action-btn"
-                                                style="color: #95A5A6;"
+                                                style="color: #D32F2F;"
                                                 onclick="return confirm('Delete this disaster?')">
                                                     <i class="fas fa-trash"></i>
                                                 </a>
@@ -271,16 +271,12 @@ foreach ($disasters as $d) {
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
-                        </div>
-                        
-                        <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
-                            <a href="index.php" class="btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Back
-                            </a>
+                        </div> 
+                        <!-- <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
                             <a href="disaster_report.php" class="btn-secondary">
                                 <i class="fas fa-file-pdf"></i> Report
                             </a>
-                        </div>
+                        </div> -->
                     <?php endif; ?>
                 </div>
             </div>

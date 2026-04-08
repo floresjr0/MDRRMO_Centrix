@@ -504,6 +504,7 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                 <?php endif; ?>
             </div>
 
+
 <div class="card">
     <!-- Updated Card Header with Print All button -->
     <div class="card-header">

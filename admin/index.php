@@ -190,7 +190,8 @@ $activeDisaster = $disasterStmt->fetch();
                     <div class="sidebar-section-title">Monitoring</div>
                     <ul class="sidebar-menu">
                         <li><a href="maps.php" class="sidebar-link"><i class="fas fa-map"></i> <span>Maps</span></a></li>
-                        <li><a href="evacuees.php" class="sidebar-link"><i class="fas fa-people-arrows"></i> <span>Evacuees</span> <span class="sidebar-badge"><?php echo number_format($summary['total_evacuees']); ?></span></a></li>
+                        <li><a href="evacuees.php" class="sidebar-link"><i class="fas fa-people-arrows"></i> <span>Evacuees</span>
+                         <span class="sidebar-badge"><?php echo number_format($summary['total_evacuees']); ?></span></a></li>
                     </ul>
                 </div>
 
