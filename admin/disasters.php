@@ -98,7 +98,7 @@ foreach ($disasters as $d) {
                     <button class="mobile-toggle" id="mobileToggle">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1>Disasters & Events</h1>
+                    <h1>Disasters</h1>
                 </div>
 
                 <div class="user-menu">

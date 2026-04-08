@@ -370,3 +370,439 @@
             .top-nav { padding: 0 16px; }
             .user-role, .user-name + .user-role { display: none; }
         }
+        I get that you want it **all in one CSS block** — here it is, clean and complete:
+
+```css
+/* ===== MODAL OVERLAY ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(44, 62, 80, 0.55);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+/* ===== MODAL BOX ===== */
+.modal-box {
+    width: 100%;
+    max-width: 460px;
+    background: #FFFFFF;
+    border-radius: 20px;
+    padding: 26px 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    animation: slideUp 0.35s ease;
+}
+
+/* ===== HEADER ===== */
+.modal-box h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #2C3E50;
+    margin-bottom: 10px;
+}
+
+.modal-box h3 i {
+    background: #FDEDEC;
+    padding: 10px;
+    border-radius: 12px;
+    color: #C0392B;
+}
+
+/* ===== TEXT ===== */
+.modal-box p {
+    font-size: 13px;
+    color: #7F8C8D;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+/* ===== WARNING BOX ===== */
+.modal-warning {
+    display: flex;
+    gap: 10px;
+    background: #FFF3E0;
+    border-left: 4px solid #E67E22;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    color: #935116;
+    margin-bottom: 18px;
+}
+
+/* ===== FORM ===== */
+.modal-box label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5D6D7E;
+    display: block;
+    margin-bottom: 6px;
+    margin-top: 12px;
+}
+
+.modal-box input,
+.modal-box select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #D5DBDB;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.modal-box input:focus,
+.modal-box select:focus {
+    border-color: #C0392B;
+    box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.1);
+    outline: none;
+}
+
+/* ===== BUTTONS ===== */
+.modal-actions {
+    margin-top: 22px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-cancel {
+    background: #ECF0F1;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #5D6D7E;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #D5DBDB;
+}
+
+.btn-archive {
+    background: linear-gradient(135deg, #C0392B, #E74C3C);
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: 0.25s;
+}
+
+.btn-archive:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(192, 57, 43, 0.3);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+/* ===== ARCHIVE MODAL (CLEAN + MATCHES YOUR THEME) ===== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(44, 62, 80, 0.55);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+/* Modal Box aligned with your card style */
+.modal-box {
+    width: 100%;
+    max-width: 480px;
+    background: #FFFFFF;
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid #EDE7E7;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    animation: modalSlide 0.25s ease;
+}
+
+/* Header */
+.modal-box h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2C3E50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.modal-box h3 i {
+    color: var(--primary-red);
+}
+
+/* Description */
+.modal-box p {
+    font-size: 13px;
+    color: #95A5A6;
+    margin-bottom: 14px;
+}
+
+/* Warning */
+.modal-warning {
+    display: flex;
+    gap: 10px;
+    background: var(--light-yellow);
+    border-left: 4px solid var(--accent-yellow);
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    color: #B26A00;
+    margin-bottom: 16px;
+}
+
+/* Form */
+.modal-box label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5D6D7E;
+    margin-top: 12px;
+    display: block;
+}
+
+.modal-box input,
+.modal-box select {
+    width: 100%;
+    margin-top: 5px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid #EDE7E7;
+    font-size: 13px;
+    background: #F8F9FA;
+    transition: 0.2s;
+}
+
+.modal-box input:focus,
+.modal-box select:focus {
+    border-color: var(--primary-red);
+    background: #FFF;
+    outline: none;
+}
+
+/* Buttons */
+.modal-actions {
+    margin-top: 18px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.btn-cancel {
+    background: #ECF0F1;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #5D6D7E;
+    cursor: pointer;
+}
+
+.btn-cancel:hover {
+    background: #D5DBDB;
+}
+
+.btn-archive {
+    background: var(--primary-red);
+    border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #FFF;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-archive:hover {
+    background: var(--dark-red);
+    box-shadow: 0 4px 10px rgba(211,47,47,0.25);
+}
+
+/* Animation */
+@keyframes modalSlide {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+/* ===== ARCHIVE HISTORY (UPGRADED DESIGN) ===== */
+
+/* Each Batch Card */
+.archive-batch {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 18px;
+    border: 1px solid #EDE7E7;
+    border-radius: 14px;
+    background: #FFFFFF;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.archive-batch:hover {
+    border-color: var(--primary-red);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.05);
+    transform: translateY(-2px);
+}
+
+/* LEFT SIDE */
+.archive-batch-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2C3E50;
+    display: flex;
+    align-items: center;
+}
+
+.archive-batch-meta {
+    font-size: 11.5px;
+    color: #95A5A6;
+    margin-top: 3px;
+}
+
+/* DEMOGRAPHICS */
+.archive-batch-demos {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Make chips tighter */
+.archive-batch-demos .chip {
+    font-size: 11px;
+    padding: 3px 9px;
+}
+
+/* RIGHT SIDE */
+.archive-total {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary-red);
+    line-height: 1;
+    text-align: right;
+}
+
+.archive-total-lbl {
+    font-size: 11px;
+    color: #95A5A6;
+    margin-top: 2px;
+    text-align: right;
+}
+
+/* PRINT BUTTON (INDIVIDUAL) */
+.archive-batch a {
+    transition: all 0.2s ease;
+}
+
+.archive-batch a:hover {
+    background: #D6EAF8 !important;
+    border-color: #5DADE2 !important;
+    transform: translateY(-1px);
+}
+
+/* HEADER IMPROVEMENT */
+.card-header {
+    border-bottom: 1px solid #F0F0F0;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+}
+
+/* PRINT ALL BUTTON */
+.card-header a {
+    transition: all 0.2s ease;
+}
+
+.card-header a:hover {
+    background: #154360 !important;
+}
+
+/* EMPTY STATE IMPROVEMENT */
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: #95A5A6;
+}
+
+.empty-state i {
+    font-size: 42px;
+    margin-bottom: 10px;
+    opacity: 0.3;
+}
+
+/* SUBTLE DIVIDER BETWEEN ITEMS */
+.archive-batch:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 20px;
+    right: 20px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #F0EDED, transparent);
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+    .archive-batch {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .archive-total,
+    .archive-total-lbl {
+        text-align: left;
+    }
+}

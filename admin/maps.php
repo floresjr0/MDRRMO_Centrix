@@ -240,35 +240,6 @@ foreach ($st as $s) {
                         </div>
                     </div>
 
-                    <!-- Quick Overview — exact copy of index.php Quick Overview -->
-                    <div class="card" style="overflow:hidden">
-                        <div class="card-header">
-                            <h3><i class="fas fa-chart-pie"></i> Quick Overview</h3>
-                        </div>
-                        <div class="quick-grid">
-                            <div class="quick-box">
-                                <div class="qb-val" style="color:var(--map-green)"><?php echo $summary['status_available']; ?></div>
-                                <div class="qb-lbl">Available</div>
-                            </div>
-                            <div class="quick-box">
-                                <div class="qb-val" style="color:var(--map-yellow)"><?php echo $summary['status_near']; ?></div>
-                                <div class="qb-lbl">Near Capacity</div>
-                            </div>
-                            <div class="quick-box">
-                                <div class="qb-val" style="color:var(--map-red)"><?php echo $summary['status_full']; ?></div>
-                                <div class="qb-lbl">Full</div>
-                            </div>
-                            <div class="quick-box">
-                                <div class="qb-val" style="color:var(--map-blue)"><?php echo $summary['status_temp']; ?></div>
-                                <div class="qb-lbl">Temp Shelters</div>
-                            </div>
-                            <div class="quick-box span2">
-                                <div class="qb-val" style="color:#95A5A6"><?php echo $summary['status_closed']; ?></div>
-                                <div class="qb-lbl">Closed Centers</div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </div><!-- /grid-2 -->
 

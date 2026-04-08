@@ -118,10 +118,7 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
     <meta charset="UTF-8">
     <title>Evacuees | MDRRMO San Ildefonso</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<<<<<<< Updated upstream
      <link rel="stylesheet" href="../asset/css/admin_evacuees.css" />
-=======
->>>>>>> Stashed changes
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
 
@@ -507,8 +504,6 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                 <?php endif; ?>
             </div>
 
-<<<<<<< Updated upstream
-           <!-- ── Archive History ── -->
 <div class="card">
     <!-- Updated Card Header with Print All button -->
     <div class="card-header">
@@ -574,9 +569,6 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
         <?php endforeach; ?>
     <?php endif; ?>
 </div>
-
-=======
->>>>>>> Stashed changes
         </div><!-- /dashboard -->
     </main>
 </div>
