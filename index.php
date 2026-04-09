@@ -75,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link rel="stylesheet" href="./asset/css/userlogin.css">
 <style>
 
+
 </style>
 </head>
 <body>
@@ -203,45 +204,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <!-- CENTERED CARD -->
   <div class="dt-card">
 
-    <!-- LEFT: Branding -->
+    <!-- LEFT: Branding — pills removed, logo/name/hashtag enlarged and centered -->
     <div class="dt-card-left">
 
-      <!-- Seal — no orbit animation on desktop -->
+      <!-- Seal — enlarged to 180px -->
       <div class="dt-seal-wrap">
         <img src="./img/mdrrmo.png" alt="MDRRMO Seal"
              onerror="this.style.display='none'">
       </div>
 
+      <!-- Agency name — enlarged to 64px -->
       <div class="dt-agency">MDRRMO</div>
+
+      <!-- Hashtag tagline -->
       <div class="dt-tagline">BidaAngLagingHanda</div>
 
-      <div class="dt-info-pills">
-        <div class="dt-pill">
-          <div class="dt-pill-icon">🛡️</div>
-          <div class="dt-pill-text">
-            <strong>Disaster Risk Reduction</strong>
-            <span>Proactive community preparedness & mitigation</span>
-          </div>
-        </div>
-        <div class="dt-pill">
-          <div class="dt-pill-icon">🚨</div>
-          <div class="dt-pill-text">
-            <strong>Emergency Response</strong>
-            <span>Rapid coordination during crisis events</span>
-          </div>
-        </div>
-        <div class="dt-pill">
-          <div class="dt-pill-icon">📍</div>
-          <div class="dt-pill-text">
-            <strong>San Ildefonso, Bulacan</strong>
-            <span>Serving all barangays of the municipality</span>
-          </div>
-        </div>
-      </div>
-
+      <!-- Bottom badge -->
       <div class="dt-bottom-badge">Municipal Government of San Ildefonso</div>
 
-    </div>
+    </div><!-- /.dt-card-left -->
 
     <!-- RIGHT: Login Form -->
     <div class="dt-card-right">

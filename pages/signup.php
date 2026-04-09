@@ -241,41 +241,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <!-- CENTERED CARD -->
   <div class="dt-card">
 
-    <!-- LEFT: Branding -->
+    <!-- LEFT: Branding (pills removed; logo, name & hashtag enlarged and centered) -->
     <div class="dt-card-left">
 
+      <!-- Seal — enlarged -->
       <div class="dt-seal-wrap">
         <img src="../img/mdrrmo.png" alt="MDRRMO Seal"
              onerror="this.style.display='none'">
       </div>
 
+      <!-- Agency name — larger -->
       <div class="dt-agency">MDRRMO</div>
+
+      <!-- Tagline / hashtag — slightly larger -->
       <div class="dt-tagline">#BidaAngLagingHanda</div>
 
-      <div class="dt-info-pills">
-        <div class="dt-pill">
-          <div class="dt-pill-icon">🛡️</div>
-          <div class="dt-pill-text">
-            <strong>Disaster Risk Reduction</strong>
-            <span>Proactive community preparedness & mitigation</span>
-          </div>
-        </div>
-        <div class="dt-pill">
-          <div class="dt-pill-icon">🚨</div>
-          <div class="dt-pill-text">
-            <strong>Emergency Response</strong>
-            <span>Rapid coordination during crisis events</span>
-          </div>
-        </div>
-        <div class="dt-pill">
-          <div class="dt-pill-icon">📍</div>
-          <div class="dt-pill-text">
-            <strong>San Ildefonso, Bulacan</strong>
-            <span>Serving all barangays of the municipality</span>
-          </div>
-        </div>
-      </div>
-
+      <!-- Bottom credit badge -->
       <div class="dt-bottom-badge">Municipal Government of San Ildefonso</div>
 
     </div><!-- /.dt-card-left -->
