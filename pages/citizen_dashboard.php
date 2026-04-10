@@ -54,11 +54,11 @@ if ($response !== false) {
         // ── Antas ng panganib ──
         $level = 'low';
 
-        if ($heatIndex >= 41) {
+        if ($heatIndex >= 42) {
             $level = 'extreme';
-        } elseif ($heatIndex >= 38) {
+        } elseif ($heatIndex >= 40) {
             $level = 'high';
-        } elseif ($heatIndex >= 32) {
+        } elseif ($heatIndex >= 38) {
             $level = 'medium';
         }
 
@@ -331,6 +331,9 @@ if ($isNightTime) {
 
 $wx_ptcls = $wx_particles[$wx_cat] ?? $wx_particles['sunny'];
 
+require_once __DIR__ . '/notify.php';
+maybeSendDisasterNotification($pdo);
+
 // ── Ready Bag modal data — JSON-safe para sa JS ──
 $readyBagTitle   = $advice ? htmlspecialchars($advice['title']   ?? 'Ready Bag',   ENT_QUOTES) : 'Ready Bag';
 $readyBagMessage = $advice ? htmlspecialchars($advice['message'] ?? '',             ENT_QUOTES) : '';
@@ -352,6 +355,9 @@ $disasterModalJson = json_encode($activeDisaster ? [
 // ── Disaster alert level para sa JS notifications ──
 $disasterLevel = $activeDisaster ? (int)$activeDisaster['level'] : 0;
 $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT_QUOTES) : '';
+
+// ── Detect if running inside median.co WebView ──
+$isMedianCo = isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_AGENT'], 'MedianWebView') !== false;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -363,9 +369,70 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
+<?php if (!$isMedianCo): ?>
+<!-- Only load OneSignal web SDK when NOT in median.co -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<?php endif; ?>
+<script>
+<?php if ($isMedianCo): ?>
+  // median.co native push bridge
+  window.MedialPush = window.MedialPush || {};
+  window.MedialPush.onesignalAppId = "8704d450-f3b9-4bc8-a1a9-a376abd93131";
+  
+  // Auto‑register for push when device is ready
+  function registerForPush() {
+    if (window.MedialPush && window.MedialPush.registerForPushNotifications) {
+      window.MedialPush.registerForPushNotifications();
+      console.log("[median.co] Push registration requested");
+    } else {
+      console.warn("[median.co] MedialPush bridge not ready yet");
+    }
+  }
+  
+  // Wait for Cordova/median.co device ready event
+  document.addEventListener('deviceready', function() {
+    console.log("[median.co] Device ready – registering for push");
+    registerForPush();
+  }, false);
+  
+  // Fallback: if deviceready already fired, try after a short delay
+  setTimeout(function() {
+    if (window.MedialPush && window.MedialPush.registerForPushNotifications) {
+      registerForPush();
+    }
+  }, 1000);
+<?php else: ?>
+  // Web (browser) OneSignal initialization
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "8704d450-f3b9-4bc8-a1a9-a376abd93131",
+      serviceWorkerPath: "/OneSignalSDK.sw.js",
+      promptOptions: {
+        slidedown: {
+          prompts: [{
+            type: "push",
+            autoPrompt: true,
+            text: {
+              actionMessage: "Nais mong makatanggap ng alerto sa sakuna at matinding init mula sa MDRRMO San Ildefonso?",
+              acceptButton: "Oo, payagan",
+              cancelButton: "Hindi muna",
+            },
+            delay: { timeDelay: 5, pageViews: 1 },
+          }],
+        },
+      },
+    });
 
-</style>
+    // Tag the user with their barangay for targeted alerts later
+    const barangay = <?php echo json_encode($user['barangay_name'] ?? ''); ?>;
+    const userId   = <?php echo json_encode((string)($user['id'] ?? '')); ?>;
+    if (barangay) await OneSignal.User.addTag("barangay", barangay);
+    if (userId)   await OneSignal.User.addTag("user_id", userId);
+    await OneSignal.User.addTag("disaster_level", "<?php echo $disasterLevel; ?>");
+  });
+<?php endif; ?>
+</script>
 </head>
 <body>
 
