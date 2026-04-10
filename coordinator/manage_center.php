@@ -104,12 +104,16 @@ $barColor = $pct >= 100 ? '#dc2626' : ($pct >= 75 ? '#d97706' : '#16a34a');
 <head>
     <meta charset="UTF-8">
     <title>Manage Center – <?php echo htmlspecialchars($center['name']); ?></title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <link rel="stylesheet" href="../asset/css/manage_center.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="stylesheet" href="../asset/css/manage_center.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
+<style>
+   
+
+</style>
 <body>
 
 <!-- Overlay for drawer -->
@@ -362,7 +366,7 @@ $barColor = $pct >= 100 ? '#dc2626' : ($pct >= 75 ? '#d97706' : '#16a34a');
                 </form>
             </section>
 
-            <!-- REGISTRATIONS TABLE -->
+            <!-- REGISTRATIONS TABLE + MOBILE CARDS -->
             <section class="card">
                 <div class="card-header">
                     <div class="card-header-icon">
@@ -380,6 +384,8 @@ $barColor = $pct >= 100 ? '#dc2626' : ($pct >= 75 ? '#d97706' : '#16a34a');
                         No families have been registered yet.
                     </div>
                 <?php else: ?>
+
+                    <!-- ── DESKTOP TABLE ── -->
                     <div class="table-wrap">
                         <table class="table">
                             <thead>
@@ -427,6 +433,54 @@ $barColor = $pct >= 100 ? '#dc2626' : ($pct >= 75 ? '#d97706' : '#16a34a');
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- ── MOBILE CARDS ── -->
+                    <div class="reg-cards">
+                        <?php foreach ($registrations as $r): ?>
+                        <div class="reg-card">
+
+                            <!-- Card header: name + total -->
+                            <div class="reg-card-head">
+                                <div>
+                                    <div class="reg-card-name"><?php echo htmlspecialchars($r['family_head_name']); ?></div>
+                                    <div class="reg-card-barangay"><?php echo htmlspecialchars($r['barangay_name']); ?></div>
+                                </div>
+                                <div class="reg-card-total">
+                                    <div class="reg-card-total-num"><?php echo (int)$r['total_members']; ?></div>
+                                    <div class="reg-card-total-label">Total</div>
+                                </div>
+                            </div>
+
+                            <!-- Member type rows with steppers -->
+                            <div class="reg-card-members">
+                                <?php foreach (['adults' => 'Adults', 'children' => 'Children', 'seniors' => 'Seniors', 'pwds' => 'PWDs'] as $field => $label): ?>
+                                <div class="member-row">
+                                    <span class="member-row-label"><?php echo $label; ?></span>
+                                    <div class="member-row-controls">
+                                        <form method="post" class="inline-adjust">
+                                            <input type="hidden" name="action"  value="adjust">
+                                            <input type="hidden" name="reg_id" value="<?php echo (int)$r['id']; ?>">
+                                            <input type="hidden" name="field"  value="<?php echo $field; ?>">
+                                            <input type="hidden" name="delta"  value="-1">
+                                            <button type="submit">−</button>
+                                        </form>
+                                        <span class="adjust-val"><?php echo (int)$r[$field]; ?></span>
+                                        <form method="post" class="inline-adjust">
+                                            <input type="hidden" name="action"  value="adjust">
+                                            <input type="hidden" name="reg_id" value="<?php echo (int)$r['id']; ?>">
+                                            <input type="hidden" name="field"  value="<?php echo $field; ?>">
+                                            <input type="hidden" name="delta"  value="1">
+                                            <button type="submit">+</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+
                 <?php endif; ?>
             </section>
 

@@ -18,15 +18,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // $lng      = $_POST['lng'] ?? null;
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Kailangan ng wastong email.';
+        $errors[] = 'A valid email is required.';
     }
 
     if ($password === '') {
-        $errors[] = 'Kailangan ng password.';
+        $errors[] = 'Password is required.';
     }
 
     // if (!$lat || !$lng) {
-    //     $errors[] = 'Kailangan ang access sa lokasyon para mag-login.';
+    //     $errors[] = 'Location access is required to login.';
     // }
 
     if (!$errors) {
@@ -40,19 +40,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!$user || !password_verify($password, $user['password_hash'])) {
 
-            $errors[] = 'Mali ang email o password.';
+            $errors[] = 'Incorrect email or password.';
 
         } elseif ((int)$user['is_active'] !== 1) {
 
-            $errors[] = 'Ang account ay hindi aktibo.';
+            $errors[] = 'This account is inactive.';
 
         } elseif ((int)$user['is_email_verified'] !== 1) {
 
-            $errors[] = 'Paki-verify muna ang iyong email bago mag-login.';
+            $errors[] = 'Please verify your email before logging in.';
 
         } elseif ($user['municipality'] !== 'San Ildefonso' || $user['province'] !== 'Bulacan') {
 
-            $errors[] = 'Para lamang sa mga residente ng San Ildefonso, Bulacan ang access na ito.';
+            $errors[] = 'This access is only for residents of San Ildefonso, Bulacan.';
 
         } else {
 
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="tl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Login - MDRRMO San Ildefonso</title>
@@ -74,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./asset/css/userlogin.css">
 <style>
+
 
 </style>
 </head>
@@ -114,8 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div class="splash-title">MDRRMO</div>
-    <div class="splash-hashtag">#BidaAngLagingHanda</div>
-    <div class="tap-hint">Pindutin kahit saan para magpatuloy</div>
+    <div class="splash-hashtag">BidaAngLagingHanda</div>
+    <div class="tap-hint">Tap anywhere to continue</div>
   </div>
 
 </div>
@@ -144,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
 
       <div class="hero-headline" id="heroHeadline">
-        Mag-login sa<br>iyong account
+        Login to<br>your account
       </div>
     </div>
 
@@ -165,28 +166,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="field">
           <label class="field-label" for="email">Email / Username</label>
           <input type="email" id="email" name="email"
-                 placeholder="Ilagay ang iyong email" required
+                 placeholder="Enter your email" required
                  value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
         </div>
 
         <div class="field">
           <label class="field-label" for="password">Password</label>
           <input type="password" id="password" name="password"
-                 placeholder="Ilagay ang iyong password" required>
+                 placeholder="Enter your password" required>
         </div>
 
         <div class="forgot-row">
-          <a href="#">Nakalimutan ang Password?</a>
+          <a href="#">Forgot Password?</a>
         </div>
 
         <input type="hidden" name="lat" id="lat">
         <input type="hidden" name="lng" id="lng">
 
-        <button type="submit" class="btn-signin">Mag-login</button>
+        <button type="submit" class="btn-signin">Login</button>
 
       </form>
 
-      <p class="signup-row">Wala pang account? <a href="pages/signup.php">Mag-sign up</a></p>
+      <p class="signup-row">Don't have an account? <a href="pages/signup.php">Sign up</a></p>
 
     </div>
 
@@ -203,53 +204,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <!-- CENTERED CARD -->
   <div class="dt-card">
 
-    <!-- LEFT: Branding -->
+    <!-- LEFT: Branding — pills removed, logo/name/hashtag enlarged and centered -->
     <div class="dt-card-left">
 
-      <!-- Seal — no orbit animation on desktop -->
+      <!-- Seal — enlarged to 180px -->
       <div class="dt-seal-wrap">
         <img src="./img/mdrrmo.png" alt="MDRRMO Seal"
              onerror="this.style.display='none'">
       </div>
 
+      <!-- Agency name — enlarged to 64px -->
       <div class="dt-agency">MDRRMO</div>
-      <div class="dt-tagline">#BidaAngLagingHanda</div>
 
-      <div class="dt-info-pills">
-        <div class="dt-pill">
-          <div class="dt-pill-icon">🛡️</div>
-          <div class="dt-pill-text">
-            <strong>Disaster Risk Reduction</strong>
-            <span>Proactive community preparedness & mitigation</span>
-          </div>
-        </div>
-        <div class="dt-pill">
-          <div class="dt-pill-icon">🚨</div>
-          <div class="dt-pill-text">
-            <strong>Emergency Response</strong>
-            <span>Rapid coordination during crisis events</span>
-          </div>
-        </div>
-        <div class="dt-pill">
-          <div class="dt-pill-icon">📍</div>
-          <div class="dt-pill-text">
-            <strong>San Ildefonso, Bulacan</strong>
-            <span>Serving all barangays of the municipality</span>
-          </div>
-        </div>
-      </div>
+      <!-- Hashtag tagline -->
+      <div class="dt-tagline">BidaAngLagingHanda</div>
 
+      <!-- Bottom badge -->
       <div class="dt-bottom-badge">Municipal Government of San Ildefonso</div>
 
-    </div>
+    </div><!-- /.dt-card-left -->
 
     <!-- RIGHT: Login Form -->
     <div class="dt-card-right">
 
       <div class="dt-form-header">
-        <div class="dt-welcome">Maligayang Pagbabalik</div>
-        <div class="dt-form-title">Mag-login sa<br>Iyong Account</div>
-        <div class="dt-form-subtitle">Manatiling handa at may kaalaman.<br>I-access ang iyong MDRRMO account.</div>
+        <div class="dt-welcome">Welcome Back</div>
+        <div class="dt-form-title">Login to<br>Your Account</div>
+        <div class="dt-form-subtitle">Stay prepared and informed.<br>Access your MDRRMO account.</div>
       </div>
 
       <?php if ($errors): ?>
@@ -274,23 +255,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="dt-field">
           <label for="dt-password">Password</label>
           <input type="password" id="dt-password" name="password"
-                 placeholder="Ilagay ang iyong password" required>
+                 placeholder="Enter your password" required>
         </div>
 
         <div class="dt-forgot">
-          <a href="#">Nakalimutan ang Password?</a>
+          <a href="#">Forgot Password?</a>
         </div>
 
         <input type="hidden" name="lat">
         <input type="hidden" name="lng">
 
-        <button type="submit" class="dt-btn-signin">Mag-login</button>
+        <button type="submit" class="dt-btn-signin">Login</button>
 
       </form>
 
-      <div class="dt-divider"><span>Bago pa lang?</span></div>
+      <div class="dt-divider"><span>New here?</span></div>
 
-      <p class="dt-signup-row">Wala pang account? <a href="pages/signup.php">Mag-sign up</a></p>
+      <p class="dt-signup-row">Don't have an account? <a href="pages/signup.php">Sign up</a></p>
 
     </div><!-- /.dt-card-right -->
 

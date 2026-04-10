@@ -1,4 +1,4 @@
-
+	
 /* =============================================
    DESKTOP LAYOUT — only activates at 900px+
    Mobile styles remain untouched below
@@ -99,7 +99,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: center;       /* vertically centered since pills are gone */
   padding: 52px 40px;
   position: relative;
   overflow: hidden;
@@ -117,103 +117,55 @@
   pointer-events: none;
 }
 
-/* Seal image — no orbit, just the logo */
+/* ---- Seal — enlarged from 120px → 180px ---- */
 .dt-seal-wrap {
   position: relative;
   z-index: 1;
-  width: 120px;
-  height: 120px;
-  margin-bottom: 22px;
+  width: 180px;
+  height: 180px;
+  margin-bottom: 28px;
 }
 
 .dt-seal-wrap img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 6px 28px rgba(0,0,0,0.55));
+  filter: drop-shadow(0 8px 36px rgba(0,0,0,0.6));
   border-radius: 50%;
 }
 
-/* Agency name */
+/* ---- Agency name — enlarged from 48px → 64px ---- */
 .dt-agency {
   position: relative;
   z-index: 1;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 48px;
-  letter-spacing: 7px;
+  font-size: 64px;
+  letter-spacing: 9px;
   color: #fff;
   line-height: 1;
-  margin-bottom: 6px;
-  text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+  margin-bottom: 10px;
+  text-shadow: 0 2px 24px rgba(0,0,0,0.5);
 }
 
+/* ---- Tagline — slightly enlarged ---- */
 .dt-tagline {
   position: relative;
   z-index: 1;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 3px;
+  letter-spacing: 3.5px;
   color: rgba(255,255,255,0.5);
   text-transform: uppercase;
-  margin-bottom: 36px;
+  margin-bottom: 0; /* no more gap needed — pills removed */
 }
 
-/* Info pills */
-.dt-info-pills {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-}
-
-.dt-pill {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(0,0,0,0.25);
-  border: 1px solid rgba(255,255,255,0.09);
-  border-radius: 12px;
-  padding: 12px 16px;
-  text-align: left;
-  transition: background 0.2s;
-}
-
-.dt-pill:hover {
-  background: rgba(0,0,0,0.38);
-}
-
-.dt-pill-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: rgba(192,57,30,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 16px;
-}
-
-.dt-pill-text strong {
-  display: block;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.dt-pill-text span {
-  font-size: 11px;
-  color: rgba(255,255,255,0.5);
-  font-weight: 400;
-}
+/* ---- Info pills REMOVED — .dt-info-pills & .dt-pill kept for reference but unused ---- */
 
 /* Bottom badge */
 .dt-bottom-badge {
   position: relative;
   z-index: 1;
-  margin-top: 32px;
+  margin-top: 40px;
   font-size: 10px;
   color: rgba(255,255,255,0.25);
   letter-spacing: 1.5px;

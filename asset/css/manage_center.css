@@ -1,4 +1,4 @@
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       /* Brand — matches coordinator dashboard */
@@ -312,6 +312,7 @@
       border-top: 1px solid var(--border);
       box-shadow: 0 -2px 16px rgba(0,0,0,0.07);
       z-index: 50;
+      /* Safe area for notch phones */
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
@@ -744,7 +745,7 @@
     }
 
     /* ════════════════════════════════════════════
-       TABLE
+       TABLE — desktop
     ════════════════════════════════════════════ */
     .table-wrap {
       overflow-x: auto;
@@ -832,6 +833,108 @@
       font-family: var(--font-mono);
     }
 
+    /* ════════════════════════════════════════════
+       MOBILE REGISTRATION CARDS
+       Replaces the table on small screens
+    ════════════════════════════════════════════ */
+    .reg-cards { display: none; }
+
+    .reg-card {
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1rem 1.1rem;
+    }
+
+    .reg-card:last-child { border-bottom: none; }
+
+    .reg-card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .reg-card-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.25;
+    }
+
+    .reg-card-barangay {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+      font-weight: 500;
+    }
+
+    .reg-card-total {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+
+    .reg-card-total-num {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--orange);
+      font-family: var(--font-mono);
+      line-height: 1;
+    }
+
+    .reg-card-total-label {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* Member rows inside card */
+    .reg-card-members {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem 0.75rem;
+    }
+
+    .member-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.45rem 0.6rem;
+    }
+
+    .member-row-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .member-row-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    /* Bigger tap targets for mobile stepper buttons */
+    .member-row .inline-adjust button {
+      width: 28px;
+      height: 28px;
+      font-size: 1rem;
+      touch-action: manipulation;
+    }
+
+    .member-row .adjust-val {
+      min-width: 24px;
+      font-size: 0.9rem;
+    }
+
     /* No data */
     .no-data {
       padding: 2.5rem 1.4rem;
@@ -872,19 +975,45 @@
       .main { padding-bottom: var(--bottom-nav-h); }
 
       .topbar { padding: 0 1rem; height: 58px; }
+      .topbar-title { font-size: 0.84rem; }
+
       .dashboard { padding: 1.25rem 1rem 2rem; gap: 1.25rem; }
-      .page-heading { font-size: 1.35rem; }
+      .page-heading { font-size: 1.3rem; }
+
       .card-body { padding: 1rem; }
+      .card-header { padding: 0.85rem 1rem; }
+      .card-header h2 { font-size: 0.78rem; }
+
       .form-body { padding: 1rem; }
+
+      /* Switch table → cards on mobile */
+      .table-wrap { display: none; }
+      .reg-cards  { display: block; }
     }
 
     @media (max-width: 480px) {
       .grid-2 { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
-      .btn-submit { width: 100%; justify-content: center; }
+
+      /* Full-width submit button on small phones */
+      .btn-submit { width: 100%; justify-content: center; padding: 0.7rem 1rem; font-size: 0.85rem; }
+
+      /* Taller inputs for easier tapping */
+      .form-label input[type="text"],
+      .form-label input[type="number"],
+      .form-label select {
+        padding: 0.7rem 0.85rem;
+        font-size: 1rem;
+      }
+
+      .reg-card-members { grid-template-columns: 1fr 1fr; }
+
+      .occ-bar-label { font-size: 0.68rem; }
+      .occ-bar-label span:last-child { text-align: right; }
     }
 
     @media (max-width: 360px) {
       .grid-2 { grid-template-columns: 1fr; }
+      .reg-card-members { grid-template-columns: 1fr; }
     }
 
     /* ── SCROLLBAR ── */
