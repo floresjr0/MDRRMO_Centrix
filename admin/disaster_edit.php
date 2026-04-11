@@ -42,23 +42,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        if ($id && $disaster) {
-            $stmt = $pdo->prepare("UPDATE disasters
-                                   SET type = ?, level = ?, status = ?, title = ?,
-                                       description = ?, started_at = ?, ended_at = ?
-                                   WHERE id = ?");
-            $stmt->execute([$type, $level, $status, $title, $desc ?: null, $start ?: null, $end ?: null, $id]);
-        } else {
-            $stmt = $pdo->prepare("INSERT INTO disasters
-                                   (type, level, status, title, description, started_at, ended_at)
-                                   VALUES (?,?,?,?,?,?,?)");
-            $stmt->execute([$type, $level, $status, $title, $desc ?: null, $start ?: null, $end ?: null]);
-            $id = (int)$pdo->lastInsertId();
-        }
-
-        header('Location: disasters.php');
-        exit;
+    if ($id && $disaster) {
+        $stmt = $pdo->prepare("UPDATE disasters
+                               SET type = ?, level = ?, status = ?, title = ?,
+                                   description = ?, started_at = ?, ended_at = ?
+                               WHERE id = ?");
+        $stmt->execute([$type, $level, $status, $title, $desc ?: null, $start ?: null, $end ?: null, $id]);
+        $savedId = $id;
+    } else {
+        $stmt = $pdo->prepare("INSERT INTO disasters
+                               (type, level, status, title, description, started_at, ended_at)
+                               VALUES (?,?,?,?,?,?,?)");
+        $stmt->execute([$type, $level, $status, $title, $desc ?: null, $start ?: null, $end ?: null]);
+        $savedId = (int)$pdo->lastInsertId();
     }
+
+    // ── Push notification — only if status is ongoing ──
+    if ($status === 'ongoing') {
+        require_once __DIR__ . '/../pages/notify.php';
+
+        $types  = ['typhoon'=>'Bagyo','flood'=>'Baha','earthquake'=>'Lindol',
+                   'heat'=>'Init','landslide'=>'Landslide','fire'=>'Sunog','other'=>'Iba pa'];
+        $levels = [1=>'Mababa',2=>'Katamtaman',3=>'Mataas',4=>'Sukdulan',5=>'Kritikal'];
+
+        $tl = $types[$type] ?? ucfirst($type);
+        $ll = $levels[$level] ?? 'Signal #'.$level;
+
+        $notifTitle = "⚠️ MDRRMO Alert: {$tl} Signal #{$level}";
+        $notifBody  = "{$ll} na antas ng panganib. " . mb_substr($desc ?: 'Manatiling alerto at sundin ang mga tagubilin.', 0, 100);
+
+        // Clear the lock for this disaster so it always fires when admin explicitly saves
+        $lockFile = sys_get_temp_dir() . '/mdrrmo_notif_lock.json';
+        $lock = file_exists($lockFile)
+            ? (json_decode(file_get_contents($lockFile), true) ?? [])
+            : [];
+        unset($lock['disaster_' . $savedId]); // force resend
+        file_put_contents($lockFile, json_encode($lock));
+
+        sendOneSignalNotification($notifTitle, $notifBody, [
+            'type'          => 'disaster',
+            'level'         => $level,
+            'disaster_type' => $type,
+            'disaster_id'   => $savedId,
+        ]);
+    }
+
+    // ── "All clear" notification when resolved ──
+    if ($status === 'resolved') {
+        require_once __DIR__ . '/../pages/notify.php';
+        sendOneSignalNotification(
+            "✅ MDRRMO: Tapos na ang alerto",
+            "Ang {$title} ay natapos na. Manatiling maingat.",
+            ['type' => 'resolved', 'disaster_id' => $savedId]
+        );
+    }
+
+    header('Location: disasters.php');
+    exit;
+}
 }
 
 ?>
