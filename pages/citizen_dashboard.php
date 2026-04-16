@@ -691,9 +691,9 @@ $isMedianCo = isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_A
     <a href="citizen_dashboard.php" class="nav-item active">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span>
     </a>
-    <a href="#current-alerts" class="nav-item">
-      <!-- <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span>Alerto</span> -->
-    </a>
+    <!-- <a href="#current-alerts" class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span>Alerto</span>
+    </a> -->
     <div class="nav-item nav-center" id="evacNavItem">
       <div class="nav-center-circle" id="evacFab">
         <div class="evac-fab-ring" id="evacRing"></div>
@@ -702,9 +702,9 @@ $isMedianCo = isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_A
       <div class="evac-hint" id="evacHint">Hold to Evacuate</div>
       <span>Evacuate</span>
     </div>
-    <a href="#announcements" class="nav-item">
-      <!-- <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg><span>Update</span> -->
-    </a>
+    <!-- <a href="#announcements" class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg><span>Update</span>
+    </a> -->
     <button class="nav-item" onclick="openSidebar()">
       <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg><span>Menu</span>
     </button>
