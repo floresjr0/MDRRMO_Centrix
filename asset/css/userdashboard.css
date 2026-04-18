@@ -16,8 +16,10 @@
   --muted:    #888888;
   --border:   #e8e8e8;
   --topbar-h: 58px;
-  --navbar-h: 68px;
+  --navbar-h: 58px;
   --font:     'Poppins', sans-serif;
+  --navmobile-h: 125px
+
 }
 
 html,
@@ -938,17 +940,18 @@ body {
 
 .bottom-nav {
   position: fixed;
-  bottom: 0;
+  bottom: -45px;
   left: 0;
   right: 0;
-  height: var(--navbar-h);
+  height: var(--navmobile-h);
   background: var(--white);
-  border-top: 1px solid var(--border);
+  border-top: 3px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-around;
   z-index: 100;
-  padding: 0 .5rem;
+  padding: 0 .1rem;
+  border-radius: 50%;
 }
 .nav-item {
   flex: 1;
@@ -963,23 +966,24 @@ body {
   background: none;
   padding: .3rem 0;
   transition: color .15s;
+  margin-bottom: 35px;
 }
 .nav-item.active { color: var(--red); }
 .nav-item svg {
-  width: 22px;
-  height: 22px;
+  width: 25px;
+  height: 25px;
   fill: currentColor;
 }
 .nav-item span {
-  font-size: .58rem;
+  font-size: .68rem;
   font-weight: 600;
   font-family: var(--font);
 }
-.nav-item.nav-center { position: relative; top: -16px; }
+.nav-item.nav-center { position: relative; top: -30px; }
 
 .nav-center-circle {
-  width: 54px;
-  height: 54px;
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--red), var(--orange));
   display: flex;
@@ -1028,9 +1032,9 @@ body {
   75%     { transform: rotate(-2deg) scale(1); }
 }
 .nav-center-circle svg {
-  width: 26px;
-  height: 26px;
-  fill: #fff;
+  width: 50%;
+  height: 50%;
+  fill: #ffffff;
   position: relative;
   z-index: 4;
   pointer-events: none;

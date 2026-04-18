@@ -388,18 +388,18 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Dashboard
     </a>
     <a href="#current-alerts" class="drawer-nav-item" onclick="closeSidebar()">
-      <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>Mga Alerto
+      <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>Alert
     </a>
     <a href="navigation.php" class="drawer-nav-item">
-      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>Paglikas
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>Evacuate
     </a>
     <a href="#announcements" class="drawer-nav-item" onclick="closeSidebar()">
-      <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>Mga Anunsyo
+      <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>Announcement
     </a>
   </nav>
   <div class="drawer-footer">
     <a href="logout.php" class="drawer-logout">
-      <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h4V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>Mag-log Out
+      <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h4V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>Logout
     </a>
   </div>
 </div>
@@ -523,7 +523,7 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
     </div>
     <?php endif; ?>
 
-    <div class="section-header"><h2>Ulat Panahon</h2></div>
+    <div class="section-header"><h2>Weather Forecast</h2></div>
     <?php if ($weather): ?>
     <div class="weather-card" style="box-shadow:0 10px 38px <?php echo $wx_colors[3]; ?>;">
       <div class="weather-banner" style="background:linear-gradient(140deg,<?php echo $wx_colors[0]; ?> 0%,<?php echo $wx_colors[1]; ?> 45%,<?php echo $wx_colors[2]; ?> 100%);">
@@ -592,13 +592,13 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
     <div class="weather-card"><div class="weather-banner" style="padding-bottom:1rem;background:linear-gradient(135deg,#F97316,#FBBF24);"><p style="font-size:.82rem;color:rgba(255,255,255,.8);text-align:center;padding:.5rem 0;">Walang available na datos ng panahon.</p></div></div>
     <?php endif; ?>
 
-    <div class="section-header"><h2>Paglikas</h2></div>
+    <div class="section-header"><h2>Evacuate</h2></div>
     <div class="evac-card">
       <p style="font-size:.80rem;color:#555;padding:.9rem 1rem .4rem;">Kapag available, hanapin ang pinakamalapit na evacuation center at mag-navigate mula sa iyong lokasyon.</p>
       <div style="padding:0 1rem 1rem;"><a href="navigation.php" class="btn-nav">Buksan ang Navigation</a></div>
     </div>
 
-    <div class="section-header" id="announcements"><h2>Mga Anunsyo</h2></div>
+    <div class="section-header" id="announcements"><h2>Announcements</h2></div>
     <?php if (!$announcements): ?>
     <div class="ann-list"><div class="ann-empty">Wala pang anunsyo.</div></div>
     <?php else: ?>
@@ -624,20 +624,20 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
     <a href="citizen_dashboard.php" class="nav-item active">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span>
     </a>
-    <a href="#current-alerts" class="nav-item">
+    <!-- <a href="#current-alerts" class="nav-item">
       <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span>Alerto</span>
-    </a>
+    </a> -->
     <div class="nav-item nav-center" id="evacNavItem">
       <div class="nav-center-circle" id="evacFab">
         <div class="evac-fab-ring" id="evacRing"></div>
         <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>
       </div>
       <div class="evac-hint" id="evacHint">Pindutin para lumikas</div>
-      <span>Lumikas</span>
+      <span>Evacuate</span>
     </div>
-    <a href="#announcements" class="nav-item">
+    <!-- <a href="#announcements" class="nav-item">
       <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg><span>Update</span>
-    </a>
+    </a> -->
     <button class="nav-item" onclick="openSidebar()">
       <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg><span>Menu</span>
     </button>
@@ -1044,7 +1044,7 @@ function escHtml(str) {
 
 // EVACUATION FAB — 1 SECOND HOLD
 (function () {
-  const HOLD_MS = 1000;
+  const HOLD_MS = 450;
   const DEST = 'navigation.php';
   const fab = document.getElementById('evacFab');
   const hint = document.getElementById('evacHint');
@@ -1070,7 +1070,7 @@ function escHtml(str) {
     while (overlayIcon.firstChild) overlayIcon.removeChild(overlayIcon.firstChild);
     overlayIcon.insertAdjacentHTML('beforeend', overlayIconSVG);
     const sp = document.createElement('span');
-    sp.textContent = 'LUMILIKAS NA';
+    sp.textContent = 'EVACUATE';
     overlayIcon.appendChild(sp);
   }
 
