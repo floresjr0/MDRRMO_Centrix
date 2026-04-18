@@ -302,13 +302,7 @@ $uSummary = $pdo->query("
                             <div class="stat-label-small">Full</div>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon-small"><i class="fas fa-thermometer-half"></i></div>
-                        <div class="stat-content">
-                            <div class="stat-value-small"><?php echo $weather['heat_index'] ?? '32'; ?>°C</div>
-                            <div class="stat-label-small">Heat Index</div>
-                        </div>
-                    </div>
+
                 </div>
 
                 <!-- Main Two Column Layout -->
