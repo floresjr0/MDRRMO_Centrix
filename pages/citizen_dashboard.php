@@ -455,13 +455,13 @@ $isMedianCo = isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_A
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Dashboard
     </a>
     <a href="#current-alerts" class="drawer-nav-item" onclick="closeSidebar()">
-      <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>Alerts
+      <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>Mga Alerto
     </a>
     <a href="navigation.php" class="drawer-nav-item">
       <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>Evacuate
     </a>
     <a href="#announcements" class="drawer-nav-item" onclick="closeSidebar()">
-      <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>Announcements
+      <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>Mga Anunsyo
     </a>
   </nav>
   <div class="drawer-footer">
@@ -699,8 +699,8 @@ $isMedianCo = isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_A
         <div class="evac-fab-ring" id="evacRing"></div>
         <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>
       </div>
-      <div class="evac-hint" id="evacHint">Hold to Evacuate</div>
-      <span>Evacuate</span>
+      <div class="evac-hint" id="evacHint">Pindutin para lumikas</div>
+      <span>Lumikas</span>
     </div>
     <!-- <a href="#announcements" class="nav-item">
       <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg><span>Update</span>
@@ -1111,7 +1111,7 @@ function escHtml(str) {
 
 // EVACUATION FAB — 1 SECOND HOLD
 (function () {
-  const HOLD_MS = 1000;
+  const HOLD_MS = 450;
   const DEST = 'navigation.php';
   const fab = document.getElementById('evacFab');
   const hint = document.getElementById('evacHint');
@@ -1137,7 +1137,7 @@ function escHtml(str) {
     while (overlayIcon.firstChild) overlayIcon.removeChild(overlayIcon.firstChild);
     overlayIcon.insertAdjacentHTML('beforeend', overlayIconSVG);
     const sp = document.createElement('span');
-    sp.textContent = 'LUMILIKAS NA';
+    sp.textContent = 'EVACUATE';
     overlayIcon.appendChild(sp);
   }
 

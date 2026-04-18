@@ -200,8 +200,7 @@
 
         .sidebar-link:hover {
             background: var(--light-red);
-            color: var(--primary-red);
-            border-left-color: var(--primary-red);
+            color: var(--primary-red)
         }
 
         .sidebar-link.active {

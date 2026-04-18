@@ -322,7 +322,7 @@ $barColor = $pct >= 100 ? '#dc2626' : ($pct >= 75 ? '#d97706' : '#16a34a');
                     <input type="hidden" name="action" value="add_family">
 
                     <label class="form-label">
-                        Head of Family Name
+                        Pangalan ng Head ng Pamilya
                         <input type="text" name="family_head_name" required
                                value="<?php echo htmlspecialchars($_POST['family_head_name'] ?? ''); ?>">
                     </label>
@@ -330,7 +330,7 @@ $barColor = $pct >= 100 ? '#dc2626' : ($pct >= 75 ? '#d97706' : '#16a34a');
                     <label class="form-label">
                         Barangay
                         <select name="barangay_id" required>
-                            <option value="">-- Select barangay --</option>
+                            <option value="">-- Pumili ng barangay --</option>
                             <?php foreach ($barangays as $b): ?>
                                 <option value="<?php echo (int)$b['id']; ?>"
                                     <?php echo (isset($_POST['barangay_id']) && (int)$_POST['barangay_id'] === (int)$b['id']) ? 'selected' : ''; ?>>
@@ -342,11 +342,11 @@ $barColor = $pct >= 100 ? '#dc2626' : ($pct >= 75 ? '#d97706' : '#16a34a');
 
                     <div class="grid-2">
                         <label class="form-label">
-                            Adults
+                            Mga Matatanda(Adults)
                             <input type="number" name="adults" min="0" value="<?php echo (int)($_POST['adults'] ?? 0); ?>">
                         </label>
                         <label class="form-label">
-                            Children
+                            Mga Bata(Children)
                             <input type="number" name="children" min="0" value="<?php echo (int)($_POST['children'] ?? 0); ?>">
                         </label>
                         <label class="form-label">

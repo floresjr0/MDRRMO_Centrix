@@ -75,7 +75,6 @@
         }
         .sidebar-link:hover, .sidebar-link.active {
             background: var(--light-red); color: var(--primary-red);
-            border-left-color: var(--primary-red);
         }
         .sidebar-link i { width: 20px; font-size: 16px; color: inherit; }
         .sidebar-badge {

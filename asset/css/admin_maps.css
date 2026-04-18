@@ -82,7 +82,7 @@
             text-decoration: none; font-size: 14px; font-weight: 500;
             transition: all 0.2s; border-left: 3px solid transparent;
         }
-        .sidebar-link:hover { background: var(--light-red); color: var(--primary-red); border-left-color: var(--primary-red); }
+        .sidebar-link:hover { background: var(--light-red); color: var(--primary-red); }
         .sidebar-link.active { background: var(--light-red); color: var(--primary-red); border-left-color: var(--primary-red); }
         .sidebar-link i { width: 20px; font-size: 16px; color: inherit; }
         .sidebar-badge {
