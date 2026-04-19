@@ -216,11 +216,21 @@ body {
     margin-bottom: 20px;
 }
 .header-logo-box {
-    width: 54px; height: 54px;
-    background: var(--red);
+    width: 54px;
+    height: 54px;
+    background: #fff; /* cleaner for logo */
     border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.header-logo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* keeps logo proportions */
 }
 .header-logo-box span { color: #fff; font-size: 22px; font-weight: 700; }
 .header-org h1  { font-size: 17px; font-weight: 700; color: var(--red); line-height: 1.2; }
@@ -288,7 +298,7 @@ body {
 /* ═══════════════════════════════════════════════
    DEMOGRAPHIC MATRIX TABLE
 ═══════════════════════════════════════════════ */
-.matrix-wrap { margin-bottom: 22px; overflow-x: auto; }
+.matrix-wrap { margin-bottom: 22px; overflow-x: hidden; }
 
 table {
     width: 100%;
@@ -422,7 +432,9 @@ td.center-col small { display: block; font-weight: 400; color: var(--muted); fon
 
     <!-- Header -->
     <div class="report-header no-break">
-        <div class="header-logo-box"><span>M</span></div>
+        <div class="header-logo-box">
+            <img src="../img/mdrrmo.png" alt="MDRRMO Logo">
+        </div>
         <div class="header-org">
             <h1>MDRRMO — Municipality of San Ildefonso</h1>
             <p>Municipal Disaster Risk Reduction and Management Office · San Ildefonso, Bulacan</p>
@@ -437,8 +449,8 @@ td.center-col small { display: block; font-weight: 400; color: var(--muted); fon
     <div class="batch-header no-break">
         <div class="batch-title"><?php echo htmlspecialchars($label); ?></div>
         <div class="batch-meta">
-            <span>📅 Archived: <?php echo date('F j, Y g:i A', strtotime($batch['archived_at'])); ?></span>
-            <span>👤 By: <?php echo htmlspecialchars($batch['archived_by_name'] ?? 'Admin'); ?></span>
+            <span>Archived: <?php echo date('F j, Y g:i A', strtotime($batch['archived_at'])); ?></span>
+            <span>By: <?php echo htmlspecialchars($batch['archived_by_name'] ?? 'Admin'); ?></span>
             <?php if ($batch['disaster_title']): ?>
             <span>⚠ Disaster: <?php echo htmlspecialchars(ucfirst($batch['disaster_type']) . ' – ' . $batch['disaster_title'] . ' (Level ' . $batch['disaster_level'] . ')'); ?></span>
             <?php endif; ?>
@@ -613,7 +625,9 @@ td.center-col small { display: block; font-weight: 400; color: var(--muted); fon
 
     <!-- Mini header (compact for sub-pages) -->
     <div class="report-header no-break" style="padding-bottom:10px;margin-bottom:14px">
-        <div class="header-logo-box" style="width:36px;height:36px"><span style="font-size:15px">M</span></div>
+        <div class="header-logo-box">
+            <img src="../img/mdrrmo.png" alt="MDRRMO Logo">
+        </div>
         <div class="header-org">
             <h1 style="font-size:13px">MDRRMO — San Ildefonso, Bulacan</h1>
             <p><?php echo htmlspecialchars($label); ?></p>
@@ -725,7 +739,9 @@ td.center-col small { display: block; font-weight: 400; color: var(--muted); fon
 <div class="print-page">
 
     <div class="report-header no-break" style="padding-bottom:10px;margin-bottom:24px">
-        <div class="header-logo-box" style="width:36px;height:36px"><span style="font-size:15px">M</span></div>
+        <div class="header-logo-box">
+            <img src="../img/mdrrmo.png" alt="MDRRMO Logo">
+        </div>
         <div class="header-org">
             <h1 style="font-size:13px">MDRRMO — San Ildefonso, Bulacan</h1>
             <p>Certification Page · <?php echo htmlspecialchars($label); ?></p>

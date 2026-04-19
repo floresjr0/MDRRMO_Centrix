@@ -200,8 +200,7 @@
 
         .sidebar-link:hover {
             background: var(--light-red);
-            color: var(--primary-red);
-            border-left-color: var(--primary-red);
+            color: var(--primary-red)
         }
 
         .sidebar-link.active {
@@ -352,7 +351,7 @@
         /* Minimized Stat Cards */
         .stats-row {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 12px;
             margin-bottom: 24px;
         }
@@ -405,186 +404,35 @@
             letter-spacing: 0.3px;
         }
 
-        /* Two Column Layout for Main Content */
         .main-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 24px;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
         }
 
-        /* Current Situation Card - Weather Style */
-        .weather-card {
+        .stats-mini-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* 2 columns */
+            gap: 10px;
+        }
+
+        .stat-mini-card {
             background: white;
-            border-radius: 24px;
-            padding: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-radius: 14px;
+            padding: 13px;
             border: 1px solid #EDE7E7;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .weather-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .weather-header h2 {
-            font-size: 24px;
-            font-weight: BOLD;
-            color: #2C3E50;
-        }
-
-        .weather-header span {
-            color: #95A5A6;
-            font-size: 14px;
-        }
-
-        .weather-main {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            padding: 20px 0;
-            
-            border-bottom: 2px solid #EDE7E7;
-        }
-
-        .weather-temp-large {
-            font-size: 72px;
-            font-weight: 700;
-            color: #2C3E50;
-            line-height: 1;
-        }
-
-        .weather-info {
-            text-align: right;
-        }
-
-        .weather-condition {
-            font-size: 20px;
-            font-weight: 600;
-            color: #2C3E50;
-            margin-bottom: 4px;
-        }
-
-        .weather-detail {
-            color: #95A5A6;
-            font-size: 14px;
-        }
-
-        .forecast-title {
-            margin-top: -10px;
-            font-size: 18px;
-            font-weight: 600;
-            color: #2C3E50;
-            margin-bottom: 8px;
-        }
-
-        .forecast-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 8px;
-            margin-bottom: 0px;
-        }
-
-        .forecast-item {
             text-align: center;
-            padding: 10px 4px;
-            position: relative;
-        }
-
-        .forecast-item:not(:last-child)::after {
-            content: '';
-            position: absolute;
-            right: -4px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 1px;
-            height: 30px;
-            background: #EDE7E7;
-        }
-
-        .forecast-time {
-            font-size: 13px;
-            font-weight: 500;
-            color: #95A5A6;
-            margin-bottom: 6px;
-        }
-
-        .forecast-temp {
-            font-size: 20px;
-            font-weight: 700;
-            color: #2C3E50;
-        }
-
-        /* Air Conditions Section - New */
-        .air-conditions {
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 2px solid #EDE7E7;
-        }
-
-        .air-conditions-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #2C3E50;
-            margin-bottom: 16px;
-        }
-
-        .air-conditions-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-        }
-
-        .air-condition-item {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .air-condition-label {
-            font-size: 13px;
-            color: #95A5A6;
-            display: flex;
             align-items: center;
-            gap: 6px;
         }
 
-        .air-condition-label i {
-            color: var(--primary-red);
-            font-size: 14px;
-        }
-
-        .air-condition-value {
-            font-size: 20px;
-            font-weight: 600;
-            color: #2C3E50;
-        }
-
-        .air-condition-unit {
+        .stat-mini-label {
             font-size: 12px;
             color: #95A5A6;
-            margin-left: 2px;
         }
 
-        .disaster-badge {
-            margin-top: 12px;
-            margin-bottom: -6px;
-            background: var(--light-red);
-            color: var(--primary-red);
-            padding: 14px 18px;
-            border-radius: 16px;
-            font-size: 14px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-left: 4px solid var(--primary-red);
+        .stat-mini-value {
+            font-size: 28px;
+            font-weight: 800;
         }
 
         /* Right Column */

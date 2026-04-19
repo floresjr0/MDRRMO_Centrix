@@ -16,7 +16,108 @@ $user = current_user();
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+/* ── Capacity bar inside center cards ─────────────────────────── */
+.cap-bar-wrap {
+  margin-top: 6px;
+}
+.cap-bar-track {
+  width: 100%;
+  height: 5px;
+  background: rgba(0,0,0,0.10);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.cap-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .4s ease;
+}
+.cap-bar-fill.fill-ok     { background: #18a850; }
+.cap-bar-fill.fill-near   { background: #b07800; }
+.cap-bar-fill.fill-full   { background: #d01030; }
 
+.cap-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 3px;
+  font-size: 10.5px;
+  color: var(--text-muted, #7a7068);
+  line-height: 1.2;
+}
+.cap-label .slots {
+  font-weight: 600;
+  font-size: 11px;
+}
+.cap-label .slots.ok   { color: #18a850; }
+.cap-label .slots.near { color: #b07800; }
+.cap-label .slots.full { color: #d01030; }
+
+/* Status badge row */
+.center-badges {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.cbadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  white-space: nowrap;
+}
+.cbadge-available   { background: #d4edda; color: #1a5e2a; }
+.cbadge-near        { background: #fff3cd; color: #7a5000; }
+.cbadge-full        { background: #fde8e8; color: #a00; }
+.cbadge-temp        { background: #d6eaf8; color: #154360; }
+
+/* Full-center dimming */
+.center-item.is-full {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.center-item.is-full .center-name {
+  text-decoration: line-through;
+  text-decoration-color: #d01030;
+}
+
+/* ── Reroute toast ─────────────────────────────────────────────── */
+#rerouteToast {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-12px);
+  background: #1A1A2E;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s, transform .3s;
+  z-index: 9999;
+  max-width: 88vw;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,.35);
+}
+#rerouteToast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+#rerouteToast .toast-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
 </style>
 </head>
 
@@ -45,7 +146,6 @@ $user = current_user();
 
   <!-- OFF-ROUTE BANNER -->
   <div id="offrouteBanner">
-    <!-- Warning triangle SVG icon (white, inline) -->
     <svg class="offroute-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M8 2L15 14H1L8 2Z" stroke="#fff" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
       <line x1="8" y1="7" x2="8" y2="10" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
@@ -55,6 +155,12 @@ $user = current_user();
       <div class="offroute-text">Off Route!</div>
       <div class="offroute-sub">Recalculating…</div>
     </div>
+  </div>
+
+  <!-- REROUTE TOAST (center became full) -->
+  <div id="rerouteToast">
+    <span class="toast-icon">🔄</span>
+    <span id="rerouteToastMsg">Rerouting to next available center…</span>
   </div>
 
   <!-- BACK TO DASHBOARD -->
@@ -78,7 +184,7 @@ $user = current_user();
     <div id="speedUnit">km/h</div>
   </div>
 
-  <!-- RECENTER — dark orange SVG crosshair icon -->
+  <!-- RECENTER -->
   <button id="recenterBtn" onclick="recenter()" title="Recenter map">
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="11" cy="11" r="4" stroke="#d45f10" stroke-width="1.8"/>
@@ -103,7 +209,6 @@ $user = current_user();
       <div class="handle-hint" id="handleHint">drag to hide</div>
     </div>
 
-    <!-- Location pin: dark orange SVG icon -->
     <div id="destName" style="display:flex;align-items:center;gap:6px;">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
         <path d="M7 1C4.79 1 3 2.79 3 5c0 3.25 4 8 4 8s4-4.75 4-8c0-2.21-1.79-4-4-4Z" fill="#d45f10"/>
@@ -119,22 +224,15 @@ $user = current_user();
     <div class="mode-label">Travel Mode</div>
     <div id="modeSelector">
 
-      <!-- Walk: distinct pedestrian figure — body + swinging arm + stride legs -->
       <button class="mode-btn active" data-mode="walk" onclick="selectMode('walk')">
         <div class="mode-icon">
           <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Head -->
             <circle cx="12" cy="3.5" r="1.8" fill="#d45f10"/>
-            <!-- Torso leaning forward -->
             <line x1="12" y1="5.3" x2="10.5" y2="10.5" stroke="#d45f10" stroke-width="1.6" stroke-linecap="round"/>
-            <!-- Left arm swinging back -->
             <line x1="11.2" y1="7" x2="14.5" y2="9.5" stroke="#d45f10" stroke-width="1.5" stroke-linecap="round"/>
-            <!-- Right arm swinging forward -->
             <line x1="11" y1="7.5" x2="8" y2="9" stroke="#d45f10" stroke-width="1.5" stroke-linecap="round"/>
-            <!-- Left leg stepping forward -->
             <line x1="10.5" y1="10.5" x2="8" y2="15" stroke="#d45f10" stroke-width="1.6" stroke-linecap="round"/>
             <line x1="8" y1="15" x2="6.5" y2="18.5" stroke="#d45f10" stroke-width="1.5" stroke-linecap="round"/>
-            <!-- Right leg pushing back -->
             <line x1="10.5" y1="10.5" x2="13" y2="15" stroke="#d45f10" stroke-width="1.6" stroke-linecap="round"/>
             <line x1="13" y1="15" x2="14.5" y2="18" stroke="#d45f10" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
@@ -142,7 +240,6 @@ $user = current_user();
         <span class="mode-name">Walk</span>
       </button>
 
-      <!-- Bike: bicycle SVG icon, dark orange -->
       <button class="mode-btn" data-mode="bike" onclick="selectMode('bike')">
         <div class="mode-icon">
           <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -155,32 +252,22 @@ $user = current_user();
         <span class="mode-name">Bike</span>
       </button>
 
-      <!-- Motorcycle: distinct moto shape — low seat, raised handlebars, exhaust pipe -->
       <button class="mode-btn" data-mode="moto" onclick="selectMode('moto')">
         <div class="mode-icon">
           <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Rear wheel -->
             <circle cx="4.5" cy="15.5" r="3" stroke="#d45f10" stroke-width="1.5"/>
-            <!-- Front wheel -->
             <circle cx="17.5" cy="15.5" r="3" stroke="#d45f10" stroke-width="1.5"/>
-            <!-- Front fork -->
             <line x1="17.5" y1="12.5" x2="16" y2="8.5" stroke="#d45f10" stroke-width="1.4" stroke-linecap="round"/>
-            <!-- Handlebar -->
             <line x1="14.5" y1="8" x2="18" y2="8" stroke="#d45f10" stroke-width="1.6" stroke-linecap="round"/>
-            <!-- Main frame / tank -->
             <path d="M7 12.5 L10 8 L14.5 8.5 L16 12.5" stroke="#d45f10" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            <!-- Seat -->
             <line x1="7" y1="12.5" x2="13" y2="12.5" stroke="#d45f10" stroke-width="2" stroke-linecap="round"/>
-            <!-- Rear swing-arm to rear wheel -->
             <line x1="7" y1="12.5" x2="4.5" y2="12.5" stroke="#d45f10" stroke-width="1.4" stroke-linecap="round"/>
-            <!-- Exhaust pipe (low, pointing back) -->
             <path d="M7 14 Q5 15 3 16.5" stroke="#d45f10" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.7"/>
           </svg>
         </div>
         <span class="mode-name">Moto</span>
       </button>
 
-      <!-- Car: car SVG icon, dark orange -->
       <button class="mode-btn" data-mode="car" onclick="selectMode('car')">
         <div class="mode-icon">
           <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -215,7 +302,6 @@ $user = current_user();
       <div class="tleg"><div class="tleg-dot" style="background:#d01030"></div>Jammed</div>
     </div>
 
-    <!-- START button: dark orange rocket SVG icon -->
     <button id="startBtn" class="nav-btn" onclick="startNavigation()">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M8 2C10 2 13 3.5 13 8C13 11 11 13.5 8 14C5 13.5 3 11 3 8C3 3.5 6 2 8 2Z" stroke="#fff" stroke-width="1.4" fill="none"/>
@@ -223,7 +309,6 @@ $user = current_user();
       </svg>
       START NAVIGATION
     </button>
-    <!-- STOP button: square stop SVG icon -->
     <button id="stopBtn" class="nav-btn" onclick="stopNavigation()">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="2" y="2" width="10" height="10" rx="2" fill="#d01030"/>
@@ -234,7 +319,6 @@ $user = current_user();
 
   <!-- ARRIVAL -->
   <div id="arrivalOverlay">
-    <!-- Arrival: checkmark SVG icon, dark orange -->
     <svg class="arrival-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="32" cy="32" r="30" fill="rgba(212,95,16,0.12)" stroke="#d45f10" stroke-width="2.5"/>
       <path d="M18 33L28 43L46 22" stroke="#d45f10" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -255,7 +339,7 @@ $user = current_user();
 <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
 <script>
-// ─── CONFIG ───────────────────────────────
+// ─── CONFIG ───────────────────────────────────────────────────────────────
 const DEFAULT_DEST = {
   lat: 15.137222,
   lon: 120.976111,
@@ -264,7 +348,8 @@ const DEFAULT_DEST = {
 let destLat = DEFAULT_DEST.lat;
 let destLon = DEFAULT_DEST.lon;
 let destName = DEFAULT_DEST.name;
-const REROUTE_COOLDOWN = 15000;
+const REROUTE_COOLDOWN      = 15000;
+const STATUS_POLL_INTERVAL  = 30000; // check center status every 30 s during navigation
 
 const MODES = {
   walk: { label:'Walking',    icon:'🚶', speed:5,  accentColor:'#18a850', offRouteM:40  },
@@ -273,7 +358,7 @@ const MODES = {
   car:  { label:'Driving',    icon:'🚗', speed:60, accentColor:'#d45f10', offRouteM:80  },
 };
 
-// ─── STATE ────────────────────────────────
+// ─── STATE ────────────────────────────────────────────────────────────────
 let map, userMarker, routingControl, watchId, destMarker;
 let compassHeading = 0, lastPosition = null;
 let routeCoords = [], routeInstructions = [];
@@ -282,26 +367,24 @@ let isNavigating = false, isOffRoute = false, isMapLocked = true;
 let lastRerouteTime = 0;
 let arrowLayers = [];
 let selectedMode = 'walk';
-let centers = [];
+let centers = [];          // full sorted center list (including full ones)
 let userLoc = null;
+let selectedCenterId = null;
+let statusPollTimer = null; // interval handle for status polling
 
-// ─── TRACKING ─────────────────────────────
-// Tracks which evacuation center this citizen is navigating to.
-// Posts to citizen_track_navigation.php (same pages/ folder).
-
-let _trackedCenterId = null; // prevent duplicate calls for same center
+// ─── TRACKING ─────────────────────────────────────────────────────────────
+let _trackedCenterId = null;
 
 function trackSelectCenter(centerId, centerName) {
-  if (_trackedCenterId === centerId) return; // already tracked this center
+  if (_trackedCenterId === centerId) return;
   _trackedCenterId = centerId;
   fetch('citizen_track_navigation.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'same-origin',
     body: JSON.stringify({ action: 'select', center_id: centerId }),
-  }).catch(() => {}); // silent fail — tracking is best-effort
+  }).catch(() => {});
 
-  // Also notify citizen_dashboard.php if open in the background
   if (window.opener && !window.opener.closed) {
     try {
       window.opener.postMessage(
@@ -320,14 +403,13 @@ function trackArrived() {
     credentials: 'same-origin',
     body: JSON.stringify({ action: 'arrived' }),
   }).catch(() => {});
-
   if (window.opener && !window.opener.closed) {
     try { window.opener.postMessage({ type: 'evac_arrived' }, window.location.origin); } catch(e) {}
   }
 }
 
 function trackCancel() {
-  if (_trackedCenterId === null) return; // nothing was being tracked
+  if (_trackedCenterId === null) return;
   _trackedCenterId = null;
   fetch('citizen_track_navigation.php', {
     method: 'POST',
@@ -335,21 +417,110 @@ function trackCancel() {
     credentials: 'same-origin',
     body: JSON.stringify({ action: 'cancel' }),
   }).catch(() => {});
-
   if (window.opener && !window.opener.closed) {
     try { window.opener.postMessage({ type: 'evac_cancel' }, window.location.origin); } catch(e) {}
   }
 }
 
-// ─── PANEL DRAG ───────────────────────────
+// ─── STATUS POLLING (runs during navigation) ───────────────────────────────
+// Re-fetches the center list every STATUS_POLL_INTERVAL ms.
+// If the currently selected center is now 'full', triggers an auto-reroute.
+
+function startStatusPolling() {
+  stopStatusPolling();
+  statusPollTimer = setInterval(pollCenterStatus, STATUS_POLL_INTERVAL);
+}
+
+function stopStatusPolling() {
+  if (statusPollTimer) {
+    clearInterval(statusPollTimer);
+    statusPollTimer = null;
+  }
+}
+
+function pollCenterStatus() {
+  if (!isNavigating || selectedCenterId === null) return;
+
+  fetch('centers.php?action=list_available', { credentials: 'same-origin' })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data || !data.ok) return;
+
+      // Refresh local center data with fresh occupancy figures
+      const freshMap = {};
+      (data.centers || []).forEach(c => { freshMap[c.id] = c; });
+
+      // Update local centers array with fresh data
+      centers = centers.map(c => freshMap[c.id]
+        ? Object.assign({}, c, freshMap[c.id])
+        : c
+      );
+
+      // Re-render the center list cards to show updated occupancy
+      rebuildCenterList();
+
+      // Check if our current destination became full
+      const dest = centers.find(c => c.id === selectedCenterId);
+      if (dest && dest.status === 'full') {
+        autoRerouteFromFull(dest.name);
+      }
+    })
+    .catch(() => {}); // silent fail — polling is best-effort
+}
+
+// ─── AUTO-REROUTE (called when current destination centre is full) ─────────
+function autoRerouteFromFull(fullCenterName) {
+  // Find the next nearest center that is NOT full/closed
+  const ref = userLoc || lastPosition;
+  const next = centers.find(c =>
+    c.id !== selectedCenterId &&
+    c.status !== 'full' &&
+    c.status !== 'closed'
+  );
+
+  if (!next) {
+    showRerouteToast('⚠ ' + (fullCenterName || 'Center') + ' is full. No other centers available right now.');
+    return;
+  }
+
+  showRerouteToast(
+    (fullCenterName || 'Center') + ' is full — rerouting to ' + next.name
+  );
+
+  speak((fullCenterName || 'Your destination') + ' is now full. Rerouting to ' + next.name);
+
+  // Small delay so toast is readable before map jumps
+  setTimeout(() => {
+    chooseCenter(next.id, false);
+
+    if (isNavigating && ref) {
+      // Rebuild route to new destination
+      clearLayers();
+      if (routingControl) { map.removeControl(routingControl); routingControl = null; }
+      currentStepIdx = 0; routeCoords = [];
+      createOrUpdateRoute(ref.lat, ref.lon);
+    }
+  }, 1200);
+}
+
+// ─── REROUTE TOAST ────────────────────────────────────────────────────────
+let toastTimer = null;
+function showRerouteToast(msg) {
+  const toast = document.getElementById('rerouteToast');
+  document.getElementById('rerouteToastMsg').textContent = msg;
+  toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 5000);
+}
+
+// ─── PANEL DRAG ───────────────────────────────────────────────────────────
 let panelCollapsed = false;
 let dragStartY = 0;
 let isDragging = false;
 
 function syncToggleBtn() {
-  const btn = document.getElementById('panelToggleBtn');
+  const btn   = document.getElementById('panelToggleBtn');
   const panel = document.getElementById('bottomPanel');
-
   if (panelCollapsed) {
     btn.classList.add('collapsed');
     btn.style.bottom = '5rem';
@@ -364,9 +535,7 @@ function syncToggleBtn() {
   }
 }
 
-function togglePanel() {
-  snapPanel(!panelCollapsed);
-}
+function togglePanel() { snapPanel(!panelCollapsed); }
 
 function initPanelDrag() {
   const panel  = document.getElementById('bottomPanel');
@@ -407,7 +576,6 @@ function initPanelDrag() {
     dragStartY = e.clientY;
     isDragging = false;
     panel.classList.add('no-transition');
-
     function onMove(e) {
       const dy = e.clientY - dragStartY;
       if (Math.abs(dy) > 6) isDragging = true;
@@ -415,7 +583,6 @@ function initPanelDrag() {
       const newBottom = Math.max(-88, Math.min(0, -(dy / window.innerHeight * 100)));
       panel.style.bottom = newBottom + '%';
     }
-
     function onUp(e) {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
@@ -426,7 +593,6 @@ function initPanelDrag() {
       else snapPanel(panelCollapsed);
       isDragging = false;
     }
-
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
   });
@@ -450,9 +616,8 @@ window.snapPanel = function(collapsed) {
   requestAnimationFrame(() => setTimeout(syncToggleBtn, 520));
 };
 
-// ─── INIT ─────────────────────────────────
+// ─── INIT ─────────────────────────────────────────────────────────────────
 function initApp() {
-  // Splash removed: map and UI initializes immediately
   initMap();
   initCompass();
   initPanelDrag();
@@ -483,13 +648,121 @@ function initMap() {
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '© CARTO © OSM', subdomains: 'abcd', maxZoom: 20
   }).addTo(map);
-
   updateDestinationMarker();
   map.on('dragstart', () => { isMapLocked = false; });
   window.addEventListener('resize', syncToggleBtn);
 }
 
-// ─── CENTER SELECTION ─────────────────────
+// ─── CAPACITY HELPERS ─────────────────────────────────────────────────────
+function getCapacityClass(center) {
+  if (center.status === 'full') return 'full';
+  if (center.status === 'near_capacity') return 'near';
+  return 'ok';
+}
+
+function getSlotsLabel(center) {
+  const max   = center.max_capacity_people || 0;
+  const occ   = center.current_occupancy   || 0;
+  const slots = Math.max(0, max - occ);
+  const cls   = getCapacityClass(center);
+  if (center.status === 'full') return { text: 'FULL — no slots', cls: 'full' };
+  if (center.status === 'near_capacity') return { text: slots + ' slots left', cls: 'near' };
+  return { text: slots + ' slots available', cls: 'ok' };
+}
+
+function getOccupancyPct(center) {
+  const max = center.max_capacity_people || 0;
+  if (!max) return 0;
+  return Math.min(100, Math.round((center.current_occupancy / max) * 100));
+}
+
+// ─── BUILD CENTER LIST UI ─────────────────────────────────────────────────
+// Separated from loadCenters so it can be called again on poll refresh
+function rebuildCenterList() {
+  const listEl = document.getElementById('centerList');
+  if (!centers.length) {
+    listEl.textContent = 'No available evacuation centers at the moment.';
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  centers.forEach(c => {
+    const km      = c.distanceM != null ? (c.distanceM / 1000).toFixed(2) : '–';
+    const isFull  = c.status === 'full';
+    const capCls  = getCapacityClass(c);
+    const slots   = getSlotsLabel(c);
+    const pct     = getOccupancyPct(c);
+    const isSelected = (c.id === selectedCenterId);
+
+    // Status badge
+    let badgeHtml = '';
+    if (c.status === 'available') {
+      badgeHtml = `<span class="cbadge cbadge-available">Available</span>`;
+    } else if (c.status === 'near_capacity') {
+      badgeHtml = `<span class="cbadge cbadge-near">Near Full</span>`;
+    } else if (c.status === 'full') {
+      badgeHtml = `<span class="cbadge cbadge-full">Full</span>`;
+    } else if (c.status === 'temp_shelter') {
+      badgeHtml = `<span class="cbadge cbadge-temp">Temp Shelter</span>`;
+    }
+
+    const div = document.createElement('div');
+    div.className = 'center-item' + (isFull ? ' is-full' : '') + (isSelected ? ' selected' : '');
+    div.dataset.centerId = c.id;
+
+    // Full centers are not clickable
+    if (!isFull) {
+      div.onclick = () => chooseCenter(c.id);
+    }
+
+    div.innerHTML = `
+      <div class="center-main">
+        <div class="center-name">${c.name}</div>
+        <div class="center-badges">
+          ${badgeHtml}
+        </div>
+        <div class="center-sub" style="margin-top:3px">
+          <svg width="10" height="10" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;display:inline-block;vertical-align:middle">
+            <path d="M7 1C4.79 1 3 2.79 3 5c0 3.25 4 8 4 8s4-4.75 4-8c0-2.21-1.79-4-4-4Z" fill="#d45f10"/>
+          </svg>
+          ${c.barangay}
+        </div>
+        <div class="center-sub" style="margin-top:2px;color:var(--accent);display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;">
+            <circle cx="6" cy="4" r="2.2" stroke="#d45f10" stroke-width="1.3"/>
+            <path d="M1.5 10.5C1.5 8.57 3.57 7 6 7s4.5 1.57 4.5 3.5" stroke="#d45f10" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+          </svg>
+          ${c.coordinator_name ?? 'Unassigned'}
+          ${c.coordinator_contact
+            ? `&nbsp;·&nbsp;<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="display:inline-block;vertical-align:middle;"><path d="M2 2.5C2 2.5 3 4.5 4.5 6S9.5 10 9.5 10l1-1.5-1.5-1.5-1 1C7.5 8 5 5.5 4.5 4.5l1-1L4 2 2 2.5Z" stroke="#d45f10" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg> ${c.coordinator_contact}`
+            : ''
+          }
+        </div>
+
+        <!-- ── Capacity bar ── -->
+        <div class="cap-bar-wrap">
+          <div class="cap-bar-track">
+            <div class="cap-bar-fill fill-${capCls}" style="width:${pct}%"></div>
+          </div>
+          <div class="cap-label">
+            <span class="slots ${slots.cls}">${slots.text}</span>
+            <span>${c.current_occupancy ?? 0} / ${c.max_capacity_people ?? '?'} people</span>
+          </div>
+        </div>
+      </div>
+      <div class="center-meta">
+        <div class="center-distance">${km} km</div>
+        <div class="center-status center-status-${c.status}">${c.status}</div>
+      </div>
+    `;
+    frag.appendChild(div);
+  });
+
+  listEl.innerHTML = '';
+  listEl.appendChild(frag);
+}
+
+// ─── LOAD CENTERS FROM API ────────────────────────────────────────────────
 function loadCenters() {
   const listEl = document.getElementById('centerList');
   listEl.textContent = 'Loading available centers…';
@@ -504,7 +777,13 @@ function loadCenters() {
         centers.forEach(c => {
           c.distanceM = getDist(userLoc.lat, userLoc.lon, c.lat, c.lng);
         });
-        centers.sort((a, b) => (a.distanceM || Infinity) - (b.distanceM || Infinity));
+        // Sort: available/near first by distance, full ones pushed to bottom
+        centers.sort((a, b) => {
+          const aFull = a.status === 'full' ? 1 : 0;
+          const bFull = b.status === 'full' ? 1 : 0;
+          if (aFull !== bFull) return aFull - bFull;
+          return (a.distanceM || Infinity) - (b.distanceM || Infinity);
+        });
       }
 
       if (!centers.length) {
@@ -512,37 +791,17 @@ function loadCenters() {
         return;
       }
 
-      const frag = document.createDocumentFragment();
-      centers.forEach(c => {
-        const km = c.distanceM != null ? (c.distanceM / 1000).toFixed(2) : '–';
-        const div = document.createElement('div');
-        div.className = 'center-item';
-        div.onclick = () => chooseCenter(c.id);
-        div.innerHTML = `
-          <div class="center-main">
-            <div class="center-name">${c.name}</div>
-            <div class="center-sub"> ${c.barangay}</div>
-            <div class="center-sub" style="margin-top:3px;color:var(--accent);display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
-                <circle cx="6" cy="4" r="2.2" stroke="#d45f10" stroke-width="1.3"/>
-                <path d="M1.5 10.5C1.5 8.57 3.57 7 6 7s4.5 1.57 4.5 3.5" stroke="#d45f10" stroke-width="1.3" stroke-linecap="round" fill="none"/>
-              </svg>
-              ${c.coordinator_name ?? 'Unassigned'}
-              ${c.coordinator_contact ? `&nbsp;·&nbsp;<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;"><path d="M2 2.5C2 2.5 3 4.5 4.5 6S9.5 10 9.5 10l1-1.5-1.5-1.5-1 1C7.5 8 5 5.5 4.5 4.5l1-1L4 2 2 2.5Z" stroke="#d45f10" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg> ` + c.coordinator_contact : ''}
-            </div>
-          </div>
-          <div class="center-meta">
-            <div class="center-distance">${km} km</div>
-            <div class="center-status center-status-${c.status}">${c.status}</div>
-          </div>
-        `;
-        frag.appendChild(div);
-      });
-      listEl.innerHTML = '';
-      listEl.appendChild(frag);
+      rebuildCenterList();
 
-      // Auto-select nearest center — this also fires the first tracking call
-      chooseCenter(centers[0].id, false);
+      // Auto-select nearest non-full center
+      const firstAvailable = centers.find(c => c.status !== 'full');
+      if (firstAvailable) {
+        chooseCenter(firstAvailable.id, false);
+      } else {
+        // All centers are full — still select the nearest and warn
+        chooseCenter(centers[0].id, false);
+        showRerouteToast('⚠ All centers are currently full. Please contact MDRRMO.');
+      }
       setTimeout(syncToggleBtn, 100);
     })
     .catch(err => {
@@ -550,15 +809,19 @@ function loadCenters() {
     });
 }
 
-// ─── CHOOSE CENTER (tracking added here) ──
+// ─── CHOOSE CENTER ────────────────────────────────────────────────────────
 function chooseCenter(centerId, speakIt = true) {
-  const center = centers.find(c => c.id === centerId);
+  const center = centers.find(c => c.id == centerId);
   if (!center) return;
-  destLat = center.lat;
-  destLon = center.lng;
+
+  // Prevent selecting a full center manually
+  if (center.status === 'full') return;
+
+  selectedCenterId = center.id;
+  destLat  = center.lat;
+  destLon  = center.lng;
   destName = center.name;
 
-  // Update destName with SVG pin icon + text (matches the inline SVG in HTML)
   document.getElementById('destName').innerHTML = `
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
       <path d="M7 1C4.79 1 3 2.79 3 5c0 3.25 4 8 4 8s4-4.75 4-8c0-2.21-1.79-4-4-4Z" fill="#d45f10"/>
@@ -567,23 +830,20 @@ function chooseCenter(centerId, speakIt = true) {
     <span>${center.name} (${center.barangay})</span>
   `;
 
-  // Highlight selected item in list
-  document.querySelectorAll('.center-item').forEach(el => el.classList.remove('selected'));
-  const items = document.querySelectorAll('.center-item');
-  const idx = centers.findIndex(c => c.id === centerId);
-  if (items[idx]) items[idx].classList.add('selected');
+  // Highlight selected item
+  document.querySelectorAll('.center-item').forEach(el => {
+    el.classList.toggle('selected', el.dataset.centerId == centerId);
+  });
 
   updateDestinationMarker();
   if (userLoc) updatePreview(userLoc.lat, userLoc.lon);
   if (speakIt) speak('Destination set to ' + center.name);
 
-  // ── TRACKING: record that this citizen intends to go to this center ──
   trackSelectCenter(center.id, center.name);
 }
 
 function updateDestinationMarker() {
   if (!map) return;
-  // Destination pin uses a school SVG icon (dark orange tones) instead of emoji
   const destIcon = L.divIcon({
     className: '',
     html: `<div class="dest-pin-head">
@@ -604,7 +864,7 @@ function updateDestinationMarker() {
   }
 }
 
-// ─── MODE SELECTOR ────────────────────────
+// ─── MODE SELECTOR ────────────────────────────────────────────────────────
 function selectMode(mode) {
   if (isNavigating) return;
   selectedMode = mode;
@@ -616,16 +876,16 @@ function selectMode(mode) {
 
 function updatePreview(lat, lon) {
   const dist = getDist(lat, lon, destLat, destLon);
-  const km = (dist / 1000).toFixed(2);
-  const spd = MODES[selectedMode].speed;
-  const eta = Math.round((dist / 1000) / spd * 60);
-  document.getElementById('previewDist').textContent = km;
-  document.getElementById('previewTime').textContent = eta;
+  const km   = (dist / 1000).toFixed(2);
+  const spd  = MODES[selectedMode].speed;
+  const eta  = Math.round((dist / 1000) / spd * 60);
+  document.getElementById('previewDist').textContent  = km;
+  document.getElementById('previewTime').textContent  = eta;
   document.getElementById('previewSpeed').textContent = spd;
-  document.getElementById('remainDist').textContent = `~${km} km · ~${eta} min`;
+  document.getElementById('remainDist').textContent   = `~${km} km · ~${eta} min`;
 }
 
-// ─── COMPASS ──────────────────────────────
+// ─── COMPASS ──────────────────────────────────────────────────────────────
 function initCompass() {
   if (!window.DeviceOrientationEvent) return;
   const attach = () => window.addEventListener('deviceorientation', handleOrientation);
@@ -644,46 +904,54 @@ function handleOrientation(e) {
   document.getElementById('compassLabel').style.color = (h < 20 || h > 340) ? '#d01030' : '#7a7068';
 }
 
-// ─── START / STOP ─────────────────────────
+// ─── START NAVIGATION ─────────────────────────────────────────────────────
 function startNavigation() {
   if (!navigator.geolocation) return alert('Geolocation not supported');
   isNavigating = true;
-  document.querySelectorAll('.mode-btn').forEach(b => { b.style.opacity='0.45'; b.style.pointerEvents='none'; });
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.style.opacity = '0.45'; b.style.pointerEvents = 'none';
+  });
   document.getElementById('startBtn').style.display = 'none';
-  document.getElementById('stopBtn').style.display = 'flex';
+  document.getElementById('stopBtn').style.display  = 'flex';
   document.getElementById('dirCard').classList.add('show');
-  document.getElementById('turnInstruction').textContent = `Getting location…`;
+  document.getElementById('turnInstruction').textContent = 'Getting location…';
 
   watchId = navigator.geolocation.watchPosition(onPosition, onGeoError, {
     enableHighAccuracy: true, maximumAge: 0, timeout: 8000
   });
+
+  // Start polling center status in the background
+  startStatusPolling();
 }
 
-// ─── STOP NAVIGATION (tracking: cancel) ───
+// ─── STOP NAVIGATION ──────────────────────────────────────────────────────
 function stopNavigation() {
   isNavigating = false;
+  stopStatusPolling();
+
   if (watchId) navigator.geolocation.clearWatch(watchId);
   if (routingControl) { map.removeControl(routingControl); routingControl = null; }
   clearLayers();
 
-  document.querySelectorAll('.mode-btn').forEach(b => { b.style.opacity='1'; b.style.pointerEvents='auto'; });
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.style.opacity = '1'; b.style.pointerEvents = 'auto';
+  });
   document.getElementById('startBtn').style.display = 'flex';
-  document.getElementById('stopBtn').style.display = 'none';
+  document.getElementById('stopBtn').style.display  = 'none';
   document.getElementById('dirCard').classList.remove('show');
   document.getElementById('offrouteBanner').classList.remove('show');
   document.getElementById('turnInstruction').textContent = 'Head toward destination';
-  document.getElementById('stepDist').textContent = 'Calculating…';
-  document.getElementById('etaMin').textContent = '--';
+  document.getElementById('stepDist').textContent        = 'Calculating…';
+  document.getElementById('etaMin').textContent          = '--';
   currentStepIdx = 0; isOffRoute = false; routeCoords = []; routeInstructions = [];
 
-  // ── TRACKING: citizen manually stopped, mark as cancelled ──
   trackCancel();
 }
 
-// ─── POSITION UPDATE ──────────────────────
+// ─── POSITION UPDATE ──────────────────────────────────────────────────────
 function onPosition(pos) {
-  const lat = pos.coords.latitude;
-  const lon = pos.coords.longitude;
+  const lat   = pos.coords.latitude;
+  const lon   = pos.coords.longitude;
   const speed = pos.coords.speed ? (pos.coords.speed * 3.6) : 0;
 
   const sv = document.getElementById('speedVal');
@@ -719,7 +987,7 @@ function onPosition(pos) {
 
   if (routeCoords.length > 0) {
     const offDist = distanceToRoute(lat, lon, routeCoords);
-    if (offDist > (MODES[selectedMode].offRouteM)) {
+    if (offDist > MODES[selectedMode].offRouteM) {
       triggerOffRoute(lat, lon);
     } else if (isOffRoute) {
       isOffRoute = false;
@@ -733,16 +1001,16 @@ function onPosition(pos) {
   if (getDist(lat, lon, destLat, destLon) < 20) { onArrival(); return; }
 
   const remDist = getDist(lat, lon, destLat, destLon);
-  const remKm = (remDist / 1000).toFixed(1);
-  const eta = Math.round((remDist / 1000) / MODES[selectedMode].speed * 60);
+  const remKm   = (remDist / 1000).toFixed(1);
+  const eta     = Math.round((remDist / 1000) / MODES[selectedMode].speed * 60);
   document.getElementById('remainDist').textContent = `${remKm} km remaining`;
-  document.getElementById('etaMin').textContent = eta;
+  document.getElementById('etaMin').textContent     = eta;
   updatePreview(lat, lon);
 
   lastPosition = { lat, lon };
 }
 
-// ─── ROUTE ────────────────────────────────
+// ─── ROUTE ────────────────────────────────────────────────────────────────
 function createOrUpdateRoute(lat, lon) {
   if (routingControl) {
     routingControl.setWaypoints([L.latLng(lat, lon), L.latLng(destLat, destLon)]);
@@ -750,14 +1018,17 @@ function createOrUpdateRoute(lat, lon) {
   }
   routingControl = L.Routing.control({
     waypoints: [L.latLng(lat, lon), L.latLng(destLat, destLon)],
-    lineOptions: { styles: [{ color: 'transparent', weight: 0 }] },
-    createMarker: () => null,
-    addWaypoints: false, draggableWaypoints: false, fitSelectedRoutes: false, show: false
+    lineOptions:       { styles: [{ color: 'transparent', weight: 0 }] },
+    createMarker:      () => null,
+    addWaypoints:      false,
+    draggableWaypoints:false,
+    fitSelectedRoutes: false,
+    show:              false,
   }).addTo(map);
 
   routingControl.on('routesfound', e => {
     const route = e.routes[0];
-    routeCoords = route.coordinates;
+    routeCoords       = route.coordinates;
     routeInstructions = route.instructions || [];
     drawTrafficRoute(routeCoords);
     drawRouteArrows(routeCoords);
@@ -775,7 +1046,7 @@ function drawTrafficRoute(coords) {
   border._isRoute = true; border.addTo(map); border.bringToBack(); arrowLayers.push(border);
 
   for (let i = 1; i < coords.length; i++) {
-    const p = coords[i-1], c = coords[i];
+    const p    = coords[i-1], c = coords[i];
     const seed = (i * 7 + Math.round(p.lat * 1000)) % 10;
     const color = seed < 5 ? '#18a850' : seed < 8 ? '#b07800' : '#d01030';
     const seg = L.polyline([[p.lat,p.lng],[c.lat,c.lng]], {
@@ -794,7 +1065,7 @@ function drawRouteArrows(coords) {
     if (accum >= 120) {
       accum = 0;
       const bearing = getBearing(p.lat, p.lng, c.lat, c.lng);
-      const mid = [(p.lat+c.lat)/2, (p.lng+c.lng)/2];
+      const mid  = [(p.lat+c.lat)/2, (p.lng+c.lng)/2];
       const icon = L.divIcon({
         className: '',
         html: `<svg width="16" height="16" viewBox="0 0 16 16" style="transform:rotate(${bearing}deg);filter:drop-shadow(0 1px 3px rgba(0,0,0,0.3))">
@@ -810,7 +1081,7 @@ function drawRouteArrows(coords) {
 
 function clearLayers() { arrowLayers.forEach(l => map.removeLayer(l)); arrowLayers = []; }
 
-// ─── TURN INSTRUCTIONS ────────────────────
+// ─── TURN INSTRUCTIONS ────────────────────────────────────────────────────
 const TURN_SVG = {
   Straight:    `<path d="M12 3v15M12 3L7 8M12 3L17 8" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>`,
   Right:       `<path d="M7 20 Q7 10 17 5M17 5l-4 1M17 5l-1 4" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>`,
@@ -839,7 +1110,7 @@ function updateStepDisplay() {
   if (!routeInstructions.length) return;
   const step = routeInstructions[Math.min(currentStepIdx, routeInstructions.length-1)];
   document.getElementById('turnInstruction').textContent = step.text;
-  document.getElementById('stepDist').textContent = `In ${Math.round(step.distance)} m`;
+  document.getElementById('stepDist').textContent        = `In ${Math.round(step.distance)} m`;
   const type = getTurnType(step.text);
   document.getElementById('turnArrowSvg').innerHTML = TURN_SVG[type] || TURN_SVG.Straight;
   const isArrival = type === 'Dest';
@@ -861,7 +1132,7 @@ function updateCurrentStep(lat, lon) {
   }
 }
 
-// ─── OFF-ROUTE ────────────────────────────
+// ─── OFF-ROUTE ────────────────────────────────────────────────────────────
 function distanceToRoute(lat, lon, coords) {
   let min = Infinity;
   for (let i = 1; i < coords.length; i++) {
@@ -900,25 +1171,22 @@ function reroute(lat, lon) {
   speak('Route updated.');
 }
 
-// ─── ARRIVAL (tracking: arrived) ──────────
+// ─── ARRIVAL ──────────────────────────────────────────────────────────────
 function onArrival() {
   speak(`You have arrived! Great ${MODES[selectedMode].label.toLowerCase()}!`);
-
-  // ── TRACKING: citizen reached the center ──
   trackArrived();
-
   stopNavigation();
   document.getElementById('arrivalOverlay').classList.add('show');
 }
 function closeArrival() { document.getElementById('arrivalOverlay').classList.remove('show'); }
 
-// ─── RECENTER ─────────────────────────────
+// ─── RECENTER ─────────────────────────────────────────────────────────────
 function recenter() {
   isMapLocked = true;
   if (userMarker) map.flyTo(userMarker.getLatLng(), 17, { duration: 0.8 });
 }
 
-// ─── SPEECH ───────────────────────────────
+// ─── SPEECH ───────────────────────────────────────────────────────────────
 function speak(text) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
@@ -927,7 +1195,7 @@ function speak(text) {
   window.speechSynthesis.speak(u);
 }
 
-// ─── MATH ─────────────────────────────────
+// ─── MATH ─────────────────────────────────────────────────────────────────
 function getDist(lat1, lon1, lat2, lon2) {
   const R = 6371e3, r = Math.PI/180;
   const p1=lat1*r, p2=lat2*r, dp=(lat2-lat1)*r, dl=(lon2-lon1)*r;
@@ -943,7 +1211,7 @@ function onGeoError(err) {
   document.getElementById('turnInstruction').textContent = '⚠ ' + err.message;
 }
 
-// Start application immediately
+// ─── BOOT ─────────────────────────────────────────────────────────────────
 initApp();
 </script>
 </body>

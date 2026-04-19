@@ -34,6 +34,13 @@ foreach ($st as $s) {
         case 'closed':        $summary['status_closed']    = (int)$s['c']; break;
     }
 }
+
+// Sidebar badges
+$_badgeCenters       = (int)$pdo->query("SELECT COUNT(*) FROM evacuation_centers")->fetchColumn();
+$_badgeOngoing       = (int)$pdo->query("SELECT COUNT(*) FROM disasters WHERE status = 'ongoing'")->fetchColumn();
+$_badgeAnnouncements = (int)$pdo->query("SELECT COUNT(*) FROM announcements")->fetchColumn();
+$_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) FROM evac_registrations")->fetchColumn();
+// $_badgeUsers        = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -75,15 +82,15 @@ foreach ($st as $s) {
                 <div class="sidebar-section-title">Main</div>
                 <ul class="sidebar-menu">
                     <li><a href="index.php"     class="sidebar-link"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
-                    <li><a href="centers.php"   class="sidebar-link"><i class="fas fa-map-marker-alt"></i><span>Evacuation Centers</span></a></li>
+                    <li><a href="centers.php"   class="sidebar-link"><i class="fas fa-map-marker-alt"></i><span>Evacuation Centers</span><?php if($_badgeCenters > 0): ?><span class="sidebar-badge"><?php echo $_badgeCenters; ?></span><?php endif; ?></a></li>
                     <li><a href="users.php"     class="sidebar-link"><i class="fas fa-users"></i><span>User Management</span></a></li>
-                    <li><a href="disasters.php" class="sidebar-link"><i class="fas fa-exclamation-triangle"></i><span>Disasters</span></a></li>
+                    <li><a href="disasters.php" class="sidebar-link"><i class="fas fa-exclamation-triangle"></i><span>Disasters</span><?php if($_badgeOngoing > 0): ?><span class="sidebar-badge"><?php echo $_badgeOngoing; ?></span><?php endif; ?></a></li>
                 </ul>
             </div>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Operations</div>
                 <ul class="sidebar-menu">
-                    <li><a href="announcements.php" class="sidebar-link"><i class="fas fa-bullhorn"></i><span>Announcements</span></a></li>
+                    <li><a href="announcements.php" class="sidebar-link"><i class="fas fa-bullhorn"></i><span>Announcements</span><?php if($_badgeAnnouncements > 0): ?><span class="sidebar-badge"><?php echo $_badgeAnnouncements; ?></span><?php endif; ?></a></li>
                 </ul>
             </div>
             <div class="sidebar-section">
@@ -92,7 +99,7 @@ foreach ($st as $s) {
                     <li><a href="maps.php"     class="sidebar-link active"><i class="fas fa-map"></i><span>Maps</span></a></li>
                     <li><a href="evacuees.php" class="sidebar-link">
                         <i class="fas fa-people-arrows"></i><span>Evacuees</span>
-                        <span class="sidebar-badge"><?php echo number_format($summary['total_evacuees']); ?></span>
+                        <?php if($_badgeEvacuees > 0): ?><span class="sidebar-badge"><?php echo $_badgeEvacuees; ?></span><?php endif; ?>
                     </a></li>
                 </ul>
             </div>
@@ -237,35 +244,6 @@ foreach ($st as $s) {
 
                         <div class="view-all-link">
                             <a href="centers.php">View All Centers <i class="fas fa-arrow-right"></i></a>
-                        </div>
-                    </div>
-
-                    <!-- Quick Overview — exact copy of index.php Quick Overview -->
-                    <div class="card" style="overflow:hidden">
-                        <div class="card-header">
-                            <h3><i class="fas fa-chart-pie"></i> Quick Overview</h3>
-                        </div>
-                        <div class="quick-grid">
-                            <div class="quick-box">
-                                <div class="qb-val" style="color:var(--map-green)"><?php echo $summary['status_available']; ?></div>
-                                <div class="qb-lbl">Available</div>
-                            </div>
-                            <div class="quick-box">
-                                <div class="qb-val" style="color:var(--map-yellow)"><?php echo $summary['status_near']; ?></div>
-                                <div class="qb-lbl">Near Capacity</div>
-                            </div>
-                            <div class="quick-box">
-                                <div class="qb-val" style="color:var(--map-red)"><?php echo $summary['status_full']; ?></div>
-                                <div class="qb-lbl">Full</div>
-                            </div>
-                            <div class="quick-box">
-                                <div class="qb-val" style="color:var(--map-blue)"><?php echo $summary['status_temp']; ?></div>
-                                <div class="qb-lbl">Temp Shelters</div>
-                            </div>
-                            <div class="quick-box span2">
-                                <div class="qb-val" style="color:#95A5A6"><?php echo $summary['status_closed']; ?></div>
-                                <div class="qb-lbl">Closed Centers</div>
-                            </div>
                         </div>
                     </div>
 

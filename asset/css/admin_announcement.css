@@ -198,7 +198,6 @@
         .sidebar-link:hover {
             background: var(--light-red);
             color: var(--primary-red);
-            border-left-color: var(--primary-red);
         }
 
         .sidebar-link.active {
@@ -539,7 +538,7 @@
 
         /* Action Buttons */
         .action-btn {
-            color: #95A5A6;
+            color: green;
             text-decoration: none;
             padding: 6px 10px;
             border-radius: 6px;
@@ -551,8 +550,8 @@
         }
 
         .action-btn:hover {
-            background: var(--light-red);
-            color: var(--primary-red);
+            background: lightgrey;
+            color: green;
         }
 
         .action-btn i {

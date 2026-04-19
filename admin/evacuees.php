@@ -111,6 +111,13 @@ $grandPwds     = array_sum(array_column($evacSummary, 'total_pwds'));
 $grandFamilies = array_sum(array_column($evacSummary, 'total_families'));
 $grandTotal    = array_sum(array_column($evacSummary, 'total_evacuees'));
 $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
+
+// Sidebar badges
+$_badgeCenters       = (int)$pdo->query("SELECT COUNT(*) FROM evacuation_centers")->fetchColumn();
+$_badgeOngoing       = (int)$pdo->query("SELECT COUNT(*) FROM disasters WHERE status = 'ongoing'")->fetchColumn();
+$_badgeAnnouncements = (int)$pdo->query("SELECT COUNT(*) FROM announcements")->fetchColumn();
+$_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) FROM evac_registrations")->fetchColumn();
+// $_badgeUsers        = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -150,15 +157,15 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                 <div class="sidebar-section-title">Main</div>
                 <ul class="sidebar-menu">
                     <li><a href="index.php"     class="sidebar-link"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
-                    <li><a href="centers.php"   class="sidebar-link"><i class="fas fa-map-marker-alt"></i><span>Evacuation Centers</span></a></li>
+                    <li><a href="centers.php"   class="sidebar-link"><i class="fas fa-map-marker-alt"></i><span>Evacuation Centers</span><?php if($_badgeCenters > 0): ?><span class="sidebar-badge"><?php echo $_badgeCenters; ?></span><?php endif; ?></a></li>
                     <li><a href="users.php"     class="sidebar-link"><i class="fas fa-users"></i><span>User Management</span></a></li>
-                    <li><a href="disasters.php" class="sidebar-link"><i class="fas fa-exclamation-triangle"></i><span>Disasters</span></a></li>
+                    <li><a href="disasters.php" class="sidebar-link"><i class="fas fa-exclamation-triangle"></i><span>Disasters</span><?php if($_badgeOngoing > 0): ?><span class="sidebar-badge"><?php echo $_badgeOngoing; ?></span><?php endif; ?></a></li>
                 </ul>
             </div>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Operations</div>
                 <ul class="sidebar-menu">
-                    <li><a href="announcements.php" class="sidebar-link"><i class="fas fa-bullhorn"></i><span>Announcements</span></a></li>
+                    <li><a href="announcements.php" class="sidebar-link"><i class="fas fa-bullhorn"></i><span>Announcements</span><?php if($_badgeAnnouncements > 0): ?><span class="sidebar-badge"><?php echo $_badgeAnnouncements; ?></span><?php endif; ?></a></li>
                 </ul>
             </div>
             <div class="sidebar-section">
@@ -167,7 +174,7 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                     <li><a href="maps.php"     class="sidebar-link"><i class="fas fa-map"></i><span>Maps</span></a></li>
                     <li><a href="evacuees.php" class="sidebar-link active">
                         <i class="fas fa-people-arrows"></i><span>Evacuees</span>
-                        <span class="sidebar-badge"><?php echo number_format($totalEvacuees); ?></span>
+                        <?php if($_badgeEvacuees > 0): ?><span class="sidebar-badge"><?php echo $_badgeEvacuees; ?></span><?php endif; ?>
                     </a></li>
                 </ul>
             </div>
@@ -504,7 +511,7 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
                 <?php endif; ?>
             </div>
 
-           <!-- ── Archive History ── -->
+
 <div class="card">
     <!-- Updated Card Header with Print All button -->
     <div class="card-header">
@@ -570,7 +577,6 @@ $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
         <?php endforeach; ?>
     <?php endif; ?>
 </div>
-
         </div><!-- /dashboard -->
     </main>
 </div>

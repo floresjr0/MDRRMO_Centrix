@@ -54,11 +54,11 @@ if ($response !== false) {
         // ── Antas ng panganib ──
         $level = 'low';
 
-        if ($heatIndex >= 41) {
+        if ($heatIndex >= 42) {
             $level = 'extreme';
-        } elseif ($heatIndex >= 38) {
+        } elseif ($heatIndex >= 40) {
             $level = 'high';
-        } elseif ($heatIndex >= 32) {
+        } elseif ($heatIndex >= 38) {
             $level = 'medium';
         }
 
@@ -331,6 +331,9 @@ if ($isNightTime) {
 
 $wx_ptcls = $wx_particles[$wx_cat] ?? $wx_particles['sunny'];
 
+require_once __DIR__ . '/notify.php';
+maybeSendDisasterNotification($pdo);
+
 // ── Ready Bag modal data — JSON-safe para sa JS ──
 $readyBagTitle   = $advice ? htmlspecialchars($advice['title']   ?? 'Ready Bag',   ENT_QUOTES) : 'Ready Bag';
 $readyBagMessage = $advice ? htmlspecialchars($advice['message'] ?? '',             ENT_QUOTES) : '';
@@ -352,6 +355,9 @@ $disasterModalJson = json_encode($activeDisaster ? [
 // ── Disaster alert level para sa JS notifications ──
 $disasterLevel = $activeDisaster ? (int)$activeDisaster['level'] : 0;
 $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT_QUOTES) : '';
+
+// ── Detect if running inside median.co WebView ──
+$isMedianCo = isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_AGENT'], 'MedianWebView') !== false;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -363,9 +369,70 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
+<?php if (!$isMedianCo): ?>
+<!-- Only load OneSignal web SDK when NOT in median.co -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<?php endif; ?>
+<script>
+<?php if ($isMedianCo): ?>
+  // median.co native push bridge
+  window.MedialPush = window.MedialPush || {};
+  window.MedialPush.onesignalAppId = "8704d450-f3b9-4bc8-a1a9-a376abd93131";
+  
+  // Auto‑register for push when device is ready
+  function registerForPush() {
+    if (window.MedialPush && window.MedialPush.registerForPushNotifications) {
+      window.MedialPush.registerForPushNotifications();
+      console.log("[median.co] Push registration requested");
+    } else {
+      console.warn("[median.co] MedialPush bridge not ready yet");
+    }
+  }
+  
+  // Wait for Cordova/median.co device ready event
+  document.addEventListener('deviceready', function() {
+    console.log("[median.co] Device ready – registering for push");
+    registerForPush();
+  }, false);
+  
+  // Fallback: if deviceready already fired, try after a short delay
+  setTimeout(function() {
+    if (window.MedialPush && window.MedialPush.registerForPushNotifications) {
+      registerForPush();
+    }
+  }, 1000);
+<?php else: ?>
+  // Web (browser) OneSignal initialization
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "8704d450-f3b9-4bc8-a1a9-a376abd93131",
+      serviceWorkerPath: "/OneSignalSDK.sw.js",
+      promptOptions: {
+        slidedown: {
+          prompts: [{
+            type: "push",
+            autoPrompt: true,
+            text: {
+              actionMessage: "Nais mong makatanggap ng alerto sa sakuna at matinding init mula sa MDRRMO San Ildefonso?",
+              acceptButton: "Oo, payagan",
+              cancelButton: "Hindi muna",
+            },
+            delay: { timeDelay: 5, pageViews: 1 },
+          }],
+        },
+      },
+    });
 
-</style>
+    // Tag the user with their barangay for targeted alerts later
+    const barangay = <?php echo json_encode($user['barangay_name'] ?? ''); ?>;
+    const userId   = <?php echo json_encode((string)($user['id'] ?? '')); ?>;
+    if (barangay) await OneSignal.User.addTag("barangay", barangay);
+    if (userId)   await OneSignal.User.addTag("user_id", userId);
+    await OneSignal.User.addTag("disaster_level", "<?php echo $disasterLevel; ?>");
+  });
+<?php endif; ?>
+</script>
 </head>
 <body>
 
@@ -388,13 +455,13 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Dashboard
     </a>
     <a href="#current-alerts" class="drawer-nav-item" onclick="closeSidebar()">
-      <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>Alert
+      <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>Mga Alerto
     </a>
     <a href="navigation.php" class="drawer-nav-item">
       <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>Evacuate
     </a>
     <a href="#announcements" class="drawer-nav-item" onclick="closeSidebar()">
-      <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>Announcement
+      <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>Mga Anunsyo
     </a>
   </nav>
   <div class="drawer-footer">
@@ -480,7 +547,7 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
       <div class="alert-icon">⚠️</div>
       <div class="alert-text">
         <div class="alert-title"><?php echo htmlspecialchars(ucfirst($activeDisaster['type'])); ?> Signal#<?php echo (int)$activeDisaster['level']; ?> — Aktibo</div>
-        <div class="alert-sub"><?php $lvlLabel=['1'=>'Mababa','2'=>'Katamtaman','3'=>'Mataas','4'=>'Sukdulan']; echo ($lvlLabel[(string)(int)$activeDisaster['level']]??'Katamtaman').' na antas ng panganib · Pindutin para sa detalye'; ?></div>
+        <div class="alert-sub"><?php $lvlLabel=['1'=>'Low','2'=>'Moderate','3'=>'High','4'=>'Severe']; echo ($lvlLabel[(string)(int)$activeDisaster['level']]??'Moderate').' na antas ng panganib · Pindutin para sa detalye'; ?></div>
       </div>
       <div class="alert-chevron">›</div>
     </div>
@@ -534,7 +601,7 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
             <div class="weather-condition-label"><?php echo htmlspecialchars($weather['condition_text']); ?></div>
           </div>
           <div class="weather-risk-pill <?php echo $weather['level']; ?>">
-            <?php $riskLabels = ['low'=>'MABABA','medium'=>'KATAMTAMAN','high'=>'MATAAS','extreme'=>'SUKDULAN']; echo $riskLabels[$weather['level']]??strtoupper($weather['level']); ?> NA PANGANIB
+            <?php $riskLabels = ['low'=>'LOW','medium'=>'MODERATE','high'=>'HIGH','extreme'=>'SEVERE']; echo $riskLabels[$weather['level']]??strtoupper($weather['level']); ?> RISK
           </div>
         </div>
         <div class="weather-mascot-wrap">
@@ -595,7 +662,7 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
     <div class="section-header"><h2>Evacuate</h2></div>
     <div class="evac-card">
       <p style="font-size:.80rem;color:#555;padding:.9rem 1rem .4rem;">Kapag available, hanapin ang pinakamalapit na evacuation center at mag-navigate mula sa iyong lokasyon.</p>
-      <div style="padding:0 1rem 1rem;"><a href="navigation.php" class="btn-nav">Buksan ang Navigation</a></div>
+      <div style="padding:0 1rem 1rem;"><a href="navigation.php" class="btn-nav">Open Navigation</a></div>
     </div>
 
     <div class="section-header" id="announcements"><h2>Announcements</h2></div>
@@ -633,7 +700,7 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
         <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>
       </div>
       <div class="evac-hint" id="evacHint">Pindutin para lumikas</div>
-      <span>Evacuate</span>
+      <span>Lumikas</span>
     </div>
     <!-- <a href="#announcements" class="nav-item">
       <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg><span>Update</span>
@@ -672,14 +739,14 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
     <div class="desktop-grid">
       <div class="desktop-col-left">
         <div class="desktop-card">
-          <div class="desktop-card-header"><h2>Kasalukuyang Katayuan</h2></div>
+          <div class="desktop-card-header"><h2>Current Status</h2></div>
           <div class="desktop-card-body desktop-alert-wrap">
             <?php if ($activeDisaster): ?>
             <div class="alert-banner alert-typhoon" onclick="openDisasterModal()" role="button" style="cursor:pointer;">
               <div class="alert-icon">⚠️</div>
               <div class="alert-text">
                 <div class="alert-title"><?php echo htmlspecialchars(ucfirst($activeDisaster['type'])); ?> Signal#<?php echo (int)$activeDisaster['level']; ?> — Aktibo</div>
-                <div class="alert-sub"><?php $lvlLabel=['1'=>'Mababa','2'=>'Katamtaman','3'=>'Mataas','4'=>'Sukdulan']; echo ($lvlLabel[(string)(int)$activeDisaster['level']]??'Katamtaman').' na antas ng panganib · Pindutin para sa detalye'; ?></div>
+                <div class="alert-sub"><?php $lvlLabel=['1'=>'Low','2'=>'Moderate','3'=>'High','4'=>'Severe']; echo ($lvlLabel[(string)(int)$activeDisaster['level']]??'Moderate').' na antas ng panganib · Pindutin para sa detalye'; ?></div>
               </div>
               <div class="alert-chevron">›</div>
             </div>
@@ -717,7 +784,7 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
         </div>
 
         <div class="desktop-card">
-          <div class="desktop-card-header"><h2>Ulat Panahon</h2><a href="#">Live Data</a></div>
+          <div class="desktop-card-header"><h2>Weather Forecast</h2><a href="#">Live Data</a></div>
           <?php if ($weather): ?>
           <div class="weather-card" style="margin:0;border-radius:0;box-shadow:none;">
             <div class="weather-banner" style="background:linear-gradient(140deg,<?php echo $wx_colors[0]; ?> 0%,<?php echo $wx_colors[1]; ?> 45%,<?php echo $wx_colors[2]; ?> 100%);">
@@ -727,7 +794,7 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
                   <div class="weather-place-name">San Ildefonso, Bulacan</div>
                   <div class="weather-condition-label"><?php echo htmlspecialchars($weather['condition_text']); ?></div>
                 </div>
-                <div class="weather-risk-pill <?php echo $weather['level']; ?>"><?php $riskLabels=['low'=>'MABABA','medium'=>'KATAMTAMAN','high'=>'MATAAS','extreme'=>'SUKDULAN']; echo $riskLabels[$weather['level']]??strtoupper($weather['level']); ?> NA PANGANIB</div>
+                <div class="weather-risk-pill <?php echo $weather['level']; ?>"><?php $riskLabels=['low'=>'LOW','medium'=>'MODERATE','high'=>'HIGH','extreme'=>'SEVERE']; echo $riskLabels[$weather['level']]??strtoupper($weather['level']); ?> RISK</div>
               </div>
               <div class="weather-mascot-wrap" style="width:140px;height:140px;bottom:-10px;right:16px;">
                 <span class="mascot-note"><?php echo $wx_ptcls[0]; ?></span>
@@ -784,17 +851,17 @@ $disasterType  = $activeDisaster ? htmlspecialchars($activeDisaster['type'], ENT
         </div>
 
         <div class="desktop-card">
-          <div class="desktop-card-header"><h2>Paglikas</h2></div>
+          <div class="desktop-card-header"><h2>Evacuate</h2></div>
           <div class="desktop-evac-body">
             <p style="font-size:.82rem;color:#555;margin-bottom:.9rem;">Kapag available, hanapin ang pinakamalapit na evacuation center at mag-navigate mula sa iyong lokasyon.</p>
-            <a href="navigation.php" class="btn-nav">Buksan ang Navigation</a>
+            <a href="navigation.php" class="btn-nav">Open Navigation</a>
           </div>
         </div>
       </div>
 
       <div class="desktop-col-right">
         <div class="desktop-card">
-          <div class="desktop-card-header" id="announcements"><h2>Mga Anunsyo</h2></div>
+          <div class="desktop-card-header" id="announcements"><h2>Announcements</h2></div>
           <?php if (!$announcements): ?>
           <div class="ann-empty">Wala pang anunsyo.</div>
           <?php else: ?>

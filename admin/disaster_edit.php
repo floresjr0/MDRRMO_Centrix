@@ -42,25 +42,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        if ($id && $disaster) {
-            $stmt = $pdo->prepare("UPDATE disasters
-                                   SET type = ?, level = ?, status = ?, title = ?,
-                                       description = ?, started_at = ?, ended_at = ?
-                                   WHERE id = ?");
-            $stmt->execute([$type, $level, $status, $title, $desc ?: null, $start ?: null, $end ?: null, $id]);
-        } else {
-            $stmt = $pdo->prepare("INSERT INTO disasters
-                                   (type, level, status, title, description, started_at, ended_at)
-                                   VALUES (?,?,?,?,?,?,?)");
-            $stmt->execute([$type, $level, $status, $title, $desc ?: null, $start ?: null, $end ?: null]);
-            $id = (int)$pdo->lastInsertId();
-        }
-
-        header('Location: disasters.php');
-        exit;
+    if ($id && $disaster) {
+        $stmt = $pdo->prepare("UPDATE disasters
+                               SET type = ?, level = ?, status = ?, title = ?,
+                                   description = ?, started_at = ?, ended_at = ?
+                               WHERE id = ?");
+        $stmt->execute([$type, $level, $status, $title, $desc ?: null, $start ?: null, $end ?: null, $id]);
+        $savedId = $id;
+    } else {
+        $stmt = $pdo->prepare("INSERT INTO disasters
+                               (type, level, status, title, description, started_at, ended_at)
+                               VALUES (?,?,?,?,?,?,?)");
+        $stmt->execute([$type, $level, $status, $title, $desc ?: null, $start ?: null, $end ?: null]);
+        $savedId = (int)$pdo->lastInsertId();
     }
-}
 
+    // ── Push notification — only if status is ongoing ──
+    if ($status === 'ongoing') {
+        require_once __DIR__ . '/../pages/notify.php';
+
+        $types  = ['typhoon'=>'Bagyo','flood'=>'Baha','earthquake'=>'Lindol',
+                   'heat'=>'Init','landslide'=>'Landslide','fire'=>'Sunog','other'=>'Iba pa'];
+        $levels = [1=>'Mababa',2=>'Katamtaman',3=>'Mataas',4=>'Sukdulan',5=>'Kritikal'];
+
+        $tl = $types[$type] ?? ucfirst($type);
+        $ll = $levels[$level] ?? 'Signal #'.$level;
+
+        $notifTitle = "⚠️ MDRRMO Alert: {$tl} Signal #{$level}";
+        $notifBody  = "{$ll} na antas ng panganib. " . mb_substr($desc ?: 'Manatiling alerto at sundin ang mga tagubilin.', 0, 100);
+
+        // Clear the lock for this disaster so it always fires when admin explicitly saves
+        $lockFile = sys_get_temp_dir() . '/mdrrmo_notif_lock.json';
+        $lock = file_exists($lockFile)
+            ? (json_decode(file_get_contents($lockFile), true) ?? [])
+            : [];
+        unset($lock['disaster_' . $savedId]); // force resend
+        file_put_contents($lockFile, json_encode($lock));
+
+        sendOneSignalNotification($notifTitle, $notifBody, [
+            'type'          => 'disaster',
+            'level'         => $level,
+            'disaster_type' => $type,
+            'disaster_id'   => $savedId,
+        ]);
+    }
+
+    // ── "All clear" notification when resolved ──
+    if ($status === 'resolved') {
+        require_once __DIR__ . '/../pages/notify.php';
+        sendOneSignalNotification(
+            "✅ MDRRMO: Tapos na ang alerto",
+            "Ang {$title} ay natapos na. Manatiling maingat.",
+            ['type' => 'resolved', 'disaster_id' => $savedId]
+        );
+    }
+
+    header('Location: disasters.php');
+    exit;
+}
+}
+// Sidebar badges
+$_badgeCenters       = (int)$pdo->query("SELECT COUNT(*) FROM evacuation_centers")->fetchColumn();
+$_badgeOngoing       = (int)$pdo->query("SELECT COUNT(*) FROM disasters WHERE status = 'ongoing'")->fetchColumn();
+$_badgeAnnouncements = (int)$pdo->query("SELECT COUNT(*) FROM announcements")->fetchColumn();
+$_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) FROM evac_registrations")->fetchColumn();
+// $_badgeUsers        = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -99,9 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="sidebar-section-title">Main</div>
                     <ul class="sidebar-menu">
                         <li><a href="index.php" class="sidebar-link"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
-                        <li><a href="centers.php" class="sidebar-link"><i class="fas fa-map-marker-alt"></i> <span>Evacuation Centers</span></a></li>
+                        <li><a href="centers.php" class="sidebar-link"><i class="fas fa-map-marker-alt"></i> <span>Evacuation Centers</span> <?php if($_badgeCenters > 0): ?><span class="sidebar-badge"><?php echo number_format($_badgeCenters); ?></span><?php endif; ?></a></li>
                         <li><a href="users.php" class="sidebar-link"><i class="fas fa-users"></i> <span>User Management</span></a></li>
-                        <li><a href="disasters.php" class="sidebar-link active"><i class="fas fa-exclamation-triangle"></i> <span>Disasters</span></a></li>
+                        <li><a href="disasters.php" class="sidebar-link active"><i class="fas fa-exclamation-triangle"></i> <span>Disasters</span><?php if($_badgeOngoing > 0): ?><span class="sidebar-badge"><?php echo $_badgeOngoing; ?></span><?php endif; ?></a></li>
                     </ul>
                 </div>
 
@@ -110,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <ul class="sidebar-menu">
                         <!-- <li><a href="assistance.php" class="sidebar-link"><i class="fas fa-hand-holding-heart"></i> <span>Assistance</span></a></li> -->
                         <!-- <li><a href="reports.php" class="sidebar-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a></li> -->
-                        <li><a href="announcements.php" class="sidebar-link"><i class="fas fa-bullhorn"></i> <span>Announcements</span></a></li>
+                        <li><a href="announcements.php" class="sidebar-link"><i class="fas fa-bullhorn"></i> <span>Announcements</span><?php if($_badgeAnnouncements > 0): ?><span class="sidebar-badge"><?php echo $_badgeAnnouncements; ?></span><?php endif; ?></a></li>
                     </ul>
                 </div>
 
@@ -119,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <ul class="sidebar-menu">
                         <!-- <li><a href="weather.php" class="sidebar-link"><i class="fas fa-cloud-sun"></i> <span>Weather</span></a></li> -->
                         <li><a href="maps.php" class="sidebar-link"><i class="fas fa-map"></i> <span>Maps</span></a></li>
-                        <li><a href="evacuees.php" class="sidebar-link"><i class="fas fa-people-arrows"></i> <span>Evacuees</span><span></span> <span class="sidebar-badge">8</span></a></li>
+                        <li><a href="evacuees.php" class="sidebar-link"><i class="fas fa-people-arrows"></i> <span>Evacuees</span><span></span>  <?php if($_badgeEvacuees > 0): ?><span class="sidebar-badge"><?php echo number_format($_badgeEvacuees); ?></span><?php endif; ?></a></li>
                     </ul>
                 </div>
 

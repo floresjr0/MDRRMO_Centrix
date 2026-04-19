@@ -133,6 +133,24 @@ if (defined('WEATHER_API_KEY') && WEATHER_API_KEY !== '') {
 }
 $disasterStmt = $pdo->query("SELECT * FROM disasters WHERE status = 'ongoing' ORDER BY level DESC, started_at DESC LIMIT 1");
 $activeDisaster = $disasterStmt->fetch();
+// Sidebar badges
+$_badgeCenters       = (int)$pdo->query("SELECT COUNT(*) FROM evacuation_centers")->fetchColumn();
+$_badgeOngoing       = (int)$pdo->query("SELECT COUNT(*) FROM disasters WHERE status = 'ongoing'")->fetchColumn();
+$_badgeAnnouncements = (int)$pdo->query("SELECT COUNT(*) FROM announcements")->fetchColumn();
+$_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) FROM evac_registrations")->fetchColumn();
+// $_badgeUsers        = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+
+// User summary stats
+$uSummary = $pdo->query("
+    SELECT
+        COUNT(*) AS total_all,
+        SUM(role = 'admin') AS total_admin,
+        SUM(role = 'coordinator') AS total_coordinator,
+        SUM(role = 'citizen') AS total_citizen,
+        SUM(is_active = 1) AS total_active,
+        SUM(is_active = 0) AS total_inactive
+    FROM users
+")->fetch();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -173,30 +191,37 @@ $activeDisaster = $disasterStmt->fetch();
                     <div class="sidebar-section-title">Main</div>
                     <ul class="sidebar-menu">
                         <li><a href="#" class="sidebar-link active"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
-                        <li><a href="centers.php" class="sidebar-link"><i class="fas fa-map-marker-alt"></i> <span>Evacuation Centers</span></a></li>
+                        <li><a href="centers.php" class="sidebar-link"><i class="fas fa-map-marker-alt"></i> <span>Evacuation Centers</span>
+                    <?php if($_badgeCenters > 0): ?><span class="sidebar-badge"><?php echo $_badgeCenters; ?></span><?php endif; ?></a></li>
                         <li><a href="users.php" class="sidebar-link"><i class="fas fa-users"></i> <span>User Management</span></a></li>
-                        <li><a href="disasters.php" class="sidebar-link"><i class="fas fa-exclamation-triangle"></i> <span>Disasters</span></a></li>
+                        <li><a href="disasters.php" class="sidebar-link"><i class="fas fa-exclamation-triangle"></i> <span>Disasters</span>
+                        <?php if($_badgeOngoing > 0): ?><span class="sidebar-badge"><?php echo $_badgeOngoing; ?></span><?php endif; ?></a></li>
                     </ul>
                 </div>
 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Operations</div>
                     <ul class="sidebar-menu">
-                        <li><a href="announcements.php" class="sidebar-link"><i class="fas fa-bullhorn"></i> <span>Announcements</span></a></li>
+                        <!-- <li><a href="assistance.php" class="sidebar-link"><i class="fas fa-hand-holding-heart"></i> <span>Assistance</span></a></li> -->
+                        <!-- <li><a href="reports.php" class="sidebar-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a></li> -->
+                        <li><a href="announcements.php" class="sidebar-link "><i class="fas fa-bullhorn"></i> <span>Announcements</span> <?php if($_badgeAnnouncements > 0): ?><span class="sidebar-badge"><?php echo $_badgeAnnouncements; ?></span><?php endif; ?></a></li>
                     </ul>
                 </div>
 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Monitoring</div>
                     <ul class="sidebar-menu">
+                        <!-- <li><a href="weather.php" class="sidebar-link"><i class="fas fa-cloud-sun"></i> <span>Weather</span></a></li> -->
                         <li><a href="maps.php" class="sidebar-link"><i class="fas fa-map"></i> <span>Maps</span></a></li>
-                        <li><a href="evacuees.php" class="sidebar-link"><i class="fas fa-people-arrows"></i> <span>Evacuees</span> <span class="sidebar-badge"><?php echo number_format($summary['total_evacuees']); ?></span></a></li>
+                        <li><a href="evacuees.php" class="sidebar-link"><i class="fas fa-people-arrows"></i> <span>Evacuees</span><?php if($_badgeEvacuees > 0): ?><span class="sidebar-badge"><?php echo number_format($_badgeEvacuees); ?></span><?php endif; ?></a></li>
                     </ul>
                 </div>
 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Settings</div>
                     <ul class="sidebar-menu">
+                        <!-- <li><a href="profile.php" class="sidebar-link"><i class="fas fa-user-cog"></i> <span>Profile</span></a></li> -->
+                        <!-- <li><a href="settings.php" class="sidebar-link"><i class="fas fa-cog"></i> <span>Settings</span></a></li> -->
                         <li><a href="../pages/logout.php" class="sidebar-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
                     </ul>
                 </div>
@@ -277,178 +302,94 @@ $activeDisaster = $disasterStmt->fetch();
                             <div class="stat-label-small">Full</div>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon-small"><i class="fas fa-thermometer-half"></i></div>
-                        <div class="stat-content">
-                            <div class="stat-value-small"><?php echo $weather['heat_index'] ?? '32'; ?>°C</div>
-                            <div class="stat-label-small">Heat Index</div>
-                        </div>
-                    </div>
+
                 </div>
 
                 <!-- Main Two Column Layout -->
                 <div class="main-grid">
-                    <!-- Left Column: Current Situation Card (Weather Style) - Full Height -->
-                    <!-- <div class="weather-card">
-                        <div class="weather-header">
-                            <h2>San Ildefonso</h2>
-                            <span>Chance of rain 50%</span>
-                        </div> -->
 
-                        <!-- Hardcoded weather data for now -->
-                        <!-- <div class="weather-main">
-                            <div class="weather-temp-large">32°</div>
-                            <div class="weather-info">
-                                <div class="weather-condition">Partly Cloudy</div>
-                                <div class="weather-detail">Heat Index: 36° • Humidity: 65%</div>
-                            </div>
-                        </div> -->
+   <!-- Quick Stats Mini Cards — User Summary -->
+<div class="stats-mini-grid">
+    <div class="stat-mini-card">
+        <div class="stat-mini-label">All Users</div>
+        <div class="stat-mini-value"><?php echo number_format((int)$uSummary['total_all']); ?></div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-label">Admins</div>
+        <div class="stat-mini-value" style="color: #3498DB;"><?php echo number_format((int)$uSummary['total_admin']); ?></div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-label">Coordinators</div>
+        <div class="stat-mini-value" style="color: #FFC107;"><?php echo number_format((int)$uSummary['total_coordinator']); ?></div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-label">Citizens</div>
+        <div class="stat-mini-value" style="color: var(--map-green);"><?php echo number_format((int)$uSummary['total_citizen']); ?></div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-label">Active</div>
+        <div class="stat-mini-value" style="color: #2E7D32;"><?php echo number_format((int)$uSummary['total_active']); ?></div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-label">Inactive</div>
+        <div class="stat-mini-value" style="color: var(--map-red);"><?php echo number_format((int)$uSummary['total_inactive']); ?></div>
+    </div>
+</div>
 
-                        <!-- <div class="forecast-title">TODAY'S FORECAST</div>
-                        <div class="forecast-grid">
-                            <div class="forecast-item">
-                                <div class="forecast-time">6:00 AM</div>
-                                <div class="forecast-temp">23°</div>
-                            </div>
-                            <div class="forecast-item">
-                                <div class="forecast-time">9:00 AM</div>
-                                <div class="forecast-temp">31°</div>
-                            </div>
-                            <div class="forecast-item">
-                                <div class="forecast-time">12:00 PM</div>
-                                <div class="forecast-temp">32°</div>
-                            </div>
-                            <div class="forecast-item">
-                                <div class="forecast-time">3:00 PM</div>
-                                <div class="forecast-temp">26°</div>
-                            </div>
-                            <div class="forecast-item">
-                                <div class="forecast-time">6:00 PM</div>
-                                <div class="forecast-temp">25°</div>
-                            </div>
-                            <div class="forecast-item">
-                                <div class="forecast-time">9:00 PM</div>
-                                <div class="forecast-temp">21°</div>
-                            </div>
-                        </div> -->
+    <!-- Evacuation Centers -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-map-pin"></i> Evacuation Centers</h3>
+            <span class="badge"><?php echo count($centers); ?> Active</span>
+        </div>
 
-                        <!-- Air Conditions Section - No Backend Needed
-                        <div class="air-conditions">
-                            <div class="air-conditions-title">AIR CONDITIONS</div>
-                            <div class="air-conditions-grid">
-                                <div class="air-condition-item">
-                                    <span class="air-condition-label">
-                                        <i class="fas fa-temperature-low"></i> Real Feel
-                                    </span>
-                                    <span class="air-condition-value">32<span class="air-condition-unit">°C</span></span>
-                                    
-                                </div>
-                                <div class="air-condition-item">
-                                    <span class="air-condition-label">
-                                        <i class="fas fa-wind"></i> Wind
-                                    </span>
-                                    <span class="air-condition-value">12<span class="air-condition-unit">km/h</span></span>
-                                    
-                                </div>
-                                <div class="air-condition-item">
-                                    <span class="air-condition-label">
-                                        <i class="fas fa-droplet"></i> Chance of rain
-                                    </span>
-                                    <span class="air-condition-value">50<span class="air-condition-unit">%</span></span>
-                                    
-                                </div>
-                                <div class="air-condition-item">
-                                    <span class="air-condition-label">
-                                        <i class="fas fa-sun"></i> UV Index
-                                    </span>
-                                    <span class="air-condition-value">7<span class="air-condition-unit"></span></span>
-                                    
-                                </div>
-                            </div>
-                        </div> -->
+        <div class="centers-list">
+            <?php 
+            $displayCenters = array_slice($centers, 0, 4);
+            foreach ($displayCenters as $center): 
+                $dotClass = 'dot-gray';
+                $fillClass = '';
+                $capacityPercent = ($center['max_capacity_people'] > 0) 
+                    ? ($center['current_occupancy'] / $center['max_capacity_people']) * 100 
+                    : 0;
 
-                        <?php if ($activeDisaster): ?>
-                        <div class="disaster-badge">
-                            <span>⚠️ Active: <?php echo htmlspecialchars(strtoupper($activeDisaster['type'])); ?> (Signal <?php echo (int)$activeDisaster['level']; ?>)</span>
-                            <span><?php echo htmlspecialchars($activeDisaster['title']); ?></span>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- Right Column: Quick Stats and Centers -->
-                    <div class="right-column">
-                        <!-- Quick Stats Mini Cards -->
-                        <div class="stats-mini-grid">
-                            <div class="stat-mini-card">
-                                <div class="stat-mini-label">Available</div>
-                                <div class="stat-mini-value" style="color: var(--map-green);"><?php echo $summary['status_available']; ?></div>
-                            </div>
-                            <div class="stat-mini-card">
-                                <div class="stat-mini-label">Near Capacity</div>
-                                <div class="stat-mini-value" style="color: var(--map-yellow);"><?php echo $summary['status_near']; ?></div>
-                            </div>
-                            <div class="stat-mini-card">
-                                <div class="stat-mini-label">Full</div>
-                                <div class="stat-mini-value" style="color: var(--map-red);"><?php echo $summary['status_full']; ?></div>
-                            </div>
-                            <div class="stat-mini-card">
-                                <div class="stat-mini-label">Temp Shelters</div>
-                                <div class="stat-mini-value" style="color: var(--map-blue);"><?php echo $summary['status_temp']; ?></div>
-                            </div>
-                        </div>
-
-                        <!-- Evacuation Centers Card -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h3><i class="fas fa-map-pin"></i> Evacuation Centers</h3>
-                                <span class="badge"><?php echo count($centers); ?> Active</span>
-                            </div>
-                            
-                            <div class="centers-list">
-                                <?php 
-                                $displayCenters = array_slice($centers, 0, 4);
-                                foreach ($displayCenters as $center): 
-                                    $dotClass = 'dot-gray';
-                                    $fillClass = '';
-                                    $capacityPercent = ($center['max_capacity_people'] > 0) 
-                                        ? ($center['current_occupancy'] / $center['max_capacity_people']) * 100 
-                                        : 0;
-                                    
-                                    if ($center['status'] === 'available') {
-                                        $dotClass = 'dot-green';
-                                        $fillClass = 'green';
-                                    } else if ($center['status'] === 'near_capacity') {
-                                        $dotClass = 'dot-yellow';
-                                        $fillClass = 'yellow';
-                                    } else if ($center['status'] === 'full') {
-                                        $dotClass = 'dot-red';
-                                    } else if ($center['status'] === 'temp_shelter') {
-                                        $dotClass = 'dot-blue';
-                                    }
-                                ?>
-                                <div class="center-item">
-                                    <div class="center-info">
-                                        <h4><?php echo htmlspecialchars($center['name']); ?></h4>
-                                        <p><?php echo htmlspecialchars($center['barangay_name']); ?></p>
-                                    </div>
-                                    <div class="capacity-indicator">
-                                        <div class="capacity-bar">
-                                            <div class="capacity-fill <?php echo $fillClass; ?>" style="width: <?php echo min($capacityPercent, 100); ?>%;"></div>
-                                        </div>
-                                        <span class="capacity-dot <?php echo $dotClass; ?>"></span>
-                                    </div>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-
-                            <div style="margin-top: 15px; text-align: center;">
-                                <a href="centers.php" style="color: var(--primary-red); text-decoration: none; font-size: 13px; font-weight: 500;">
-                                    View All Centers <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                if ($center['status'] === 'available') {
+                    $dotClass = 'dot-green';
+                    $fillClass = 'green';
+                } else if ($center['status'] === 'near_capacity') {
+                    $dotClass = 'dot-yellow';
+                    $fillClass = 'yellow';
+                } else if ($center['status'] === 'full') {
+                    $dotClass = 'dot-red';
+                } else if ($center['status'] === 'temp_shelter') {
+                    $dotClass = 'dot-blue';
+                }
+            ?>
+            <div class="center-item">
+                <div class="center-info">
+                    <h4><?php echo htmlspecialchars($center['name']); ?></h4>
+                    <p><?php echo htmlspecialchars($center['barangay_name']); ?></p>
                 </div>
+                <div class="capacity-indicator">
+                    <div class="capacity-bar">
+                        <div class="capacity-fill <?php echo $fillClass; ?>" 
+                             style="width: <?php echo min($capacityPercent, 100); ?>%;">
+                        </div>
+                    </div>
+                    <span class="capacity-dot <?php echo $dotClass; ?>"></span>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+
+        <div style="margin-top: 15px; text-align: center;">
+            <a href="centers.php" style="color: var(--primary-red); text-decoration: none; font-size: 13px; font-weight: 500;">
+                View All Centers <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+</div>
 
                 <!-- Evacuation Centers Summary - FULLY RESTORED with all columns -->
                 <?php if (!empty($evacSummary)): ?>
