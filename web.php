@@ -1376,7 +1376,7 @@ body::before {
       </svg>
     </div>
     <h3>MDRRMO Ready App</h3>
-    <p>Scan to download on iOS & Android</p>
+    <p>Scan to download on Android</p>
     <button class="modal-close-btn" onclick="closeModal()">Close</button>
   </div>
 </div>
@@ -1405,8 +1405,8 @@ body::before {
     </a>
     
     <div class="nav-buttons">
-      <button class="btn-login">Download App</button>
-      
+<button class="btn-login" id="downloadBtnHeader">Download App</button>
+
     </div>
     <button class="menu-btn" onclick="openMobileMenu()">☰</button>
   </div>
@@ -1436,10 +1436,13 @@ body::before {
         </h1>
         <p class="hero-desc">Official disaster risk reduction and management portal — real-time alerts, and emergency response for San Ildefonso, Bulacan.</p>
         <div class="hero-buttons">
-          <button class="btn-primary-lg">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"/></svg>
-            Download App
-          </button>
+         <button class="btn-primary-lg" id="downloadBtnHero">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+    <rect x="5" y="2" width="14" height="20" rx="2"/>
+    <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"/>
+  </svg>
+  Download App
+</button>
          
         </div>
         <div class="stats">
@@ -1580,6 +1583,43 @@ window.addEventListener('scroll', function() {
     header.classList.remove('scrolled');
   }
 });
+
+// Helper function to start the APK download
+function downloadAPK() {
+  // Adjust the path to match your server structure
+  const apkPath = 'app/CENTRIX.apk';   // relative to the current HTML file
+  // Or use an absolute path: '/app/app.apk'
+
+  // Create a temporary anchor element
+  const link = document.createElement('a');
+  link.href = apkPath;
+  link.download = 'MDRRMO_San_Ildefonso.apk';   // suggested filename
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Attach click handlers to both download buttons
+document.addEventListener('DOMContentLoaded', () => {
+  const headerBtn = document.getElementById('downloadBtnHeader');
+  const heroBtn = document.getElementById('downloadBtnHero');
+
+  if (headerBtn) {
+    headerBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      downloadAPK();
+    });
+  }
+
+  if (heroBtn) {
+    heroBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      downloadAPK();
+    });
+  }
+});
+
+
 
 const weatherEl = document.getElementById('weatherDemo');
 if (weatherEl) {
