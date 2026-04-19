@@ -62,7 +62,7 @@
   </div>
 </header>
 
-<!-- Hero -->
+<!-- Hero sad-->
 <section class="hero">
   <div class="hero-ambient"></div>
   <div class="hero-ambient-2"></div>
@@ -299,4 +299,5 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 </script>
 </body>
+
 </html>
