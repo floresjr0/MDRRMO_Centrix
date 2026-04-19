@@ -5,7 +5,7 @@ if (!function_exists('db')) {
 
 if (!defined('ONESIGNAL_APP_ID')) {
     define('ONESIGNAL_APP_ID', '8704d450-f3b9-4bc8-a1a9-a376abd93131');
-    define('ONESIGNAL_API_KEY', 'os_v2_app_q4cniuhtxff4rinjun3kxwjrgf2iuvngngyuan5ls2ft7smtkxrotyi2aceepsgqiawlebi36f4tltrl6oitlahnioem65bvsloqkka');
+    define('ONESIGNAL_API_KEY', 'os_v2_app_q4cniuhtxff4rinjun3kxwjrgfq4bqf3s7aewweja422gseetmlhk7u47navkumrqf66o4y6dkzo4do4pad7qgojuron3m54mfj5mfq');
 }
 
 if (!function_exists('sendOneSignalNotification')) {
