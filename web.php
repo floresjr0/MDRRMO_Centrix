@@ -52,7 +52,7 @@
     </a>
     
     <div class="nav-buttons">
-<button class="btn-login" id="downloadBtnHeader">Download App</button>
+<button class="btn-login" id="downloadBtnHeader" href="download.php">Download App</button>
 
     </div>
     <button class="menu-btn" onclick="openMobileMenu()">☰</button>
@@ -76,7 +76,7 @@
         </h1>
         <p class="hero-desc">Mobile-based disaster alerts and evacuation guidance with real-time evacuation monitoring for San Ildefonso, Bulacan.</p>
         <div class="hero-buttons">
-         <button class="btn-primary-lg" id="downloadBtnHero">
+         <button class="btn-primary-lg" id="downloadBtnHero"  href="download.php">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
     <rect x="5" y="2" width="14" height="20" rx="2"/>
     <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"/>
