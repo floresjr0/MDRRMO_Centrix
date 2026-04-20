@@ -1527,5 +1527,6 @@ const observer = new IntersectionObserver((entries) => { entries.forEach((e) => 
 document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 document.querySelectorAll('a[href^="#"]').forEach(anchor => { anchor.addEventListener('click', function(e) { const id = this.getAttribute('href').slice(1); const target = document.getElementById(id); if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }); });
 </script>
+<!-- asdsad -->
 </body>
 </html>
