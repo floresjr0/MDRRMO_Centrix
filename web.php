@@ -8,7 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
 
+</style>
 </head>
 <body>
 
@@ -51,9 +53,9 @@
         <p>San Ildefonso, Bulacan</p>
       </div>
     </a>
-    
+
     <div class="nav-buttons">
-<button class="btn-login" id="downloadBtnHeader">Download App</button>
+<button class="btn-login" id="downloadBtnHeader" href="download.php">Download App</button>
 
     </div>
     <button class="menu-btn" onclick="openMobileMenu()">☰</button>
@@ -84,7 +86,7 @@
         </h1>
         <p class="hero-desc">Official disaster risk reduction and management portal — real-time alerts, and emergency response for San Ildefonso, Bulacan.</p>
         <div class="hero-buttons">
-         <button class="btn-primary-lg" id="downloadBtnHero">
+         <button class="btn-primary-lg" id="downloadBtnHero" href="download.php">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
     <rect x="5" y="2" width="14" height="20" rx="2"/>
     <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"/>
@@ -235,7 +237,7 @@ window.addEventListener('scroll', function() {
 // Helper function to start the APK download
 function downloadAPK() {
   // Adjust the path to match your server structure
-  const apkPath = 'app/CENTRIX.apk';   // relative to the current HTML file
+  const apkPath = 'download.php';   // relative to the current HTML file
   // Or use an absolute path: '/app/app.apk'
 
   // Create a temporary anchor element
