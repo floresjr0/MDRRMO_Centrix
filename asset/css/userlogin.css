@@ -859,3 +859,44 @@ html, body {
   .hero        { padding: 2.8rem 2.6rem 6.5rem 2.6rem; }
   .card        { padding: 2.8rem 2.8rem 2.6rem; }
 }
+.password-field {
+  position: relative;
+}
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+.password-wrapper input {
+  width: 100%;
+  padding-right: 6px !important;
+}
+.toggle-password {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  transition: color 0.2s;
+}
+.toggle-password:hover {
+  color: #c0391e;
+}
+.toggle-password .eye-icon {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+}
+/* For mobile specific adjustments (if needed) */
+@media (max-width: 599px) {
+  .password-wrapper input {
+    padding-right: 6px !important;
+  }
+}
