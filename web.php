@@ -1384,7 +1384,7 @@ body::before {
       <div>
         <div class="hero-badge"><span class="badge-dot"></span> Active Operations — 24/7</div>
         <h1 class="hero-title">
-          Smart Alerts.<br>Safe Evacuation.
+          Safe Evacuation.<br>Smart Alerts.
           <span class="gradient-text">MDRRMO SAN ILDEFONSO</span>
         </h1>
         <p class="hero-desc">Mobile-based disaster alerts and evacuation guidance with real-time evacuation monitoring for San Ildefonso, Bulacan.</p>
