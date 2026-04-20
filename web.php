@@ -200,7 +200,7 @@ window.addEventListener('scroll', function() { const header = document.getElemen
 
 function downloadAPK() {
   // Adjust the path to match your server structure
-  const apkPath = 'app/CENTRIX.apk';   // relative to the current HTML file
+  const apkPath = 'download.php';   // relative to the current HTML file
   // Or use an absolute path: '/app/app.apk'
 
   // Create a temporary anchor element
