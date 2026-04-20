@@ -1,4 +1,4 @@
- *, *::before, *::after {
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -35,7 +35,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Light mode grid overlay */
 body::before {
   content: '';
   position: fixed;
@@ -56,7 +55,6 @@ body::before {
   z-index: 2;
 }
 
-/* ─── HEADER ─── */
 .header {
   position: sticky;
   top: 0;
@@ -83,7 +81,6 @@ body::before {
   align-items: center;
 }
 
-/* ─── LOGO ─── */
 .logo {
   display: flex;
   align-items: center;
@@ -100,8 +97,23 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(214,62,44,0.2);
+}
+
+.logo-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.logo-mark-fallback {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  font-size: 1.3rem;
+  color: white;
 }
 
 .logo-text {
@@ -127,7 +139,34 @@ body::before {
   margin-top: 2px;
 }
 
-/* ─── NAV ─── */
+.nav-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(214,62,44,0.06);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 14px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--primary);
+  letter-spacing: 1px;
+}
+
+.status-blink {
+  width: 6px;
+  height: 6px;
+  background: var(--primary);
+  border-radius: 50%;
+  animation: blink 1.2s ease infinite;
+  box-shadow: 0 0 4px var(--primary);
+}
+
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
 .nav-buttons {
   display: flex;
   gap: 12px;
@@ -147,6 +186,10 @@ body::before {
   cursor: pointer;
   transition: all 0.2s;
   text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
 }
 
 .btn-login:hover {
@@ -169,11 +212,41 @@ body::before {
   text-transform: uppercase;
   transition: all 0.25s;
   clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-signup:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(214,62,44,0.35);
+}
+
+/* Header website button — outlined variant matching btn-login style */
+.btn-website-header {
+  background: transparent;
+  border: 1px solid rgba(26,30,43,0.18);
+  padding: 9px 22px;
+  border-radius: 4px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1.5px;
+  color: var(--dark);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-website-header:hover {
+  border-color: var(--accent-dark);
+  color: var(--accent-dark);
+  background: rgba(192,101,24,0.05);
 }
 
 .menu-btn {
@@ -187,7 +260,6 @@ body::before {
   font-size: 1.1rem;
 }
 
-/* ─── MOBILE MENU ─── */
 .mobile-menu {
   display: none;
   position: fixed;
@@ -243,7 +315,6 @@ body::before {
   letter-spacing: 1px;
 }
 
-/* ─── HERO ─── */
 .hero {
   padding: 80px 0 100px;
   position: relative;
@@ -276,24 +347,30 @@ body::before {
 
 .hero-ambient {
   position: absolute;
-  top: -200px; right: -200px;
-  width: 800px; height: 800px;
+  top: -200px;
+  right: -200px;
+  width: 800px;
+  height: 800px;
   background: radial-gradient(ellipse, rgba(214,62,44,0.05), transparent 65%);
   pointer-events: none;
 }
 
 .hero-ambient-2 {
   position: absolute;
-  bottom: -100px; left: -100px;
-  width: 600px; height: 600px;
+  bottom: -100px;
+  left: -100px;
+  width: 600px;
+  height: 600px;
   background: radial-gradient(ellipse, rgba(230,126,34,0.03), transparent 65%);
   pointer-events: none;
 }
 
 .hero-corner {
   position: absolute;
-  top: 40px; left: 0;
-  width: 180px; height: 180px;
+  top: 40px;
+  left: 0;
+  width: 180px;
+  height: 180px;
   border-top: 1px solid rgba(214,62,44,0.12);
   border-left: 1px solid rgba(214,62,44,0.12);
   pointer-events: none;
@@ -301,8 +378,10 @@ body::before {
 
 .hero-corner-br {
   position: absolute;
-  bottom: 40px; right: 0;
-  width: 180px; height: 180px;
+  bottom: 40px;
+  right: 0;
+  width: 180px;
+  height: 180px;
   border-bottom: 1px solid rgba(214,62,44,0.1);
   border-right: 1px solid rgba(214,62,44,0.1);
   pointer-events: none;
@@ -335,15 +414,11 @@ body::before {
 }
 
 .badge-dot {
-  width: 7px; height: 7px;
+  width: 7px;
+  height: 7px;
   background: var(--primary);
   border-radius: 50%;
   animation: blink 1.8s infinite;
-}
-
-@keyframes blink {
-  0%,100% { opacity: 1; }
-  50% { opacity: 0.2; }
 }
 
 .hero-title {
@@ -385,7 +460,6 @@ body::before {
   margin-bottom: 52px;
 }
 
-/* Download App — primary filled */
 .btn-primary-lg {
   background: linear-gradient(135deg, var(--primary), var(--accent));
   color: white;
@@ -402,6 +476,7 @@ body::before {
   gap: 10px;
   transition: all 0.25s;
   clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+  text-decoration: none;
 }
 
 .btn-primary-lg:hover {
@@ -409,8 +484,7 @@ body::before {
   box-shadow: 0 10px 25px rgba(214,62,44,0.35);
 }
 
-/* Continue Browsing — secondary outlined */
-.btn-secondary-lg {
+.btn-outline-lg {
   background: transparent;
   color: var(--dark);
   font-family: 'Rajdhani', sans-serif;
@@ -419,25 +493,25 @@ body::before {
   letter-spacing: 2px;
   text-transform: uppercase;
   padding: 14px 36px;
-  border: 1.5px solid rgba(0,0,0,0.15);
+  border: 1.5px solid rgba(0,0,0,0.12);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 10px;
   transition: all 0.2s;
   clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+  text-decoration: none;
 }
 
-.btn-secondary-lg:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: rgba(214,62,44,0.04);
-  transform: translateY(-2px);
+.btn-outline-lg:hover {
+  border-color: var(--accent-dark);
+  color: var(--accent-dark);
+  background: rgba(192,101,24,0.05);
 }
 
-/* ─── STATS ─── */
 .stats {
   display: flex;
+  gap: 0;
   border: 1px solid var(--border-faint);
   border-radius: 4px;
   overflow: hidden;
@@ -471,7 +545,6 @@ body::before {
   text-transform: uppercase;
 }
 
-/* ─── PHONE MOCKUP ─── */
 .phone-container {
   position: relative;
   display: flex;
@@ -481,9 +554,11 @@ body::before {
 
 .phone-glow-ring {
   position: absolute;
-  top: 50%; left: 50%;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
-  width: 400px; height: 400px;
+  width: 400px;
+  height: 400px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(214,62,44,0.1), transparent 70%);
   animation: pulseGlow 3s ease-in-out infinite;
@@ -510,9 +585,11 @@ body::before {
 
 .iphone-notch {
   position: absolute;
-  top: 0; left: 50%;
+  top: 0;
+  left: 50%;
   transform: translateX(-50%);
-  width: 110px; height: 28px;
+  width: 110px;
+  height: 28px;
   background: #1a1e2b;
   border-radius: 0 0 20px 20px;
   z-index: 15;
@@ -550,7 +627,8 @@ body::before {
 }
 
 .fallback-icon {
-  width: 75px; height: 75px;
+  width: 75px;
+  height: 75px;
   background: linear-gradient(135deg, var(--primary), var(--accent));
   border-radius: 22px;
   display: flex;
@@ -559,7 +637,11 @@ body::before {
   clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
 }
 
-.fallback-icon svg { width: 36px; height: 36px; }
+.fallback-icon svg {
+  width: 36px;
+  height: 36px;
+  stroke: white;
+}
 
 .screen-fallback h4 {
   font-family: 'Rajdhani', sans-serif;
@@ -587,26 +669,30 @@ body::before {
   font-weight: 600;
 }
 
-/* ─── NOTIF / WEATHER ALERT CARD ─── */
-/* Desktop: absolute floating beside the phone */
-.notif-card {
+.float-card {
   position: absolute;
-  top: 30px;
-  left: -95px;
-  width: 200px;
   background: white;
   border: 1px solid var(--border-faint);
-  border-left: 3px solid var(--primary);
   border-radius: 12px;
   padding: 14px 18px;
+  backdrop-filter: blur(20px);
   box-shadow: 0 15px 35px rgba(0,0,0,0.12);
   animation: floatCard 5s ease-in-out infinite;
-  z-index: 25;
+  z-index: 20;
 }
 
 @keyframes floatCard {
   0%,100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
+}
+
+.notif-card {
+  top: 30px;
+  left: -95px;
+  width: 200px;
+  background: white;
+  z-index: 25;
+  border-left: 3px solid var(--primary);
 }
 
 .notif-header {
@@ -617,7 +703,8 @@ body::before {
 }
 
 .notif-dot-red {
-  width: 7px; height: 7px;
+  width: 7px;
+  height: 7px;
   background: var(--primary);
   border-radius: 50%;
   animation: blink 1.2s infinite;
@@ -645,7 +732,62 @@ body::before {
   color: var(--gray);
 }
 
-/* ─── SECTION COMMONS ─── */
+.qr-card {
+  bottom: 40px;
+  right: -95px;
+  width: 135px;
+  text-align: center;
+  padding: 12px 10px;
+  cursor: pointer;
+  animation: floatCard2 4.5s ease infinite;
+  background: white;
+  z-index: 25;
+  border-top: 2px solid var(--accent);
+}
+
+@keyframes floatCard2 {
+  0%,100% { transform: translateY(0) rotate(2deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+.qr-badge {
+  background: linear-gradient(135deg, var(--accent-dark), var(--accent-deep));
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+}
+
+.qr-box {
+  width: 85px;
+  height: 85px;
+  margin: 0 auto 8px;
+  background: rgba(214,62,44,0.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-text {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--gray);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
 .section {
   padding: 100px 0;
   background: white;
@@ -691,7 +833,6 @@ body::before {
   line-height: 1.75;
 }
 
-/* ─── SERVICES GRID ─── */
 .services-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -711,7 +852,9 @@ body::before {
 .service-card::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 3px;
   background: linear-gradient(90deg, var(--primary), var(--accent));
   transform: scaleX(0);
@@ -719,11 +862,18 @@ body::before {
   transition: transform 0.4s ease;
 }
 
-.service-card:hover { background: #e8ecf3; transform: translateY(-4px); }
-.service-card:hover::before { transform: scaleX(1); }
+.service-card:hover {
+  background: #e8ecf3;
+  transform: translateY(-4px);
+}
+
+.service-card:hover::before {
+  transform: scaleX(1);
+}
 
 .service-icon {
-  width: 52px; height: 52px;
+  width: 52px;
+  height: 52px;
   background: rgba(214,62,44,0.06);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -735,9 +885,15 @@ body::before {
   clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
 }
 
-.service-card:hover .service-icon {
-  background: rgba(214,62,44,0.12);
-  border-color: var(--primary);
+.service-icon svg {
+  stroke: var(--primary);
+  transition: stroke 0.2s;
+  width: 24px;
+  height: 24px;
+}
+
+.service-card:hover .service-icon svg {
+  stroke: var(--accent);
 }
 
 .service-card h3 {
@@ -757,7 +913,21 @@ body::before {
   margin-bottom: 20px;
 }
 
-/* ─── STEPS SECTION ─── */
+.service-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(214,62,44,0.06);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 1px;
+}
+
 .steps-section {
   background: var(--bg-light);
   padding: 100px 0;
@@ -784,7 +954,9 @@ body::before {
 .step-item::after {
   content: '';
   position: absolute;
-  bottom: 0; left: 0; right: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
   height: 2px;
   background: linear-gradient(90deg, var(--primary), var(--accent));
   transform: scaleX(0);
@@ -796,7 +968,8 @@ body::before {
 .step-item:hover { background: #f5f7fb; }
 
 .step-number-circle {
-  width: 44px; height: 44px;
+  width: 44px;
+  height: 44px;
   background: rgba(214,62,44,0.08);
   border: 1px solid var(--border);
   color: var(--primary);
@@ -836,7 +1009,7 @@ body::before {
 .pin-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   background: rgba(230,126,34,0.08);
   border: 1px solid rgba(230,126,34,0.2);
   border-radius: 4px;
@@ -867,7 +1040,6 @@ body::before {
 
 .become-banner span { color: var(--accent-dark); }
 
-/* ─── FOOTER ─── */
 .footer {
   background: linear-gradient(145deg, #2d1a0a 0%, #1a0f05 100%);
   color: #e2e8f0;
@@ -879,7 +1051,9 @@ body::before {
 .footer::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--accent-deep), var(--accent-footer), var(--accent-deep), transparent);
   opacity: 0.8;
@@ -903,13 +1077,28 @@ body::before {
 }
 
 .footer-icon {
-  width: 48px; height: 48px;
+  width: 48px;
+  height: 48px;
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.footer-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.footer-icon-fallback {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: white;
 }
 
 .footer-brand-text {
@@ -947,7 +1136,8 @@ body::before {
 }
 
 .social-link {
-  width: 40px; height: 40px;
+  width: 40px;
+  height: 40px;
   background: rgba(230,126,34,0.15);
   border: 1px solid rgba(230,126,34,0.3);
   border-radius: 50%;
@@ -956,6 +1146,13 @@ body::before {
   justify-content: center;
   transition: all 0.25s;
   cursor: pointer;
+  color: #e2e8f0;
+}
+
+.social-link svg {
+  stroke: currentColor;
+  width: 18px;
+  height: 18px;
 }
 
 .social-link:hover {
@@ -974,13 +1171,20 @@ body::before {
 }
 
 .contact-icon {
-  width: 32px; height: 32px;
+  width: 32px;
+  height: 32px;
   background: rgba(230,126,34,0.12);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.contact-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
 }
 
 .hotline-num {
@@ -999,7 +1203,9 @@ body::before {
   font-weight: 500;
 }
 
-.hotline-item { margin-bottom: 16px; }
+.hotline-item {
+  margin-bottom: 16px;
+}
 
 .footer-bottom {
   padding: 24px 0 0;
@@ -1011,21 +1217,106 @@ body::before {
   font-weight: 500;
 }
 
-/* Hide footer on mobile */
 @media (max-width: 768px) {
-  .footer { display: none; }
+  .footer {
+    display: none;
+  }
 }
 
-/* ─── ANIMATIONS ─── */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(12px);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.active { display: flex; }
+
+.modal-content {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 44px;
+  max-width: 360px;
+  width: 90%;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+}
+
+.modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+
+.modal-qr {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 22px;
+  background: rgba(214,62,44,0.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content h3 {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  font-size: 1.3rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--dark);
+}
+
+.modal-content p {
+  color: var(--gray);
+  margin-top: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.modal-close-btn {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  border: none;
+  padding: 11px 30px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 22px;
+  cursor: pointer;
+  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+  box-shadow: 0 6px 18px rgba(214,62,44,0.35);
+}
+
 .fade-up {
   opacity: 0;
   transform: translateY(30px);
   transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.fade-up.visible { opacity: 1; transform: translateY(0); }
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 
-/* ─── RESPONSIVE ─── */
 @media (max-width: 1050px) {
   .hero-grid { grid-template-columns: 1fr; gap: 60px; text-align: center; }
   .hero-desc, .hero-buttons, .stats { margin-left: auto; margin-right: auto; justify-content: center; }
@@ -1033,34 +1324,27 @@ body::before {
   .services-grid { grid-template-columns: repeat(2, 1fr); }
   .steps-flow { grid-template-columns: repeat(4, 1fr); }
   .footer-grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
-  /* Reposition notif card on tablet */
   .notif-card { left: -20px; top: -10px; }
+  .qr-card { right: -20px; }
 }
 
 @media (max-width: 768px) {
   .container { padding: 0 24px; }
   .header-inner { padding: 12px 24px; }
   .nav-buttons { display: none; }
+  .nav-status { display: none; }
   .menu-btn { display: flex; }
   .services-grid { grid-template-columns: 1fr; }
   .steps-flow { grid-template-columns: repeat(2, 1fr); }
   .iphone-frame { width: 270px; }
   .iphone-screen { height: 540px; }
+  .notif-card { display: none; }
+  .qr-card { right: -15px; bottom: 15px; width: 115px; }
+  .qr-box { width: 70px; height: 70px; }
   .hero-corner, .hero-corner-br { display: none; }
   .particle { display: none; }
   .phone-glow-ring { width: 280px; height: 280px; }
-
-  /* ─── Notif card: switch from absolute (floating) to relative (inline above phone) ─── */
-  .phone-container { flex-direction: column; }
-
-  .notif-card {
-    position: relative;
-    top: auto;
-    left: auto;
-    width: auto;
-    max-width: 290px;
-    margin: 0 auto 20px;
-    /* disable the floating animation on mobile — looks odd inline */
-    animation: none;
-  }
+  /* Stack hero buttons vertically on small screens */
+  .hero-buttons { flex-direction: column; align-items: center; }
+  .btn-primary-lg, .btn-outline-lg { width: 100%; max-width: 280px; justify-content: center; }
 }
