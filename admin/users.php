@@ -1,16 +1,69 @@
-<?php
-require_once __DIR__ . '/../pages/session.php';
-require_login('admin');
+<?php require_once __DIR__ . '/../pages/session.php'; require_login('admin');  
+$pdo = db(); 
 
-$pdo = db();
-$users = $pdo->query("
-    SELECT u.id, u.full_name, u.email, u.role,
-           u.is_active, u.is_email_verified,
-           b.name AS barangay_name
-    FROM users u
-    JOIN barangays b ON b.id = u.barangay_id
-    ORDER BY u.id DESC
-")->fetchAll();
+// Pagination & filter settings
+$perPage = 10;
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$roleFilter = isset($_GET['role_filter']) ? trim($_GET['role_filter']) : '';
+$statusFilter = isset($_GET['status_filter']) ? trim($_GET['status_filter']) : '';
+
+// Build WHERE conditions for filtering
+$where = [];
+$params = [];
+
+if (!empty($roleFilter)) {
+    $where[] = "u.role = :role";
+    $params[':role'] = $roleFilter;
+}
+if ($statusFilter === 'active') {
+    $where[] = "u.is_active = 1";
+} elseif ($statusFilter === 'inactive') {
+    $where[] = "u.is_active = 0";
+}
+if (!empty($search)) {
+    $where[] = "(u.full_name LIKE :search OR u.email LIKE :search)";
+    $params[':search'] = "%$search%";
+}
+$whereClause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
+
+// Count total filtered records
+$countSql = "SELECT COUNT(*) FROM users u JOIN barangays b ON b.id = u.barangay_id $whereClause";
+$stmt = $pdo->prepare($countSql);
+foreach ($params as $key => $val) {
+    $stmt->bindValue($key, $val);
+}
+$stmt->execute();
+$totalRows = (int)$stmt->fetchColumn();
+$totalPages = ceil($totalRows / $perPage);
+if ($page < 1) $page = 1;
+if ($page > $totalPages && $totalPages > 0) $page = $totalPages;
+$offset = ($page - 1) * $perPage;
+
+// Fetch users for current page (filtered + paginated)
+$sql = "SELECT u.id, u.full_name, u.email, u.role, u.is_active, u.is_email_verified, b.name AS barangay_name 
+        FROM users u 
+        JOIN barangays b ON b.id = u.barangay_id 
+        $whereClause 
+        ORDER BY u.id DESC 
+        LIMIT :limit OFFSET :offset";
+$stmt = $pdo->prepare($sql);
+foreach ($params as $key => $val) {
+    $stmt->bindValue($key, $val);
+}
+$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$filteredUsers = $stmt->fetchAll();
+
+// Stats: Overall counts (independent of filters)
+$totalUsers = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+$adminCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'admin'")->fetchColumn();
+$coordinatorCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'coordinator'")->fetchColumn();
+$mswdoCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'mswdo'")->fetchColumn();
+$barangayCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'barangay'")->fetchColumn();
+$verifiedCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE is_email_verified = 1")->fetchColumn();
+$activeCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE is_active = 1")->fetchColumn();
 
 // Get current user for display
 $user = current_user();
@@ -20,7 +73,6 @@ $_badgeCenters       = (int)$pdo->query("SELECT COUNT(*) FROM evacuation_centers
 $_badgeOngoing       = (int)$pdo->query("SELECT COUNT(*) FROM disasters WHERE status = 'ongoing'")->fetchColumn();
 $_badgeAnnouncements = (int)$pdo->query("SELECT COUNT(*) FROM announcements")->fetchColumn();
 $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) FROM evac_registrations")->fetchColumn();
-// $_badgeUsers        = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -31,7 +83,142 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
     <link rel="stylesheet" href="../asset/css/admin_user.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
-
+        /* Pagination Styles - Clean & Modern */
+        .pagination-container {
+            margin-top: 28px;
+            padding-top: 16px;
+            border-top: 1px solid #EDE7E7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .pagination-info {
+            font-size: 13px;
+            color: #5D6D7E;
+            background: #F8F9FA;
+            padding: 6px 14px;
+            border-radius: 30px;
+        }
+        .pagination {
+            display: flex;
+            gap: 6px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .pagination li a, .pagination li span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 38px;
+            height: 38px;
+            padding: 0 12px;
+            border-radius: 10px;
+            background: white;
+            border: 1px solid #E2E8F0;
+            color: #4A5568;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .pagination li a:hover {
+            background: var(--light-red);
+            border-color: var(--primary-red);
+            color: var(--primary-red);
+            transform: translateY(-1px);
+        }
+        .pagination li.active span {
+            background: var(--primary-red);
+            border-color: var(--primary-red);
+            color: white;
+            box-shadow: 0 2px 6px rgba(211, 47, 47, 0.2);
+        }
+        .pagination li.disabled span {
+            background: #F8F9FA;
+            color: #CBD5E0;
+            border-color: #EDE7E7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .btn-outline {
+            background: white;
+            border: 1px solid #EDE7E7;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #5D6D7E;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-outline:hover {
+            border-color: var(--primary-red);
+            color: var(--primary-red);
+            background: var(--light-red);
+        }
+        .btn-search {
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            padding: 0 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 38px;
+        }
+        .btn-search:hover {
+            background: var(--dark-red);
+        }
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 180px;
+        }
+        .filter-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: #95A5A6;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        @media (max-width: 768px) {
+            .filter-bar {
+                flex-direction: column;
+            }
+            .filter-group {
+                width: 100%;
+            }
+            .pagination-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
@@ -69,8 +256,6 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Operations</div>
                     <ul class="sidebar-menu">
-                        <!-- <li><a href="assistance.php" class="sidebar-link"><i class="fas fa-hand-holding-heart"></i> <span>Assistance</span> </a></li> -->
-                        <!-- <li><a href="reports.php" class="sidebar-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a></li> -->
                         <li><a href="announcements.php" class="sidebar-link"><i class="fas fa-bullhorn"></i> <span>Announcements</span><?php if($_badgeAnnouncements > 0): ?><span class="sidebar-badge"><?php echo $_badgeAnnouncements; ?></span><?php endif; ?></a></li>
                     </ul>
                 </div>
@@ -78,7 +263,6 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Monitoring</div>
                     <ul class="sidebar-menu">
-                        <!-- <li><a href="weather.php" class="sidebar-link"><i class="fas fa-cloud-sun"></i> <span>Weather</span></a></li> -->
                         <li><a href="maps.php" class="sidebar-link"><i class="fas fa-map"></i> <span>Maps</span></a></li>
                         <li><a href="evacuees.php" class="sidebar-link"><i class="fas fa-people-arrows"></i> <span>Evacuees</span> <?php if($_badgeEvacuees > 0): ?><span class="sidebar-badge"><?php echo number_format($_badgeEvacuees); ?></span><?php endif; ?></a></li>
                     </ul>
@@ -87,8 +271,6 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Settings</div>
                     <ul class="sidebar-menu">
-                        <!-- <li><a href="profile.php" class="sidebar-link"><i class="fas fa-user-cog"></i> <span>Profile</span></a></li>
-                        <li><a href="settings.php" class="sidebar-link"><i class="fas fa-cog"></i> <span>Settings</span></a></li> -->
                         <li><a href="../pages/logout.php" class="sidebar-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
                     </ul>
                 </div>
@@ -136,26 +318,6 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                 </div>
 
                 <!-- Stats Cards -->
-                <?php
-                $totalUsers = count($users);
-                $adminCount = 0;
-                $coordinatorCount = 0;
-                $mswdoCount = 0;
-                $barangayCount = 0;
-                $verifiedCount = 0;
-                $activeCount = 0;
-                
-                foreach ($users as $u) {
-                    if ($u['role'] === 'admin') $adminCount++;
-                    else if ($u['role'] === 'coordinator') $coordinatorCount++;
-                    else if ($u['role'] === 'mswdo') $mswdoCount++;
-                    else if ($u['role'] === 'barangay') $barangayCount++;
-                    
-                    if ($u['is_email_verified']) $verifiedCount++;
-                    if ($u['is_active']) $activeCount++;
-                }
-                ?>
-                
                 <div class="stats-row">
                     <div class="stat-card">
                         <div class="stat-icon"><i class="fas fa-users"></i></div>
@@ -190,29 +352,46 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                 <!-- Users Table Card -->
                 <div class="card">
                     <!-- Filter Bar -->
-                    <div class="filter-bar">
-                        <input type="text" class="filter-input" placeholder="Search users..." id="searchInput">
-                        <select class="filter-select" id="roleFilter">
-                            <option value="">All Roles</option>
-                            <option value="admin">Admin</option>
-                            <option value="coordinator">Coordinator</option>
-                            <option value="mswdo">MSWDO</option>
-                            <option value="barangay">Barangay</option>
-                        </select>
-                        <select class="filter-select" id="statusFilter">
-                            <option value="">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                    </div>
+                    <form method="GET" action="" id="filterForm" class="filter-bar">
+                        <div class="filter-group">
+                            <label><i class="fas fa-search"></i> Search</label>
+                            <input type="text" name="search" class="filter-input" placeholder="Name or email..." value="<?php echo htmlspecialchars($search); ?>" style="width:100%;">
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-tag"></i> Role</label>
+                            <select name="role_filter" class="filter-select" style="width:100%;">
+                                <option value="">All Roles</option>
+                                <option value="admin" <?php echo $roleFilter === 'admin' ? 'selected' : ''; ?>>Admin</option>
+                                <option value="coordinator" <?php echo $roleFilter === 'coordinator' ? 'selected' : ''; ?>>Coordinator</option>
+                                <option value="mswdo" <?php echo $roleFilter === 'mswdo' ? 'selected' : ''; ?>>MSWDO</option>
+                                <option value="barangay" <?php echo $roleFilter === 'barangay' ? 'selected' : ''; ?>>Barangay</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-circle"></i> Status</label>
+                            <select name="status_filter" class="filter-select" style="width:100%;">
+                                <option value="">All Status</option>
+                                <option value="active" <?php echo $statusFilter === 'active' ? 'selected' : ''; ?>>Active</option>
+                                <option value="inactive" <?php echo $statusFilter === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                            </select>
+                        </div>
+                        <div class="filter-actions">
+                            <button type="submit" class="btn-search"><i class="fas fa-filter"></i> Apply</button>
+                            <a href="users.php" class="btn-outline"><i class="fas fa-undo-alt"></i> Reset</a>
+                        </div>
+                    </form>
 
-                    <?php if (!$users): ?>
+                    <?php if (empty($filteredUsers) && $totalRows == 0): ?>
+                        <div class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <p>No users match your filters.</p>
+                            <a href="users.php" class="btn-primary">Clear Filters</a>
+                        </div>
+                    <?php elseif (empty($filteredUsers)): ?>
                         <div class="empty-state">
                             <i class="fas fa-users"></i>
                             <p>No users found.</p>
-                            <a href="create_coordinator.php" class="btn-primary">
-                                <i class="fas fa-user-plus"></i> Add Your First User
-                            </a>
+                            <a href="create_coordinator.php" class="btn-primary">Add Your First User</a>
                         </div>
                     <?php else: ?>
                         <div class="table-container">
@@ -230,7 +409,7 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($users as $u): 
+                                    <?php foreach ($filteredUsers as $u): 
                                         $roleClass = '';
                                         if ($u['role'] === 'admin') $roleClass = 'role-admin';
                                         else if ($u['role'] === 'coordinator') $roleClass = 'role-coordinator';
@@ -267,12 +446,57 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                                 </tbody>
                             </table>
                         </div>
-                        
+
+                        <!-- PAGINATION (at the bottom of the user list) -->
+                        <?php if ($totalPages > 1): ?>
+                        <div class="pagination-container">
+                            <div class="pagination-info">
+                                <i class="fas fa-table-list"></i> Showing <?php echo $offset + 1; ?> – <?php echo min($offset + $perPage, $totalRows); ?> of <?php echo $totalRows; ?> users
+                                <?php if (!empty($search) || !empty($roleFilter) || !empty($statusFilter)): ?>
+                                    <span style="color:#D32F2F;">(filtered)</span>
+                                <?php endif; ?>
+                            </div>
+                            <ul class="pagination">
+                                <!-- Prev -->
+                                <li class="<?php echo $page <= 1 ? 'disabled' : ''; ?>">
+                                    <?php if ($page > 1): ?>
+                                        <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page - 1])); ?>"><i class="fas fa-chevron-left"></i> Prev</a>
+                                    <?php else: ?>
+                                        <span><i class="fas fa-chevron-left"></i> Prev</span>
+                                    <?php endif; ?>
+                                </li>
+                                <!-- Page numbers -->
+                                <?php
+                                $start = max(1, $page - 2);
+                                $end = min($totalPages, $page + 2);
+                                if ($start > 1) echo '<li><a href="?' . http_build_query(array_merge($_GET, ['page' => 1])) . '">1</a></li>';
+                                if ($start > 2) echo '<li class="disabled"><span>...</span></li>';
+                                for ($i = $start; $i <= $end; $i++):
+                                ?>
+                                    <li class="<?php echo $i == $page ? 'active' : ''; ?>">
+                                        <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $i])); ?>"><?php echo $i; ?></a>
+                                    </li>
+                                <?php endfor;
+                                if ($end < $totalPages - 1) echo '<li class="disabled"><span>...</span></li>';
+                                if ($end < $totalPages) echo '<li><a href="?' . http_build_query(array_merge($_GET, ['page' => $totalPages])) . '">' . $totalPages . '</a></li>';
+                                ?>
+                                <!-- Next -->
+                                <li class="<?php echo $page >= $totalPages ? 'disabled' : ''; ?>">
+                                    <?php if ($page < $totalPages): ?>
+                                        <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page + 1])); ?>">Next <i class="fas fa-chevron-right"></i></a>
+                                    <?php else: ?>
+                                        <span>Next <i class="fas fa-chevron-right"></i></span>
+                                    <?php endif; ?>
+                                </li>
+                            </ul>
+                        </div>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>
         </main>
     </div>
+
     <!-- Edit User Modal -->
     <div id="editModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center;">
         <div class="card" style="width:100%; max-width:480px; margin:20px; position:relative;">
@@ -337,7 +561,6 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
             sidebar.classList.toggle('collapsed');
             mainContent.classList.toggle('expanded');
             toggleBtn.classList.toggle('collapsed');
-            
             const icon = toggleBtn.querySelector('i');
             if (sidebar.classList.contains('collapsed')) {
                 icon.className = 'fas fa-chevron-right';
@@ -350,101 +573,66 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
             sidebar.classList.toggle('show');
         });
 
-        // Simple search functionality
-        document.getElementById('searchInput').addEventListener('keyup', function() {
-            const searchText = this.value.toLowerCase();
-            const table = document.getElementById('usersTable');
-            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-            
-            for (let row of rows) {
-                const name = row.cells[1].textContent.toLowerCase();
-                const email = row.cells[2].textContent.toLowerCase();
-                if (name.includes(searchText) || email.includes(searchText)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            }
-        });
-
-        // Role filter
-        document.getElementById('roleFilter').addEventListener('change', function() {
-            const role = this.value.toLowerCase();
-            const table = document.getElementById('usersTable');
-            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-            
-            for (let row of rows) {
-                if (!role) {
-                    row.style.display = '';
-                    continue;
-                }
-                const rowRole = row.cells[3].textContent.trim().toLowerCase();
-                if (rowRole === role) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            }
-        });
-
         // Modal edit
-            function openModal(id, name, email, role, isActive) {
-        document.getElementById('editId').value = id;
-        document.getElementById('editName').value = name;
-        document.getElementById('editEmail').value = email;
-        document.getElementById('editRole').value = role;
-        document.getElementById('editActive').value = isActive;
-        document.getElementById('editPassword').value = '';
-        document.getElementById('editMsg').style.display = 'none';
-        const modal = document.getElementById('editModal');
-        modal.style.display = 'flex';
-    }
+        function openModal(id, name, email, role, isActive) {
+            document.getElementById('editId').value = id;
+            document.getElementById('editName').value = name;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editRole').value = role;
+            document.getElementById('editActive').value = isActive;
+            document.getElementById('editPassword').value = '';
+            document.getElementById('editMsg').style.display = 'none';
+            const modal = document.getElementById('editModal');
+            modal.style.display = 'flex';
+        }
 
-    function closeModal() {
-        document.getElementById('editModal').style.display = 'none';
-    }
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
 
-    document.getElementById('editForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const msg = document.getElementById('editMsg');
-        msg.style.display = 'none';
+        document.getElementById('editForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const msg = document.getElementById('editMsg');
+            msg.style.display = 'none';
 
-        const body = new FormData();
-        body.append('id',       document.getElementById('editId').value);
-        body.append('full_name',document.getElementById('editName').value);
-        body.append('email',    document.getElementById('editEmail').value);
-        body.append('role',     document.getElementById('editRole').value);
-        body.append('is_active',document.getElementById('editActive').value);
-        const pw = document.getElementById('editPassword').value;
-        if (pw) body.append('password', pw);
+            const body = new FormData();
+            body.append('id',       document.getElementById('editId').value);
+            body.append('full_name',document.getElementById('editName').value);
+            body.append('email',    document.getElementById('editEmail').value);
+            body.append('role',     document.getElementById('editRole').value);
+            body.append('is_active',document.getElementById('editActive').value);
+            const pw = document.getElementById('editPassword').value;
+            if (pw) body.append('password', pw);
 
-        fetch('edit_user.php', { method: 'POST', body })
-            .then(r => r.json())
-            .then(data => {
-                msg.style.display = 'block';
-                if (data.ok) {
-                    msg.style.background = '#E8F5E9';
-                    msg.style.color = '#2E7D32';
-                    msg.textContent = '✓ User updated successfully.';
-                    setTimeout(() => { closeModal(); location.reload(); }, 1200);
-                } else {
+            fetch('edit_user.php', { method: 'POST', body })
+                .then(r => r.json())
+                .then(data => {
+                    msg.style.display = 'block';
+                    if (data.ok) {
+                        msg.style.background = '#E8F5E9';
+                        msg.style.color = '#2E7D32';
+                        msg.textContent = '✓ User updated successfully.';
+                        setTimeout(() => { 
+                            closeModal(); 
+                            window.location.reload(); 
+                        }, 1200);
+                    } else {
+                        msg.style.background = '#FFEBEE';
+                        msg.style.color = '#D32F2F';
+                        msg.textContent = '✗ ' + (data.error || 'Something went wrong.');
+                    }
+                })
+                .catch(() => {
+                    msg.style.display = 'block';
                     msg.style.background = '#FFEBEE';
                     msg.style.color = '#D32F2F';
-                    msg.textContent = '✗ ' + (data.error || 'Something went wrong.');
-                }
-            })
-            .catch(() => {
-                msg.style.display = 'block';
-                msg.style.background = '#FFEBEE';
-                msg.style.color = '#D32F2F';
-                msg.textContent = '✗ Network error.';
-            });
-    });
+                    msg.textContent = '✗ Network error.';
+                });
+        });
 
-    // Close modal on backdrop click
-    document.getElementById('editModal').addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
-    });
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
     </script>
 </body>
 </html>
