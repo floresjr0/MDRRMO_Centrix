@@ -940,7 +940,7 @@ body {
 
 .bottom-nav {
   position: fixed;
-  bottom: -45px;
+  bottom: -50px;
   left: 0;
   right: 0;
   height: var(--navmobile-h);
@@ -982,8 +982,8 @@ body {
 .nav-item.nav-center { position: relative; top: -30px; }
 
 .nav-center-circle {
-  width: 84px;
-  height: 84px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--red), var(--orange));
   display: flex;

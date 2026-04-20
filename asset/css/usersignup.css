@@ -1,10 +1,4 @@
 
-
-/* ==============================================
-   MDRRMO San Ildefonso — Sign Up Page
-   Same design as Login · Scrollable Card
-   ============================================== */
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
@@ -246,6 +240,44 @@ body {
   padding-right: 1.4rem;
   cursor: pointer;
 }
+
+/* ── PASSWORD FIELD WRAPPER (eye icon — RIGHT SIDE ONLY) ── */
+.pw-wrap {
+  position: relative;
+}
+/* Push input text away from the right eye icon */
+.pw-wrap input {
+  padding-right: 2rem !important;
+}
+/* Hide browser-native password reveal button (Edge/IE/Chrome) */
+.pw-wrap input[type="password"]::-ms-reveal,
+.pw-wrap input[type="password"]::-ms-clear,
+.pw-wrap input[type="password"]::-webkit-contacts-auto-fill-button,
+.pw-wrap input[type="password"]::-webkit-credentials-auto-fill-button,
+.pw-wrap input::-webkit-inner-spin-button,
+.pw-wrap input::-webkit-outer-spin-button { display: none !important; }
+
+/* Eye toggle button — RIGHT side, stays permanently visible */
+.pw-toggle {
+  position: absolute;
+  right: 0;
+  bottom: 0.45rem; /* align with the underline input baseline */
+  left: auto !important; /* ensure it never drifts left */
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b0b0b0;
+  transition: color 0.2s;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.pw-toggle:hover,
+.pw-toggle:focus { color: #c0391e; outline: none; }
+.pw-toggle svg { width: 18px; height: 18px; display: block; pointer-events: none; }
 
 /* Checkbox row */
 .checkbox-field {
@@ -709,6 +741,44 @@ body {
   padding-right: 1.4rem;
   cursor: pointer;
 }
+
+/* ── DESKTOP PASSWORD FIELD WRAPPER (eye icon — RIGHT SIDE ONLY) ── */
+.dt-pw-wrap {
+  position: relative;
+}
+/* Push input text away from the right eye icon */
+.dt-pw-wrap input {
+  padding-right: 1.8rem !important;
+}
+/* Hide browser-native password reveal button (Edge/IE/Chrome) */
+.dt-pw-wrap input[type="password"]::-ms-reveal,
+.dt-pw-wrap input[type="password"]::-ms-clear,
+.dt-pw-wrap input[type="password"]::-webkit-contacts-auto-fill-button,
+.dt-pw-wrap input[type="password"]::-webkit-credentials-auto-fill-button,
+.dt-pw-wrap input::-webkit-inner-spin-button,
+.dt-pw-wrap input::-webkit-outer-spin-button { display: none !important; }
+
+/* Eye toggle button — RIGHT side only, stays permanently visible */
+.dt-pw-toggle {
+  position: absolute;
+  right: 0;
+  bottom: 7px; /* align with the underline input baseline */
+  left: auto !important; /* ensure it never drifts left */
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b8b8b8;
+  transition: color 0.2s;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.dt-pw-toggle:hover,
+.dt-pw-toggle:focus { color: #c0391e; outline: none; }
+.dt-pw-toggle svg { width: 17px; height: 17px; display: block; pointer-events: none; }
 
 .dt-checkbox-field {
   display: flex;

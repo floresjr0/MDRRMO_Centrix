@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-
 </style>
 </head>
 <body>
@@ -35,7 +34,11 @@
   <a href="#" onclick="closeMobileMenu()">Home</a>
   <a href="#services" onclick="closeMobileMenu()">Services</a>
   <a href="#steps" onclick="closeMobileMenu()">Guide</a>
-  <a href="#" class="btn-signup" style="margin-top:16px; text-decoration:none;" onclick="closeMobileMenu()">Sign Up</a>
+  <a href="index.php" style="font-family:'Rajdhani',sans-serif;font-size:1.4rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;text-decoration:none;color:var(--accent);transition:color 0.2s;" onclick="closeMobileMenu()">Website</a>
+  <a href="#" class="btn-signup" style="margin-top:16px; text-decoration:none;" onclick="closeMobileMenu()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"/></svg>
+    Download App
+  </a>
   <div class="mobile-copyright">© 2026 CENTRIX - #BidaLagingHanda</div>
 </div>
 
@@ -52,8 +55,20 @@
     </a>
     
     <div class="nav-buttons">
-<button class="btn-login" id="downloadBtnHeader" href="download.php">Download App</button>
-
+      <!-- Continue to Website button -->
+      <a href="index.php" class="btn-login" id="websiteBtnHeader">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        Continue to Website
+      </a>
+      <!-- Download App button -->
+      <button class="btn-signup" id="downloadBtnHeader">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"/></svg>
+        Download App
+      </button>
     </div>
     <button class="menu-btn" onclick="openMobileMenu()">☰</button>
   </div>
@@ -76,14 +91,23 @@
         </h1>
         <p class="hero-desc">Mobile-based disaster alerts and evacuation guidance with real-time evacuation monitoring for San Ildefonso, Bulacan.</p>
         <div class="hero-buttons">
-         <button class="btn-primary-lg" id="downloadBtnHero"  href="download.php">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-    <rect x="5" y="2" width="14" height="20" rx="2"/>
-    <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"/>
-  </svg>
-  Download App
-</button>
-         
+          <!-- Download App - primary CTA -->
+          <button class="btn-primary-lg" id="downloadBtnHero">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <rect x="5" y="2" width="14" height="20" rx="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"/>
+            </svg>
+            Download App
+          </button>
+          <!-- Continue to Website - secondary CTA -->
+          <a href="index.php" class="btn-outline-lg" id="websiteBtnHero">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            Continue to Website
+          </a>
         </div>
         <div class="stats">
           <div class="stat-item"><div class="stat-number">24/7</div><div class="stat-label">Operations Center</div></div>
@@ -199,11 +223,7 @@ function closeMobileMenu() { document.getElementById('mobileMenu').classList.rem
 window.addEventListener('scroll', function() { const header = document.getElementById('header'); if (window.scrollY > 50) header.classList.add('scrolled'); else header.classList.remove('scrolled'); });
 
 function downloadAPK() {
-  // Adjust the path to match your server structure
-  const apkPath = 'download.php';   // relative to the current HTML file
-  // Or use an absolute path: '/app/app.apk'
-
-  // Create a temporary anchor element
+  const apkPath = 'download.php';
   const link = document.createElement('a');
   link.href = apkPath;
   link.download = 'MDRRMO_San_Ildefonso.apk';
@@ -211,6 +231,7 @@ function downloadAPK() {
   link.click();
   document.body.removeChild(link);
 }
+
 document.addEventListener('DOMContentLoaded', () => {
   const headerBtn = document.getElementById('downloadBtnHeader');
   const heroBtn = document.getElementById('downloadBtnHero');

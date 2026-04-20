@@ -170,11 +170,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
         </div>
 
+        <!-- Mobile password field with eye toggle -->
         <div class="field password-field">
-          <label class="field-label" for="password">Password</label>
+          <label class="field-label" for="mob-password">Password</label>
           <div class="password-wrapper">
-            <input type="password" id="password" name="password"
-                  placeholder="Enter your password" required>
+            <input type="password" id="mob-password" name="password"
+                   placeholder="Enter your password" required>
+            <button type="button" class="toggle-password" data-target="mob-password" aria-label="Show password">
+              <svg class="eye-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -254,11 +261,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
         </div>
 
-        <div class="field password-field">
-          <label class="field-label" for="password">Password</label>
-          <div class="password-wrapper">
-            <input type="password" id="password" name="password"
-                  placeholder="Enter your password" required>
+        <!-- Desktop password field with eye toggle -->
+        <div class="dt-field">
+          <label for="dt-password">Password</label>
+          <div class="dt-password-wrapper">
+            <input type="password" id="dt-password" name="password"
+                   placeholder="Enter your password" required>
+            <button type="button" class="toggle-password" data-target="dt-password" aria-label="Show password">
+              <svg class="eye-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -295,77 +309,117 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
 
   /* ================================================
+     SPLASH ONCE — show only on first visit per
+     browser session. Once dismissed it is stored
+     in sessionStorage so navigating to login/signup
+     and back will NOT replay the splash until the
+     browser tab/window is fully closed and reopened.
+     ================================================ */
+
+  var SPLASH_KEY = 'mdrrmo_splash_shown';
+  var splashAlreadySeen = sessionStorage.getItem(SPLASH_KEY) === '1';
+
+  if (splashAlreadySeen) {
+    /* Skip splash — jump straight to login */
+    var splashEl = document.getElementById('splash');
+    if (splashEl) splashEl.style.display = 'none';
+
+    var loginEl = document.getElementById('login-page');
+    if (loginEl) {
+      loginEl.classList.add('visible');
+      /* Animate logo + card immediately */
+      requestAnimationFrame(function() {
+        setTimeout(function() {
+          var lr = document.getElementById('logoRow');
+          var hh = document.getElementById('heroHeadline');
+          if (lr) lr.classList.add('visible');
+          if (hh) hh.classList.add('visible');
+        }, 60);
+        setTimeout(function() {
+          var c = document.getElementById('card');
+          if (c) c.classList.add('visible');
+        }, 180);
+      });
+    }
+  }
+  /* If not yet seen, splash is visible by default — nothing extra needed */
+
+
+  /* ================================================
      MOBILE: Original orbit canvas animation
      ================================================ */
 
-  const canvas = document.getElementById('orbitCanvas');
-  const ctx    = canvas.getContext('2d');
+  var canvas = document.getElementById('orbitCanvas');
+  var ctx    = canvas ? canvas.getContext('2d') : null;
 
-  const CX       = 140;
-  const CY       = 140;
-  const R        = 114;
-  const TAIL_RAD = (220 * Math.PI) / 180;
-  const TOTAL    = Math.PI * 2 * 1.25;
-  const DURATION = 7000;
+  var CX       = 140;
+  var CY       = 140;
+  var R        = 114;
+  var TAIL_RAD = (220 * Math.PI) / 180;
+  var TOTAL    = Math.PI * 2 * 1.25;
+  var DURATION = 7000;
 
-  let startTime = null;
-  let rafId     = null;
+  var startTime = null;
+  var rafId     = null;
 
-  setTimeout(() => {
-    startTime = performance.now();
-    rafId = requestAnimationFrame(draw);
-  }, 1100);
+  /* Only run the canvas animation when splash is actually shown */
+  if (!splashAlreadySeen && ctx) {
+    setTimeout(function() {
+      startTime = performance.now();
+      rafId = requestAnimationFrame(draw);
+    }, 1100);
+  }
 
   function draw(now) {
-    const elapsed  = now - startTime;
-    const progress = Math.min(elapsed / DURATION, 1);
+    var elapsed  = now - startTime;
+    var progress = Math.min(elapsed / DURATION, 1);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const eased     = easeInOutCubic(progress);
-    const headAngle = -Math.PI / 2 + eased * TOTAL;
-    const tailAngle = headAngle - TAIL_RAD;
+    var eased     = easeInOutCubic(progress);
+    var headAngle = -Math.PI / 2 + eased * TOTAL;
+    var tailAngle = headAngle - TAIL_RAD;
 
-    let alpha = 1;
+    var alpha = 1;
     if (progress < 0.10) alpha = progress / 0.10;
     else if (progress > 0.72) alpha = 1 - (progress - 0.72) / 0.28;
 
-    const STEPS = 100;
-    for (let i = 0; i < STEPS; i++) {
-      const frac = i / STEPS;
-      const a0   = tailAngle + frac * TAIL_RAD;
-      const a1   = tailAngle + (frac + 1 / STEPS) * TAIL_RAD;
-      const segOpacity = Math.pow(frac, 1.8) * alpha;
-      const w    = 1 + frac * 5.5;
-      const rr   = 255;
-      const gg   = Math.round(160 + frac * 90);
-      const bb   = Math.round(20  + frac * 200);
+    var STEPS = 100;
+    for (var i = 0; i < STEPS; i++) {
+      var frac = i / STEPS;
+      var a0   = tailAngle + frac * TAIL_RAD;
+      var a1   = tailAngle + (frac + 1 / STEPS) * TAIL_RAD;
+      var segOpacity = Math.pow(frac, 1.8) * alpha;
+      var w    = 1 + frac * 5.5;
+      var rr   = 255;
+      var gg   = Math.round(160 + frac * 90);
+      var bb   = Math.round(20  + frac * 200);
 
       ctx.beginPath();
       ctx.arc(CX, CY, R, a0, a1);
-      ctx.strokeStyle = `rgba(${rr},${gg},${bb},${segOpacity})`;
+      ctx.strokeStyle = 'rgba(' + rr + ',' + gg + ',' + bb + ',' + segOpacity + ')';
       ctx.lineWidth   = w;
       ctx.lineCap     = 'round';
       ctx.stroke();
     }
 
-    const hx = CX + R * Math.cos(headAngle);
-    const hy = CY + R * Math.sin(headAngle);
+    var hx = CX + R * Math.cos(headAngle);
+    var hy = CY + R * Math.sin(headAngle);
 
-    let g = ctx.createRadialGradient(hx, hy, 0, hx, hy, 28);
-    g.addColorStop(0,    `rgba(255,250,200,${0.85 * alpha})`);
-    g.addColorStop(0.25, `rgba(255,210,100,${0.55 * alpha})`);
-    g.addColorStop(0.6,  `rgba(255,140, 30,${0.18 * alpha})`);
-    g.addColorStop(1,    `rgba(255, 80,  0,0)`);
+    var g = ctx.createRadialGradient(hx, hy, 0, hx, hy, 28);
+    g.addColorStop(0,    'rgba(255,250,200,' + (0.85 * alpha) + ')');
+    g.addColorStop(0.25, 'rgba(255,210,100,' + (0.55 * alpha) + ')');
+    g.addColorStop(0.6,  'rgba(255,140, 30,' + (0.18 * alpha) + ')');
+    g.addColorStop(1,    'rgba(255, 80,  0,0)');
     ctx.beginPath();
     ctx.arc(hx, hy, 28, 0, Math.PI * 2);
     ctx.fillStyle = g;
     ctx.fill();
 
-    let core = ctx.createRadialGradient(hx, hy, 0, hx, hy, 6);
-    core.addColorStop(0,   `rgba(255,255,255,${alpha})`);
-    core.addColorStop(0.6, `rgba(255,240,160,${0.7 * alpha})`);
-    core.addColorStop(1,   `rgba(255,200,80,0)`);
+    var core = ctx.createRadialGradient(hx, hy, 0, hx, hy, 6);
+    core.addColorStop(0,   'rgba(255,255,255,' + alpha + ')');
+    core.addColorStop(0.6, 'rgba(255,240,160,' + (0.7 * alpha) + ')');
+    core.addColorStop(1,   'rgba(255,200,80,0)');
     ctx.beginPath();
     ctx.arc(hx, hy, 6, 0, Math.PI * 2);
     ctx.fillStyle = core;
@@ -385,22 +439,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   function goToLogin() {
     if (rafId) cancelAnimationFrame(rafId);
 
+    /* Mark splash as seen for the rest of this browser session */
+    sessionStorage.setItem(SPLASH_KEY, '1');
+
     document.getElementById('splash').classList.add('exit');
 
-    setTimeout(() => {
-      const splash = document.getElementById('splash');
+    setTimeout(function() {
+      var splash = document.getElementById('splash');
       splash.style.display = 'none';
 
-      const loginPage = document.getElementById('login-page');
+      var loginPage = document.getElementById('login-page');
       loginPage.classList.add('visible');
 
-      requestAnimationFrame(() => {
-        setTimeout(() => {
+      requestAnimationFrame(function() {
+        setTimeout(function() {
           document.getElementById('logoRow').classList.add('visible');
           document.getElementById('heroHeadline').classList.add('visible');
         }, 60);
 
-        setTimeout(() => {
+        setTimeout(function() {
           document.getElementById('card').classList.add('visible');
         }, 180);
       });
@@ -408,20 +465,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }, 420);
   }
 
-  setTimeout(goToLogin, 8500);
+  /* Auto-dismiss splash after 8.5s if user hasn't tapped */
+  if (!splashAlreadySeen) {
+    setTimeout(goToLogin, 8500);
+  }
 
-  document.querySelectorAll('.field input').forEach(function (inp) {
-    inp.addEventListener('focus', function () {
+
+  /* ================================================
+     MOBILE: Input focus styles
+     ================================================ */
+  document.querySelectorAll('.field input').forEach(function(inp) {
+    inp.addEventListener('focus', function() {
       this.style.setProperty('border-bottom', '1.5px solid #c0391e', 'important');
     });
-    inp.addEventListener('blur', function () {
+    inp.addEventListener('blur', function() {
       this.style.setProperty('border-bottom', '1.5px solid #c8c8c8', 'important');
     });
   });
 
+
+  /* ================================================
+     MOBILE: Login button ripple
+     ================================================ */
   var btn = document.querySelector('.btn-signin');
   if (btn) {
-    btn.addEventListener('click', function (e) {
+    btn.addEventListener('click', function(e) {
       var r   = btn.getBoundingClientRect();
       var sz  = Math.max(r.width, r.height);
       var rpl = document.createElement('span');
@@ -434,16 +502,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'transform:scale(0);opacity:1;' +
         'transition:transform 0.55s ease,opacity 0.55s ease;';
       btn.appendChild(rpl);
-      requestAnimationFrame(function () {
+      requestAnimationFrame(function() {
         rpl.style.transform = 'scale(2.6)';
         rpl.style.opacity   = '0';
       });
-      setTimeout(function () { rpl.remove(); }, 600);
+      setTimeout(function() { rpl.remove(); }, 600);
     });
   }
 
 
-  /* Desktop button ripple */
+  /* ================================================
+     DESKTOP: Sign-in button ripple
+     ================================================ */
   var dtBtn = document.querySelector('.dt-btn-signin');
   if (dtBtn) {
     dtBtn.addEventListener('click', function(e) {
@@ -466,26 +536,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       setTimeout(function() { rpl.remove(); }, 600);
     });
   }
-  // Toggle password visibility (works for both mobile and desktop)
-document.querySelectorAll('.toggle-password').forEach(button => {
-  button.addEventListener('click', function(e) {
-    e.preventDefault();
-    const targetId = this.getAttribute('data-target');
-    const input = document.getElementById(targetId);
-    if (!input) return;
 
-    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-    input.setAttribute('type', type);
 
-    // Change eye icon (open/closed)
-    const svg = this.querySelector('.eye-icon');
-    if (type === 'text') {
-      svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
-    } else {
-      svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
-    }
+  /* ================================================
+     SHARED: Eye / password toggle
+     Works for both mobile (#mob-password) and
+     desktop (#dt-password) via data-target attr.
+     ================================================ */
+  document.querySelectorAll('.toggle-password').forEach(function(button) {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+
+      var targetId = this.getAttribute('data-target');
+      var input    = document.getElementById(targetId);
+      if (!input) return;
+
+      var isPassword = input.getAttribute('type') === 'password';
+      input.setAttribute('type', isPassword ? 'text' : 'password');
+
+      /* Swap SVG between eye-open and eye-slash */
+      var svg = this.querySelector('.eye-icon');
+      if (isPassword) {
+        /* Switched to visible — show eye-slash (password revealed) */
+        svg.innerHTML =
+          '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8' +
+          'a18.45 18.45 0 0 1 5.06-5.94' +
+          'M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8' +
+          'a18.5 18.5 0 0 1-2.16 3.19' +
+          'm-6.72-1.07a3 3 0 1 1-4.24-4.24"/>' +
+          '<line x1="1" y1="1" x2="23" y2="23"/>';
+        this.setAttribute('aria-label', 'Hide password');
+      } else {
+        /* Switched to hidden — show eye-open */
+        svg.innerHTML =
+          '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>' +
+          '<circle cx="12" cy="12" r="3"/>';
+        this.setAttribute('aria-label', 'Show password');
+      }
+    });
   });
-});
+
 
   /* ================================================
      GEOLOCATION (kept inactive — uncomment to enable)

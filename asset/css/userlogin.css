@@ -99,7 +99,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;       /* vertically centered since pills are gone */
+  justify-content: center;
   padding: 52px 40px;
   position: relative;
   overflow: hidden;
@@ -147,7 +147,7 @@
   text-shadow: 0 2px 24px rgba(0,0,0,0.5);
 }
 
-/* ---- Tagline — slightly enlarged ---- */
+/* ---- Tagline ---- */
 .dt-tagline {
   position: relative;
   z-index: 1;
@@ -156,7 +156,7 @@
   letter-spacing: 3.5px;
   color: rgba(255,255,255,0.5);
   text-transform: uppercase;
-  margin-bottom: 0; /* no more gap needed — pills removed */
+  margin-bottom: 0;
 }
 
 /* ---- Info pills REMOVED — .dt-info-pills & .dt-pill kept for reference but unused ---- */
@@ -288,6 +288,17 @@
   box-shadow: 0 0 0 3px rgba(192,57,30,0.10);
 }
 
+/* Desktop password wrapper */
+.dt-password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.dt-password-wrapper input {
+  width: 100%;
+  padding-right: 44px !important;
+}
+
 /* Forgot row */
 .dt-forgot {
   text-align: right;
@@ -409,6 +420,60 @@
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.3; }
 }
+
+/* =============================================
+   SHARED: Eye toggle button
+   Works for both mobile (.password-wrapper)
+   and desktop (.dt-password-wrapper)
+   ============================================= */
+.toggle-password {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  transition: color 0.2s;
+  z-index: 2;
+}
+
+.toggle-password:hover {
+  color: #c0391e;
+}
+
+.eye-icon {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+  pointer-events: none;
+}
+
+/* Mobile: eye sits just inside the underline field */
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrapper input {
+  padding-right: 36px !important;
+}
+
+/* Desktop: eye sits inside the rounded input */
+.dt-password-wrapper .toggle-password {
+  right: 12px;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
@@ -858,45 +923,4 @@ html, body {
   .login-shell { max-width: 410px; }
   .hero        { padding: 2.8rem 2.6rem 6.5rem 2.6rem; }
   .card        { padding: 2.8rem 2.8rem 2.6rem; }
-}
-.password-field {
-  position: relative;
-}
-.password-wrapper {
-  position: relative;
-  width: 100%;
-}
-.password-wrapper input {
-  width: 100%;
-  padding-right: 6px !important;
-}
-.toggle-password {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-  transition: color 0.2s;
-}
-.toggle-password:hover {
-  color: #c0391e;
-}
-.toggle-password .eye-icon {
-  width: 18px;
-  height: 18px;
-  stroke: currentColor;
-  fill: none;
-}
-/* For mobile specific adjustments (if needed) */
-@media (max-width: 599px) {
-  .password-wrapper input {
-    padding-right: 6px !important;
-  }
 }
