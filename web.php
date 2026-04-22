@@ -56,10 +56,10 @@
     </a>
     <div class="nav-buttons">
       <!-- "Continue to Website" button — links to the main portal -->
-      <a href="index.php" class="btn-website-header">
+      <!-- <a href="index.php" class="btn-website-header">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
         Continue to Website
-      </a>
+      </a> -->
       <!-- Download App button -->
       <button class="btn-login" id="downloadBtnHeader">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><line x1="4" y1="21" x2="20" y2="21"/></svg>
