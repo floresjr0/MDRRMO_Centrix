@@ -4,19 +4,32 @@
  * POST-only action. Copies all current evac_registrations into
  * evac_registrations_archive, then deletes the live records.
  * Resets all evacuation center statuses to 'available'.
- *
- * Place at: MDRRMO_CENTRIX/admin/archive_evacuees.php
  */
+
+// Buffer ALL output so no stray whitespace/HTML can ever break headers
+ob_start();
+
 require_once __DIR__ . '/../pages/session.php';
 require_login('admin');
 
 $pdo  = db();
 $user = current_user();
 
-// Only accept POST
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: evacuees.php');
+// ── Helper: safe redirect ──────────────────────────────────────────────────
+function redirect(string $url): void {
+    ob_end_clean();
+    if (!headers_sent()) {
+        header('Location: ' . $url);
+    } else {
+        // Fallback if headers somehow already sent
+        echo '<script>window.location.href=' . json_encode($url) . ';</script>';
+    }
     exit;
+}
+
+// ── Only accept POST ───────────────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    redirect('evacuees.php');
 }
 
 $label      = trim($_POST['archive_label'] ?? '');
@@ -24,15 +37,20 @@ $disasterId = !empty($_POST['disaster_id']) ? (int)$_POST['disaster_id'] : null;
 $archivedBy = (int)$user['id'];
 
 if ($label === '') {
-    header('Location: evacuees.php?error=label_required');
-    exit;
+    redirect('evacuees.php?error=label_required');
+}
+
+// ── Guard: nothing to archive ──────────────────────────────────────────────
+$count = (int)$pdo->query("SELECT COUNT(*) FROM evac_registrations")->fetchColumn();
+if ($count === 0) {
+    redirect('evacuees.php?error=nothing_to_archive');
 }
 
 try {
     $pdo->beginTransaction();
 
-    // 1. Copy all live registrations into the archive table
-    $insertSql = "
+    // 1. Copy live registrations into archive
+    $stmt = $pdo->prepare("
         INSERT INTO evac_registrations_archive
             (original_id, center_id, family_head_name, barangay_id,
              adults, children, seniors, pwds, total_members,
@@ -44,8 +62,7 @@ try {
             created_by, created_at,
             :label, :disaster_id, :archived_by, NOW()
         FROM evac_registrations
-    ";
-    $stmt = $pdo->prepare($insertSql);
+    ");
     $stmt->execute([
         ':label'       => $label,
         ':disaster_id' => $disasterId,
@@ -57,18 +74,17 @@ try {
     // 2. Delete live registrations
     $pdo->exec("DELETE FROM evac_registrations");
 
-    // 3. Reset all evacuation center statuses to 'available'
+    // 3. Reset all center statuses to available
     $pdo->exec("UPDATE evacuation_centers SET status = 'available'");
 
     $pdo->commit();
 
-    header('Location: evacuees.php?archived=' . $archivedCount . '&label=' . urlencode($label));
-    exit;
+    redirect('evacuees.php?archived=' . $archivedCount . '&label=' . urlencode($label));
 
 } catch (Exception $e) {
-    $pdo->rollBack();
-    // Log and redirect with error
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     error_log('Archive error: ' . $e->getMessage());
-    header('Location: evacuees.php?error=archive_failed');
-    exit;
+    redirect('evacuees.php?error=archive_failed');
 }
