@@ -19,7 +19,6 @@ $demo = $pdo->query("
     FROM evac_registrations
 ")->fetch();
 
-// All centers (including closed) — closed ones greyed out
 $evacSummary = $pdo->query("
     SELECT
         ec.id,
@@ -78,27 +77,25 @@ $recentRegs = $pdo->query("
     LIMIT 20
 ")->fetchAll();
 
-// Archive history — grouped by archive batch (label + archived_at date)
 $archiveBatches = $pdo->query("
     SELECT
-        archive_label,
-        disaster_id,
-        archived_at,
-        archived_by,
+        era.archive_label,
+        era.disaster_id,
+        era.archived_at,
+        era.archived_by,
         COUNT(*)              AS total_families,
-        SUM(total_members)    AS total_evacuees,
-        SUM(adults)           AS total_adults,
-        SUM(children)         AS total_children,
-        SUM(seniors)          AS total_seniors,
-        SUM(pwds)             AS total_pwds,
+        SUM(era.total_members)    AS total_evacuees,
+        SUM(era.adults)           AS total_adults,
+        SUM(era.children)         AS total_children,
+        SUM(era.seniors)          AS total_seniors,
+        SUM(era.pwds)             AS total_pwds,
         u.full_name           AS archived_by_name
     FROM evac_registrations_archive era
     LEFT JOIN users u ON u.id = era.archived_by
-    GROUP BY archive_label, disaster_id, DATE(archived_at), archived_by
-    ORDER BY archived_at DESC
+    GROUP BY era.archive_label, era.disaster_id, DATE(era.archived_at), era.archived_by
+    ORDER BY era.archived_at DESC
 ")->fetchAll();
 
-// Ongoing disasters for the archive modal dropdown
 $disasters = $pdo->query("
     SELECT id, title, type, level FROM disasters
     ORDER BY status = 'ongoing' DESC, started_at DESC
@@ -112,12 +109,10 @@ $grandFamilies = array_sum(array_column($evacSummary, 'total_families'));
 $grandTotal    = array_sum(array_column($evacSummary, 'total_evacuees'));
 $grandCap      = array_sum(array_column($evacSummary, 'max_capacity_people'));
 
-// Sidebar badges
 $_badgeCenters       = (int)$pdo->query("SELECT COUNT(*) FROM evacuation_centers")->fetchColumn();
 $_badgeOngoing       = (int)$pdo->query("SELECT COUNT(*) FROM disasters WHERE status = 'ongoing'")->fetchColumn();
 $_badgeAnnouncements = (int)$pdo->query("SELECT COUNT(*) FROM announcements")->fetchColumn();
 $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) FROM evac_registrations")->fetchColumn();
-// $_badgeUsers        = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -125,11 +120,8 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
     <meta charset="UTF-8">
     <title>Evacuees | MDRRMO San Ildefonso</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <link rel="stylesheet" href="../asset/css/admin_evacuees.css" />
+    <link rel="stylesheet" href="../asset/css/admin_evacuees.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <style>
-
-    </style>
 </head>
 <body>
 <div class="app-wrapper">
@@ -220,8 +212,9 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                 <i class="fas fa-exclamation-circle"></i>
                 <?php
                     $errors = [
-                        'label_required' => 'Archive label is required.',
-                        'archive_failed' => 'Archive failed. Please try again or check the server logs.',
+                        'label_required'      => 'Archive label is required.',
+                        'archive_failed'      => 'Archive failed. Please try again or check the server logs.',
+                        'nothing_to_archive'  => 'There are no active registrations to archive.',
                     ];
                     echo $errors[$_GET['error']] ?? 'An unknown error occurred.';
                 ?>
@@ -246,9 +239,9 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                         <span class="badge" style="padding:6px 14px;cursor:pointer"><i class="fas fa-list"></i> Centers</span>
                     </a>
                     <?php if ($totalEvacuees > 0): ?>
-                    <button onclick="document.getElementById('archiveModal').classList.add('active')"
+                    <button type="button" onclick="openArchiveModal()"
                             style="padding:8px 16px;background:#C0392B;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
-                        <i class="fas fa-archive"></i> Archive & Reset
+                        <i class="fas fa-archive"></i> Archive &amp; Reset
                     </button>
                     <?php endif; ?>
                 </div>
@@ -326,7 +319,7 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                 </div>
             </div>
 
-            <!-- Centers Summary Table (closed = greyed out) -->
+            <!-- Centers Summary Table -->
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fas fa-building"></i> Evacuation Centers Summary</h3>
@@ -511,80 +504,84 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                 <?php endif; ?>
             </div>
 
+            <!-- Archive History -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-archive"></i> Archive History</h3>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <span class="badge"><?php echo count($archiveBatches); ?> Batches</span>
+                        <?php if (!empty($archiveBatches)): ?>
+                        <?php /* FIX: Use a plain button + JS to open print tab, NOT an <a> tag
+                                  that could bleed into surrounding elements / the modal below */ ?>
+                        <button type="button" onclick="window.open('print_archive.php','_blank')"
+                                style="padding:6px 13px;background:#1A5276;color:#fff;border:none;border-radius:7px;
+                                       font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;
+                                       align-items:center;gap:5px">
+                            <i class="fas fa-print"></i> Print All
+                        </button>
+                        <?php endif; ?>
+                    </div>
+                </div>
 
-<div class="card">
-    <!-- Updated Card Header with Print All button -->
-    <div class="card-header">
-        <h3><i class="fas fa-archive"></i> Archive History</h3>
-        <div style="display:flex;gap:8px;align-items:center">
-            <span class="badge"><?php echo count($archiveBatches); ?> Batches</span>
-            <?php if (!empty($archiveBatches)): ?>
-            <a href="print_archive.php"
-               target="_blank"
-               style="padding:6px 13px;background:#1A5276;color:#fff;border-radius:7px;font-size:12px;font-weight:600;
-                      text-decoration:none;display:inline-flex;align-items:center;gap:5px">
-                <i class="fas fa-print"></i> Print All
-            </a>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <?php if (empty($archiveBatches)): ?>
-        <div class="empty-state">
-            <i class="fas fa-box-open"></i>
-            <p>No archives yet. Use "Archive & Reset" after a disaster to save records here.</p>
-        </div>
-    <?php else: ?>
-        <?php foreach ($archiveBatches as $batch): ?>
-        <!-- Updated archive-batch with individual Print button -->
-        <div class="archive-batch">
-            <div>
-                <div class="archive-batch-label">
-                    <i class="fas fa-folder" style="color:#C0392B;margin-right:6px"></i>
-                    <?php echo htmlspecialchars($batch['archive_label']); ?>
-                </div>
-                <div class="archive-batch-meta">
-                    Archived <?php echo date('F j, Y g:i A', strtotime($batch['archived_at'])); ?>
-                    by <?php echo htmlspecialchars($batch['archived_by_name'] ?? 'Admin'); ?>
-                </div>
-                <div class="archive-batch-demos" style="margin-top:8px">
-                    <span class="chip chip-child"><?php echo number_format($batch['total_children']); ?> C</span>
-                    <span class="chip chip-adult"><?php echo number_format($batch['total_adults']); ?> A</span>
-                    <span class="chip chip-senior"><?php echo number_format($batch['total_seniors']); ?> S</span>
-                    <span class="chip chip-pwd"><?php echo number_format($batch['total_pwds']); ?> P</span>
-                    <span style="font-size:12px;color:#888"><?php echo number_format($batch['total_families']); ?> families</span>
-                </div>
+                <?php if (empty($archiveBatches)): ?>
+                    <div class="empty-state">
+                        <i class="fas fa-box-open"></i>
+                        <p>No archives yet. Use "Archive &amp; Reset" after a disaster to save records here.</p>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($archiveBatches as $batch): ?>
+                    <div class="archive-batch">
+                        <div>
+                            <div class="archive-batch-label">
+                                <i class="fas fa-folder" style="color:#C0392B;margin-right:6px"></i>
+                                <?php echo htmlspecialchars($batch['archive_label']); ?>
+                            </div>
+                            <div class="archive-batch-meta">
+                                Archived <?php echo date('F j, Y g:i A', strtotime($batch['archived_at'])); ?>
+                                by <?php echo htmlspecialchars($batch['archived_by_name'] ?? 'Admin'); ?>
+                            </div>
+                            <div class="archive-batch-demos" style="margin-top:8px">
+                                <span class="chip chip-child"><?php echo number_format($batch['total_children']); ?> C</span>
+                                <span class="chip chip-adult"><?php echo number_format($batch['total_adults']); ?> A</span>
+                                <span class="chip chip-senior"><?php echo number_format($batch['total_seniors']); ?> S</span>
+                                <span class="chip chip-pwd"><?php echo number_format($batch['total_pwds']); ?> P</span>
+                                <span style="font-size:12px;color:#888"><?php echo number_format($batch['total_families']); ?> families</span>
+                            </div>
+                        </div>
+                        <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                            <div>
+                                <div class="archive-total"><?php echo number_format($batch['total_evacuees']); ?></div>
+                                <div class="archive-total-lbl">Evacuees</div>
+                            </div>
+                            <?php /* FIX: plain button + JS instead of <a> tag */ ?>
+                            <button type="button"
+                                    onclick="window.open('print_archive.php?label=<?php echo urlencode($batch['archive_label']); ?>','_blank')"
+                                    style="padding:5px 12px;background:#EBF5FB;color:#1A5276;border:1px solid #AED6F1;
+                                           border-radius:6px;font-size:11.5px;font-weight:600;cursor:pointer;
+                                           display:inline-flex;align-items:center;gap:5px">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
 
-            <!-- Right side: Total + Individual Print button -->
-            <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-                <div>
-                    <div class="archive-total"><?php echo number_format($batch['total_evacuees']); ?></div>
-                    <div class="archive-total-lbl">Evacuees</div>
-                </div>
-                
-                <!-- Individual Print Button -->
-                <a href="print_archive.php?label=<?php echo urlencode($batch['archive_label']); ?>"
-                   target="_blank"
-                   title="Print this batch"
-                   style="padding:5px 12px;background:#EBF5FB;color:#1A5276;border:1px solid #AED6F1;
-                          border-radius:6px;font-size:11.5px;font-weight:600;text-decoration:none;
-                          display:inline-flex;align-items:center;gap:5px">
-                    <i class="fas fa-print"></i> Print
-                </a>
-            </div>
-        </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
-</div>
         </div><!-- /dashboard -->
     </main>
-</div>
+</div><!-- /app-wrapper -->
 
-<!-- ── Archive Modal ── -->
-<div class="modal-overlay" id="archiveModal">
+<!-- ══════════════════════════════════════════
+     ARCHIVE MODAL
+     IMPORTANT: This is OUTSIDE .app-wrapper intentionally
+     so it can never be a child of any <a> tag above.
+     The form uses id="archiveForm" and submits via JS
+     to guarantee the POST goes to archive_evacuees.php.
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="archiveModal" style="display:none;position:fixed;inset:0;z-index:9999;
+     background:rgba(0,0,0,.5);align-items:center;justify-content:center">
     <div class="modal-box">
-        <h3><i class="fas fa-archive" style="color:#C0392B"></i> Archive & Reset Evacuees</h3>
+        <h3><i class="fas fa-archive" style="color:#C0392B"></i> Archive &amp; Reset Evacuees</h3>
         <p>This will move all current registrations to the archive and reset all evacuation centers to <strong>Available</strong>.</p>
 
         <div class="modal-warning">
@@ -592,7 +589,8 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
             <span>This action cannot be undone. Make sure the disaster event has ended before archiving.</span>
         </div>
 
-        <form method="POST" action="archive_evacuees.php">
+        <!-- FIX: id on form, explicit method/action, no wrapping anchors anywhere near here -->
+        <form id="archiveForm" method="POST" action="archive_evacuees.php">
             <label for="archive_label">Archive Label <span style="color:#C0392B">*</span></label>
             <input type="text" id="archive_label" name="archive_label"
                    placeholder="e.g. Typhoon Bagyong Nonoy – March 2026" required>
@@ -608,11 +606,10 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
             </select>
 
             <div class="modal-actions">
-                <button type="button" class="btn-cancel"
-                        onclick="document.getElementById('archiveModal').classList.remove('active')">
+                <button type="button" class="btn-cancel" onclick="closeArchiveModal()">
                     Cancel
                 </button>
-                <button type="submit" class="btn-archive">
+                <button type="button" class="btn-archive" onclick="submitArchiveForm()">
                     <i class="fas fa-archive"></i> Archive Now
                 </button>
             </div>
@@ -621,53 +618,82 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
 </div>
 
 <script>
-    const sidebar      = document.getElementById('sidebar');
-    const mainContent  = document.getElementById('mainContent');
-    const toggleBtn    = document.getElementById('sidebarToggleBtn');
-    const mobileToggle = document.getElementById('mobileToggle');
+// ── Sidebar toggle ────────────────────────────────────────────────
+const sidebar      = document.getElementById('sidebar');
+const mainContent  = document.getElementById('mainContent');
+const toggleBtn    = document.getElementById('sidebarToggleBtn');
+const mobileToggle = document.getElementById('mobileToggle');
 
-    toggleBtn.addEventListener('click', () => {
-        sidebar.classList.toggle('collapsed');
-        mainContent.classList.toggle('expanded');
-        toggleBtn.classList.toggle('collapsed');
-        const icon = toggleBtn.querySelector('i');
-        icon.className = sidebar.classList.contains('collapsed') ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
-    });
-    mobileToggle.addEventListener('click', () => sidebar.classList.toggle('show'));
+toggleBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('expanded');
+    toggleBtn.classList.toggle('collapsed');
+    const icon = toggleBtn.querySelector('i');
+    icon.className = sidebar.classList.contains('collapsed')
+        ? 'fas fa-chevron-right'
+        : 'fas fa-chevron-left';
+});
+mobileToggle.addEventListener('click', () => sidebar.classList.toggle('show'));
 
-    // Close modal on overlay click
-    document.getElementById('archiveModal').addEventListener('click', function(e) {
-        if (e.target === this) this.classList.remove('active');
-    });
+// ── Archive modal ─────────────────────────────────────────────────
+const archiveModal = document.getElementById('archiveModal');
 
-    // Centers table filter
-    const searchInput  = document.getElementById('centerSearch');
-    const statusFilter = document.getElementById('statusFilter');
-    const tableBody    = document.querySelector('#centersTable tbody');
+function openArchiveModal() {
+    archiveModal.style.display = 'flex';
+}
 
-    function filterTable() {
-        const q  = searchInput.value.toLowerCase();
-        const st = statusFilter.value;
-        tableBody.querySelectorAll('tr').forEach(row => {
-            const matchQ  = q  === '' || row.textContent.toLowerCase().includes(q);
-            const matchSt = st === '' || row.dataset.status === st;
-            row.style.display = (matchQ && matchSt) ? '' : 'none';
-        });
+function closeArchiveModal() {
+    archiveModal.style.display = 'none';
+}
+
+function submitArchiveForm() {
+    const form  = document.getElementById('archiveForm');
+    const label = document.getElementById('archive_label').value.trim();
+
+    if (!label) {
+        document.getElementById('archive_label').focus();
+        return;
     }
-    searchInput.addEventListener('input', filterTable);
-    statusFilter.addEventListener('change', filterTable);
 
-    // Recent registrations search
-    const recentSearch = document.getElementById('recentSearch');
-    if (recentSearch) {
-        const recentBody = document.querySelector('#recentTable tbody');
-        recentSearch.addEventListener('input', () => {
-            const q = recentSearch.value.toLowerCase();
-            recentBody.querySelectorAll('tr').forEach(row => {
-                row.style.display = !q || row.textContent.toLowerCase().includes(q) ? '' : 'none';
-            });
+    // Explicitly POST to archive_evacuees.php — bypasses any browser quirks
+    form.method = 'POST';
+    form.action = 'archive_evacuees.php';
+    form.submit();
+}
+
+// Close modal when clicking the dark overlay background
+archiveModal.addEventListener('click', function(e) {
+    if (e.target === this) closeArchiveModal();
+});
+
+// ── Centers table filter ──────────────────────────────────────────
+const searchInput  = document.getElementById('centerSearch');
+const statusFilter = document.getElementById('statusFilter');
+const tableBody    = document.querySelector('#centersTable tbody');
+
+function filterTable() {
+    const q  = searchInput.value.toLowerCase();
+    const st = statusFilter.value;
+    tableBody.querySelectorAll('tr').forEach(row => {
+        const matchQ  = q  === '' || row.textContent.toLowerCase().includes(q);
+        const matchSt = st === '' || row.dataset.status === st;
+        row.style.display = (matchQ && matchSt) ? '' : 'none';
+    });
+}
+searchInput.addEventListener('input', filterTable);
+statusFilter.addEventListener('change', filterTable);
+
+// ── Recent registrations search ───────────────────────────────────
+const recentSearch = document.getElementById('recentSearch');
+if (recentSearch) {
+    const recentBody = document.querySelector('#recentTable tbody');
+    recentSearch.addEventListener('input', () => {
+        const q = recentSearch.value.toLowerCase();
+        recentBody.querySelectorAll('tr').forEach(row => {
+            row.style.display = !q || row.textContent.toLowerCase().includes(q) ? '' : 'none';
         });
-    }
+    });
+}
 </script>
 </body>
 </html>

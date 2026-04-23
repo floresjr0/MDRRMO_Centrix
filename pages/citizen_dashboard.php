@@ -433,6 +433,266 @@ $isMedianCo = isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_A
   });
 <?php endif; ?>
 </script>
+
+<style>
+/* ── Profile FAB (floating action in topbar) ──────────────────── */
+.topbar-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--red), var(--orange));
+  color: #fff;
+  font-size: .78rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; cursor: pointer;
+  border: 2px solid rgba(192,57,30,.25);
+  transition: transform .15s;
+  user-select: none;
+}
+.topbar-avatar:hover { transform: scale(1.08); }
+ 
+/* ── Profile Modal ─────────────────────────────────────────────── */
+.profile-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.48);
+  z-index: 500;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s;
+  display: flex; align-items: flex-end;
+  justify-content: center;
+}
+.profile-backdrop.open {
+  opacity: 1; pointer-events: all;
+}
+ 
+.profile-sheet {
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-width: 480px;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 0 0 env(safe-area-inset-bottom);
+  transform: translateY(100%);
+  transition: transform .32s cubic-bezier(.16,1,.3,1);
+  box-shadow: 0 -4px 40px rgba(0,0,0,.18);
+}
+.profile-backdrop.open .profile-sheet {
+  transform: translateY(0);
+}
+ 
+.profile-handle-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 12px 0 4px; cursor: pointer;
+}
+.profile-handle {
+  width: 38px; height: 4px;
+  border-radius: 99px;
+  background: #e0e0e0;
+}
+ 
+.profile-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 20px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.profile-head-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--red), var(--orange));
+  color: #fff;
+  font-size: 1.3rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 3px 12px rgba(192,57,30,.35);
+}
+.profile-head-info { flex: 1; min-width: 0; }
+.profile-head-name {
+  font-size: .95rem; font-weight: 700; color: #1a1a1a;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.profile-head-role {
+  font-size: .65rem; color: #888; font-weight: 500; margin-top: 2px;
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.profile-head-brgy {
+  font-size: .70rem; color: #666; margin-top: 1px;
+}
+ 
+/* ── Form sections ─────────────────────────────────────────────── */
+.profile-section {
+  padding: 16px 20px 4px;
+}
+.profile-section-label {
+  font-size: .60rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: #aaa; margin-bottom: 10px;
+}
+ 
+.profile-field {
+  display: flex; flex-direction: column; gap: 4px;
+  margin-bottom: 14px;
+}
+.profile-field label {
+  font-size: .72rem; font-weight: 600; color: #444;
+}
+.profile-field input {
+  height: 42px;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: .82rem; font-family: 'Poppins', sans-serif;
+  color: #1a1a1a;
+  background: #fafafa;
+  transition: border-color .15s, background .15s;
+  outline: none;
+}
+.profile-field input:focus {
+  border-color: var(--red);
+  background: #fff;
+}
+.profile-field input:read-only {
+  background: #f5f5f5; color: #888; cursor: not-allowed;
+}
+ 
+/* ── Household counter cards ────────────────────────────────────── */
+.household-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 20px 4px;
+}
+ 
+.hh-card {
+  background: #fafafa;
+  border: 1.5px solid #eee;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.hh-card-label {
+  font-size: .62rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+  color: #999;
+}
+.hh-card-emoji { font-size: 1.3rem; line-height: 1; }
+ 
+.hh-counter {
+  display: flex; align-items: center; gap: 8px;
+}
+.hh-counter-btn {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid #e0e0e0;
+  background: #fff;
+  font-size: 1.1rem; font-weight: 700; color: #555;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: border-color .15s, color .15s;
+  flex-shrink: 0; user-select: none;
+  font-family: 'Poppins', sans-serif;
+}
+.hh-counter-btn:hover { border-color: var(--red); color: var(--red); }
+.hh-counter-btn:active { transform: scale(.92); }
+.hh-counter-val {
+  font-size: 1.1rem; font-weight: 800;
+  color: #1a1a1a; min-width: 20px; text-align: center;
+}
+ 
+/* ── Total banner ─────────────────────────────────────────────── */
+.hh-total-banner {
+  margin: 12px 20px 4px;
+  background: linear-gradient(135deg, rgba(192,57,30,.08), rgba(224,112,32,.08));
+  border: 1.5px solid rgba(192,57,30,.15);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.hh-total-label {
+  font-size: .72rem; font-weight: 600; color: #666;
+}
+.hh-total-val {
+  font-size: 1.1rem; font-weight: 800; color: var(--red);
+}
+.hh-total-sub {
+  font-size: .60rem; color: #999; margin-top: 1px;
+}
+ 
+/* ── Save button ──────────────────────────────────────────────── */
+.profile-save-btn {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: calc(100% - 40px);
+  margin: 16px 20px 20px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--red), var(--orange));
+  color: #fff;
+  border: none; border-radius: 14px;
+  font-size: .88rem; font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(192,57,30,.35);
+  transition: filter .15s, transform .15s;
+}
+.profile-save-btn:hover { filter: brightness(1.07); }
+.profile-save-btn:active { transform: scale(.98); }
+.profile-save-btn.saving { opacity: .7; pointer-events: none; }
+ 
+/* ── Toast feedback ───────────────────────────────────────────── */
+.profile-toast {
+  position: fixed; bottom: 90px; left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: #1a1a1a; color: #fff;
+  padding: 10px 20px; border-radius: 20px;
+  font-size: .75rem; font-weight: 600;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s, transform .25s;
+  z-index: 9999; white-space: nowrap;
+  font-family: 'Poppins', sans-serif;
+}
+.profile-toast.show {
+  opacity: 1; transform: translateX(-50%) translateY(0);
+}
+.profile-toast.success { background: #1b5e20; }
+.profile-toast.error   { background: #b71c1c; }
+ 
+/* ── Household badge on nav FAB ──────────────────────────────── */
+.hh-size-badge {
+  position: absolute; top: -4px; right: -4px;
+  width: 18px; height: 18px;
+  background: var(--red); color: #fff;
+  border-radius: 50%; border: 2px solid #fff;
+  font-size: .52rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Poppins', sans-serif;
+  line-height: 1;
+}
+ 
+/* ── Drawer profile row ──────────────────────────────────────── */
+.drawer-profile-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 1.2rem;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .15s;
+}
+.drawer-profile-row:hover { background: #fafafa; }
+.drawer-profile-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--red), var(--orange));
+  color: #fff; font-size: .9rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.drawer-profile-name {
+  font-size: .78rem; font-weight: 700; color: var(--text);
+}
+.drawer-profile-sub {
+  font-size: .60rem; color: var(--muted); margin-top: 1px;
+}
+.drawer-profile-edit {
+  margin-left: auto;
+  font-size: .60rem; color: var(--red); font-weight: 700;
+}
+</style>
+
+
 </head>
 <body>
 
@@ -451,6 +711,14 @@ $isMedianCo = isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_A
   </div>
   <nav class="drawer-nav">
     <div class="drawer-nav-label">Menu</div>
+    <div class="drawer-profile-row" onclick="openProfileModal(); closeSidebar();">
+    <div class="drawer-profile-avatar" id="drawerAvatar">?</div>
+    <div>
+      <div class="drawer-profile-name" id="drawerName">My Profile</div>
+      <div class="drawer-profile-sub">Tap to edit profile & household</div>
+    </div>
+    <div class="drawer-profile-edit">Edit ›</div>
+  </div>
     <a href="citizen_dashboard.php" class="drawer-nav-item active">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Dashboard
     </a>
@@ -469,6 +737,159 @@ $isMedianCo = isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_A
       <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h4V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>Logout
     </a>
   </div>
+
+<!-- PROFILE MODAL — place before </body>, alongside your other modals -->
+<div class="profile-toast" id="profileToast"></div>
+ 
+<div class="profile-backdrop" id="profileBackdrop" onclick="handleProfileBackdropClick(event)">
+  <div class="profile-sheet" id="profileSheet">
+ 
+    <!-- Handle -->
+    <div class="profile-handle-wrap" onclick="closeProfileModal()">
+      <div class="profile-handle"></div>
+    </div>
+ 
+    <!-- Head -->
+    <div class="profile-head">
+      <div class="profile-head-avatar" id="profileHeadAvatar">?</div>
+      <div class="profile-head-info">
+        <div class="profile-head-name" id="profileHeadName">Loading…</div>
+        <div class="profile-head-role">Citizen · San Ildefonso</div>
+        <div class="profile-head-brgy" id="profileHeadBrgy"></div>
+        <!-- Age + sex chip shown once data loads -->
+        <div id="profileHeadMeta" style="display:none;margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;"></div>
+      </div>
+    </div>
+ 
+    <!-- Personal Info -->
+    <div class="profile-section">
+      <div class="profile-section-label">Personal Information</div>
+ 
+      <div class="profile-field">
+        <label for="pfFullName">Full Name</label>
+        <input type="text" id="pfFullName" placeholder="Enter your full name" maxlength="150" autocomplete="name">
+      </div>
+ 
+      <div class="profile-field">
+        <label for="pfContact">Contact Number</label>
+        <input type="tel" id="pfContact" placeholder="e.g. 09XXXXXXXXX" maxlength="20" autocomplete="tel">
+      </div>
+ 
+      <!-- Birthday + Sex side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+ 
+        <div class="profile-field" style="margin-bottom:0">
+          <label for="pfBirthday">Birthday</label>
+          <input type="date" id="pfBirthday"
+                 max="<?php echo date('Y-m-d'); ?>"
+                 min="1900-01-01"
+                 style="height:42px;border:1.5px solid #e8e8e8;border-radius:10px;padding:0 10px;font-size:.80rem;font-family:'Poppins',sans-serif;color:#1a1a1a;background:#fafafa;outline:none;transition:border-color .15s,background .15s;width:100%;">
+        </div>
+ 
+        <div class="profile-field" style="margin-bottom:0">
+          <label for="pfSex">Sex</label>
+          <select id="pfSex"
+                  style="height:42px;border:1.5px solid #e8e8e8;border-radius:10px;padding:0 10px;font-size:.80rem;font-family:'Poppins',sans-serif;color:#1a1a1a;background:#fafafa;outline:none;transition:border-color .15s;width:100%;appearance:none;-webkit-appearance:none;cursor:pointer;">
+            <option value="">— Select —</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="prefer_not_to_say">Prefer not to say</option>
+          </select>
+        </div>
+ 
+      </div>
+ 
+      <!-- Age display — auto-computed, read-only -->
+      <div id="ageDisplayWrap" style="display:none;margin-top:10px;">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#f0f4ff;border:1px solid #c7d4f0;border-radius:99px;padding:4px 12px;">
+          <span style="font-size:.62rem;font-weight:700;color:#3a5bb8;text-transform:uppercase;letter-spacing:.06em;">Age</span>
+          <span id="ageDisplay" style="font-size:.82rem;font-weight:800;color:#1a3a8a;">—</span>
+        </div>
+      </div>
+ 
+      <!-- Read-only location fields -->
+      <div class="profile-field" style="margin-top:14px;">
+        <label for="pfBarangay">Barangay</label>
+        <input type="text" id="pfBarangay" readonly>
+      </div>
+ 
+      <div class="profile-field">
+        <label for="pfHouseNo">House No. / Street</label>
+        <input type="text" id="pfHouseNo" readonly>
+      </div>
+ 
+    </div><!-- /personal info -->
+ 
+    <!-- Household Members -->
+    <div class="profile-section">
+      <div class="profile-section-label">Household Members</div>
+    </div>
+ 
+    <div class="household-grid">
+ 
+      <div class="hh-card">
+        <div class="hh-card-label">Adults</div>
+        <div style="font-size:.60rem;color:#bbb;margin-bottom:4px;">18–59 yrs</div>
+        <div class="hh-counter">
+          <button class="hh-counter-btn" onclick="hhChange('adults',-1)">−</button>
+          <div class="hh-counter-val" id="hhAdults">1</div>
+          <button class="hh-counter-btn" onclick="hhChange('adults',1)">+</button>
+        </div>
+      </div>
+ 
+      <div class="hh-card">
+        <div class="hh-card-label">Children</div>
+        <div style="font-size:.60rem;color:#bbb;margin-bottom:4px;">Below 18 yrs</div>
+        <div class="hh-counter">
+          <button class="hh-counter-btn" onclick="hhChange('children',-1)">−</button>
+          <div class="hh-counter-val" id="hhChildren">0</div>
+          <button class="hh-counter-btn" onclick="hhChange('children',1)">+</button>
+        </div>
+      </div>
+ 
+      <div class="hh-card">
+        <div class="hh-card-label">Seniors</div>
+        <div style="font-size:.60rem;color:#bbb;margin-bottom:4px;">60 yrs and above</div>
+        <div class="hh-counter">
+          <button class="hh-counter-btn" onclick="hhChange('seniors',-1)">−</button>
+          <div class="hh-counter-val" id="hhSeniors">0</div>
+          <button class="hh-counter-btn" onclick="hhChange('seniors',1)">+</button>
+        </div>
+      </div>
+ 
+      <div class="hh-card">
+        <div class="hh-card-label">PWDs</div>
+        <div style="font-size:.60rem;color:#bbb;margin-bottom:4px;">With disability</div>
+        <div class="hh-counter">
+          <button class="hh-counter-btn" onclick="hhChange('pwds',-1)">−</button>
+          <div class="hh-counter-val" id="hhPwds">0</div>
+          <button class="hh-counter-btn" onclick="hhChange('pwds',1)">+</button>
+        </div>
+      </div>
+ 
+    </div><!-- /household-grid -->
+ 
+    <!-- Total Banner -->
+    <div class="hh-total-banner">
+      <div>
+        <div class="hh-total-label">Total Household Members</div>
+        <div class="hh-total-sub">Sent to coordinators when you evacuate</div>
+      </div>
+      <div class="hh-total-val" id="hhTotal">1</div>
+    </div>
+ 
+    <!-- Save -->
+    <button class="profile-save-btn" id="profileSaveBtn" onclick="saveProfile()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M13 2H4L2 4v9a1 1 0 001 1h10a1 1 0 001-1V3a1 1 0 00-1-1zM5 2v4h6V2M8 9v4M6 11h4"
+              stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Save Profile
+    </button>
+ 
+  </div><!-- /profile-sheet -->
+</div><!-- /profile-backdrop -->
+
 </div>
 
 <!-- READY BAG MODAL -->
@@ -537,8 +958,8 @@ $isMedianCo = isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_A
       <div class="topbar-title">MDRRMO-San Ildefonso Bulacan</div>
       <div class="topbar-sub">Brgy. <?php echo htmlspecialchars($user['barangay_name'] ?? ''); ?> &nbsp;·&nbsp; <?php echo date('D, M j, Y'); ?></div>
     </div>
-    <button class="hamburger-btn" onclick="openSidebar()"><span></span><span></span><span></span></button>
-  </header>
+ <div class="topbar-avatar" onclick="openProfileModal()" id="topbarAvatar">?</div>
+  <button class="hamburger-btn" onclick="openSidebar()"><span></span><span></span><span></span></button>  </header>
 
   <div class="page-scroll">
 
@@ -1278,6 +1699,305 @@ function escHtml(str) {
     setTimeout(() => navItem.classList.remove('hint-show'), 2000);
   }, 1200);
 })();
+</script>
+
+<script>
+'use strict';
+ 
+// ── Birthday → age helper ────────────────────────────────────────
+function computeAge(birthdayStr) {
+  if (!birthdayStr) return null;
+  const birth = new Date(birthdayStr);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age >= 0 ? age : null;
+}
+ 
+// ── Auto-compute age when birthday input changes ──────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  const bdInput = document.getElementById('pfBirthday');
+  if (bdInput) {
+    bdInput.addEventListener('change', function () {
+      const age = computeAge(this.value);
+      const wrap = document.getElementById('ageDisplayWrap');
+      const disp = document.getElementById('ageDisplay');
+      if (age !== null) {
+        disp.textContent = age + ' years old';
+        wrap.style.display = 'block';
+      } else {
+        wrap.style.display = 'none';
+      }
+    });
+  }
+});
+ 
+// ── Household state ──────────────────────────────────────────────
+const hhState = { adults: 1, children: 0, seniors: 0, pwds: 0 };
+ 
+function hhChange(field, delta) {
+  const min = field === 'adults' ? 1 : 0;
+  hhState[field] = Math.max(min, (hhState[field] || 0) + delta);
+  document.getElementById('hh' + field.charAt(0).toUpperCase() + field.slice(1)).textContent = hhState[field];
+  updateHHTotal();
+}
+ 
+function updateHHTotal() {
+  const total = hhState.adults + hhState.children + hhState.seniors + hhState.pwds;
+  const el = document.getElementById('hhTotal');
+  if (el) el.textContent = total;
+  // Badge on evacuation FAB
+  let badge = document.getElementById('hhSizeBadge');
+  if (!badge) {
+    const fab = document.getElementById('evacFab');
+    if (fab) {
+      badge = document.createElement('div');
+      badge.className = 'hh-size-badge';
+      badge.id = 'hhSizeBadge';
+      fab.style.position = 'relative';
+      fab.appendChild(badge);
+    }
+  }
+  if (badge) badge.textContent = total;
+  return total;
+}
+ 
+// ── Open / close modal ────────────────────────────────────────────
+function openProfileModal() {
+  const backdrop = document.getElementById('profileBackdrop');
+  if (!backdrop) return;
+  backdrop.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  loadProfileData();
+}
+ 
+function closeProfileModal() {
+  const backdrop = document.getElementById('profileBackdrop');
+  if (backdrop) backdrop.classList.remove('open');
+  document.body.style.overflow = '';
+}
+ 
+function handleProfileBackdropClick(e) {
+  if (e.target === document.getElementById('profileBackdrop')) closeProfileModal();
+}
+ 
+// ── Load profile from server ──────────────────────────────────────
+function loadProfileData() {
+  fetch('citizen_profile_action.php?action=get', { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) return;
+ 
+      // Personal fields
+      const nameVal = data.full_name || '';
+      document.getElementById('pfFullName').value  = nameVal;
+      document.getElementById('pfContact').value   = data.contact_number || '';
+      document.getElementById('pfBarangay').value  = data.barangay_name  || '';
+      document.getElementById('pfHouseNo').value   = data.house_number   || '';
+ 
+      // Birthday
+      const bdInput = document.getElementById('pfBirthday');
+      if (bdInput) bdInput.value = data.birthday || '';
+ 
+      // Age display
+      const ageWrap = document.getElementById('ageDisplayWrap');
+      const ageDisp = document.getElementById('ageDisplay');
+      if (data.age !== null && data.age !== undefined) {
+        ageDisp.textContent = data.age + ' years old';
+        ageWrap.style.display = 'block';
+      } else {
+        ageWrap.style.display = 'none';
+      }
+ 
+      // Sex
+      const sexSel = document.getElementById('pfSex');
+      if (sexSel) sexSel.value = data.sex || '';
+ 
+      // Header avatar
+      const initial = nameVal ? nameVal.charAt(0).toUpperCase() : '?';
+      ['profileHeadAvatar','topbarAvatar','drawerAvatar'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = initial;
+      });
+      const drNm = document.getElementById('drawerName');
+      if (drNm) drNm.textContent = nameVal || 'My Profile';
+ 
+      document.getElementById('profileHeadName').textContent = nameVal || 'My Profile';
+      document.getElementById('profileHeadBrgy').textContent = 'Brgy. ' + (data.barangay_name || '');
+ 
+      // Head meta chips (age + sex)
+      const metaWrap = document.getElementById('profileHeadMeta');
+      if (metaWrap) {
+        metaWrap.innerHTML = '';
+        metaWrap.style.display = 'flex';
+        if (data.age !== null && data.age !== undefined) {
+          metaWrap.innerHTML += `<span style="font-size:.62rem;font-weight:700;background:#f0f4ff;color:#3a5bb8;padding:2px 8px;border-radius:99px;border:1px solid #c7d4f0;">${data.age} yrs old</span>`;
+        }
+        if (data.sex && data.sex !== 'prefer_not_to_say') {
+          const sexLabel = data.sex === 'male' ? '♂ Male' : '♀ Female';
+          const sexColor = data.sex === 'male' ? '#1565c0' : '#880e4f';
+          const sexBg    = data.sex === 'male' ? '#e3f2fd' : '#fce4ec';
+          const sexBdr   = data.sex === 'male' ? '#90caf9' : '#f48fb1';
+          metaWrap.innerHTML += `<span style="font-size:.62rem;font-weight:700;background:${sexBg};color:${sexColor};padding:2px 8px;border-radius:99px;border:1px solid ${sexBdr};">${sexLabel}</span>`;
+        }
+      }
+ 
+      // Household
+      const hh = data.household;
+      hhState.adults   = hh.adults;
+      hhState.children = hh.children;
+      hhState.seniors  = hh.seniors;
+      hhState.pwds     = hh.pwds;
+      document.getElementById('hhAdults').textContent   = hh.adults;
+      document.getElementById('hhChildren').textContent = hh.children;
+      document.getElementById('hhSeniors').textContent  = hh.seniors;
+      document.getElementById('hhPwds').textContent     = hh.pwds;
+      updateHHTotal();
+    })
+    .catch(() => showProfileToast('Could not load profile.', 'error'));
+}
+ 
+// ── Save profile ──────────────────────────────────────────────────
+function saveProfile() {
+  const btn = document.getElementById('profileSaveBtn');
+  btn.classList.add('saving');
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="animation:spin .7s linear infinite"><circle cx="7" cy="7" r="5.5" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/><path d="M7 1.5A5.5 5.5 0 0 1 12.5 7" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg> Saving…`;
+ 
+  const birthday = document.getElementById('pfBirthday').value;
+  const sex      = document.getElementById('pfSex').value;
+ 
+  // Client-side age check — warn if birthday looks wrong
+  if (birthday) {
+    const age = computeAge(birthday);
+    if (age !== null && age > 120) {
+      btn.classList.remove('saving');
+      restoreSaveBtn();
+      showProfileToast('Ang naibigay na petsa ng kaarawan ay mukhang hindi tama.', 'error');
+      return;
+    }
+  }
+ 
+  const payload = {
+    full_name:      document.getElementById('pfFullName').value.trim(),
+    contact_number: document.getElementById('pfContact').value.trim(),
+    birthday:       birthday,
+    sex:            sex,
+    adults:         hhState.adults,
+    children:       hhState.children,
+    seniors:        hhState.seniors,
+    pwds:           hhState.pwds,
+  };
+ 
+  fetch('citizen_profile_action.php?action=save', {
+    method:      'POST',
+    credentials: 'same-origin',
+    headers:     { 'Content-Type': 'application/json' },
+    body:        JSON.stringify(payload),
+  })
+    .then(r => r.json())
+    .then(data => {
+      restoreSaveBtn();
+      if (data.ok) {
+        // Update avatars with new name initial
+        const nameVal = payload.full_name;
+        const initial = nameVal ? nameVal.charAt(0).toUpperCase() : '?';
+        ['profileHeadAvatar','topbarAvatar','drawerAvatar'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = initial;
+        });
+        const drNm = document.getElementById('drawerName');
+        if (drNm) drNm.textContent = nameVal;
+        document.getElementById('profileHeadName').textContent = nameVal;
+ 
+        // Update age display after save
+        if (data.age !== null && data.age !== undefined) {
+          const ageDisp = document.getElementById('ageDisplay');
+          const ageWrap = document.getElementById('ageDisplayWrap');
+          if (ageDisp) ageDisp.textContent = data.age + ' years old';
+          if (ageWrap) ageWrap.style.display = 'block';
+        }
+ 
+        showProfileToast('✓ Na-save! Household: ' + data.total_members + ' miyembro', 'success');
+        setTimeout(closeProfileModal, 1400);
+      } else {
+        showProfileToast(data.error || 'Hindi na-save. Subukan ulit.', 'error');
+      }
+    })
+    .catch(() => {
+      restoreSaveBtn();
+      showProfileToast('Network error. Subukan ulit.', 'error');
+    });
+}
+ 
+function restoreSaveBtn() {
+  const btn = document.getElementById('profileSaveBtn');
+  if (!btn) return;
+  btn.classList.remove('saving');
+  btn.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M13 2H4L2 4v9a1 1 0 001 1h10a1 1 0 001-1V3a1 1 0 00-1-1zM5 2v4h6V2M8 9v4M6 11h4"
+            stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Save Profile`;
+}
+ 
+// ── Toast ────────────────────────────────────────────────────────
+let profileToastTimer = null;
+function showProfileToast(msg, type = '') {
+  const el = document.getElementById('profileToast');
+  if (!el) return;
+  el.textContent = msg;
+  el.className   = 'profile-toast show ' + type;
+  if (profileToastTimer) clearTimeout(profileToastTimer);
+  profileToastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+ 
+// ── Swipe sheet down to close ─────────────────────────────────────
+(function () {
+  const sheet = document.getElementById('profileSheet');
+  if (!sheet) return;
+  let startY = 0;
+  sheet.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+  sheet.addEventListener('touchend',   e => {
+    if (e.changedTouches[0].clientY - startY > 90) closeProfileModal();
+  }, { passive: true });
+})();
+ 
+// ── Page init — set avatar + badge without opening modal ──────────
+document.addEventListener('DOMContentLoaded', function () {
+  fetch('citizen_profile_action.php?action=get', { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) return;
+      const initial = data.full_name ? data.full_name.charAt(0).toUpperCase() : '?';
+      ['topbarAvatar','drawerAvatar'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = initial;
+      });
+      const drNm = document.getElementById('drawerName');
+      if (drNm) drNm.textContent = data.full_name || 'My Profile';
+      hhState.adults   = data.household.adults;
+      hhState.children = data.household.children;
+      hhState.seniors  = data.household.seniors;
+      hhState.pwds     = data.household.pwds;
+      updateHHTotal();
+    })
+    .catch(() => {});
+ 
+  // Focus border color for birthday and sex inputs
+  ['pfBirthday','pfSex'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('focus', () => { el.style.borderColor = 'var(--red)'; el.style.background = '#fff'; });
+    el.addEventListener('blur',  () => { el.style.borderColor = '#e8e8e8';    el.style.background = '#fafafa'; });
+  });
+});
+ 
+// Spinner keyframe for save button loading state
+const spinStyle = document.createElement('style');
+spinStyle.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+document.head.appendChild(spinStyle);
 </script>
 </body>
 </html>
