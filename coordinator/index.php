@@ -6,7 +6,8 @@ $pdo  = db();
 $user = current_user();
 
 // ── Assigned centers with expected-evacuee counts ─────────────────────────
-// "expected" = citizens whose tracking status is 'navigating' for this center
+// "expected" = SUM of household sizes for citizens whose tracking status
+// is 'navigating' for this center. Falls back to 1 if no household record.
 $stmt = $pdo->prepare("
     SELECT
         c.*,
@@ -15,10 +16,13 @@ $stmt = $pdo->prepare("
     FROM evacuation_centers c
     JOIN barangays b ON b.id = c.barangay_id
     LEFT JOIN (
-        SELECT center_id, COUNT(*) AS expected_count
-        FROM   evac_navigation_tracking
-        WHERE  status = 'navigating'
-        GROUP  BY center_id
+        SELECT
+            nt.center_id,
+            SUM(COALESCE(ch.total_members, 1)) AS expected_count
+        FROM   evac_navigation_tracking nt
+        LEFT JOIN citizen_household ch ON ch.user_id = nt.user_id
+        WHERE  nt.status = 'navigating'
+        GROUP  BY nt.center_id
     ) t ON t.center_id = c.id
     WHERE c.coordinator_user_id = ?
 ");
@@ -26,15 +30,17 @@ $stmt->execute([$user['id']]);
 $centers = $stmt->fetchAll();
 
 // ── Per-center breakdown: barangay origin of navigating citizens ───────────
+// citizen_count = sum of household sizes (not raw row count)
 // Keyed by center_id → array of rows
 $breakdownStmt = $pdo->prepare("
     SELECT
         nt.center_id,
         b.name  AS barangay_name,
-        COUNT(*) AS citizen_count
+        SUM(COALESCE(ch.total_members, 1)) AS citizen_count
     FROM   evac_navigation_tracking nt
     JOIN   users u  ON u.id  = nt.user_id
     JOIN   barangays b ON b.id = u.barangay_id
+    LEFT JOIN citizen_household ch ON ch.user_id = nt.user_id
     WHERE  nt.status = 'navigating'
       AND  nt.center_id IN (
                SELECT id FROM evacuation_centers WHERE coordinator_user_id = ?
@@ -77,7 +83,6 @@ foreach ($breakdownRows as $row) {
         <div class="sidebar-header">
             <div class="sidebar-brand-row">
                 <div class="brand-logo-sm">
-                    <!-- Replace src with your actual logo path e.g. ../assets/img/logo.png -->
                     <img src="../img/mdrrmo.png" alt="MDRRMO Logo"
                          style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">
                 </div>
@@ -108,12 +113,10 @@ foreach ($breakdownRows as $row) {
 
             <a href="#" class="nav-item active">
                 <span class="nav-icon">
-                    <!-- Home icon -->
                     <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><polyline points="9 21 9 12 15 12 15 21"/></svg>
                 </span>
                 Dashboard
             </a>
-
 
         </nav>
 
@@ -124,7 +127,6 @@ foreach ($breakdownRows as $row) {
         </div>
         <div class="sidebar-footer">
             <a href="../pages/logout.php" class="logout-btn">
-                <!-- Logout icon -->
                 <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 Log Out
             </a>
@@ -175,13 +177,11 @@ foreach ($breakdownRows as $row) {
     ══════════════════════════════════════ -->
     <div class="main">
 
-        <!-- Top bar: logo + name LEFT · right actions -->
+        <!-- Top bar -->
         <header class="topbar">
 
-            <!-- Left: round orange logo + name beside it -->
             <div class="topbar-brand">
                 <div class="topbar-logo" aria-hidden="true">
-                    <!-- Replace src with your actual logo path e.g. ../assets/img/logo.png -->
                     <img src="../img/mdrrmo.png" alt="MDRRMO Logo"
                          style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">
                 </div>
@@ -191,7 +191,6 @@ foreach ($breakdownRows as $row) {
                 </div>
             </div>
 
-            <!-- Right: clock · refresh · hamburger (desktop only) -->
             <div class="topbar-right">
                 <span class="topbar-date" id="topbar-clock"></span>
                 <button class="refresh-btn" id="refreshBtn" onclick="refreshCounts()">
@@ -219,7 +218,6 @@ foreach ($breakdownRows as $row) {
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <!-- Building icon -->
                         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 21V9h6v12"/><path d="M3 9h18"/></svg>
                     </div>
                     <div>
@@ -229,17 +227,15 @@ foreach ($breakdownRows as $row) {
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <!-- Person walking icon -->
                         <svg viewBox="0 0 24 24"><circle cx="12" cy="4" r="2"/><path d="M10 9h4l1 5-3 1v5"/><path d="M10 9l-1 5 3 1"/></svg>
                     </div>
                     <div>
                         <div class="stat-val" id="total-expected"><?php echo $totalExpected; ?></div>
-                        <div class="stat-label">Expected Evacuees (en route)</div>
+                        <div class="stat-label">Expected Evacuees (en route, incl. households)</div>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <!-- Check-circle icon -->
                         <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     </div>
                     <div>
@@ -336,7 +332,7 @@ foreach ($breakdownRows as $row) {
                                 <thead>
                                     <tr>
                                         <th>Barangay</th>
-                                        <th style="text-align:center;">Citizens</th>
+                                        <th style="text-align:center;">People</th>
                                         <th style="min-width:90px;"></th>
                                     </tr>
                                 </thead>
@@ -398,13 +394,9 @@ function closeMenu() {
     document.body.style.overflow = '';
 }
 
-// Close drawer on Escape key
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 
 // ── Auto-refresh expected counts via AJAX ──────────────────────────────────
-// Calls a lightweight JSON endpoint that returns counts per center.
-// This keeps the page live without a full reload every 30 seconds.
-
 const AUTO_REFRESH_INTERVAL = 30000; // 30 s
 let   refreshTimer           = null;
 
@@ -465,10 +457,7 @@ function mobileRefresh() {
     if (!btn || btn.disabled) return;
     btn.disabled = true;
     btn.classList.add('spinning');
-    // Reuse the main refreshCounts logic, then re-enable the mobile button
-    const origFinally = refreshCounts.toString();
     refreshCounts();
-    // Re-enable after a short delay matching the fetch cycle
     const poll = setInterval(() => {
         const mainBtn = document.getElementById('refreshBtn');
         if (mainBtn && !mainBtn.disabled) {
@@ -479,7 +468,6 @@ function mobileRefresh() {
     }, 200);
 }
 
-// Start auto-refresh loop
 function startAutoRefresh() {
     clearInterval(refreshTimer);
     refreshTimer = setInterval(refreshCounts, AUTO_REFRESH_INTERVAL);
