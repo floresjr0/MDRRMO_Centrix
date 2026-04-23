@@ -30,7 +30,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     // ── Record app arrival ────────────────────────────────────────────────
-    // Citizens who navigated here via the app — coordinator confirms headcount
     if ($action === 'record_app_arrival') {
         $trackingId = (int)($_POST['tracking_id'] ?? 0);
         $navUserId  = (int)($_POST['nav_user_id']  ?? 0);
@@ -40,28 +39,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pwds       = max(0, (int)($_POST['pwds']     ?? 0));
         $total      = $adults + $children + $seniors + $pwds;
 
-        // Verify the tracking row belongs to this center
-        $chk = $pdo->prepare("SELECT nt.id, u.full_name, u.barangay_id
-                               FROM evac_navigation_tracking nt
-                               JOIN users u ON u.id = nt.user_id
-                               WHERE nt.id = ? AND nt.center_id = ? AND nt.status = 'navigating'");
-        $chk->execute([$trackingId, $centerId]);
-        $trackRow = $chk->fetch();
+        $chk = $pdo->prepare("SELECT nt.id, u.full_name, u.barangay_id,
+                              u.contact_number, u.birthday, u.sex
+                       FROM evac_navigation_tracking nt
+                       JOIN users u ON u.id = nt.user_id
+                       WHERE nt.id = ? AND nt.center_id = ? AND nt.status = 'navigating'");
+$chk->execute([$trackingId, $centerId]);
+$trackRow = $chk->fetch();
 
         if ($trackRow && $total > 0) {
-            // Insert into evac_registrations
             $ins = $pdo->prepare("INSERT INTO evac_registrations
-                (center_id, family_head_name, barangay_id, adults, children, seniors, pwds, total_members, created_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $ins->execute([
-                $centerId,
-                $trackRow['full_name'],
-                $trackRow['barangay_id'],
-                $adults, $children, $seniors, $pwds, $total,
-                $user['id']
+    (center_id, family_head_name, contact_number, birthday, barangay_id,
+     adults, children, seniors, pwds, total_members, created_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+$ins->execute([
+    $centerId,
+    $trackRow['full_name'],
+    $trackRow['contact_number'] ?? null,
+    $trackRow['birthday'] ?? null,
+    $trackRow['barangay_id'],
+    $adults, $children, $seniors, $pwds, $total,
+    $user['id']
             ]);
 
-            // Mark tracking as arrived
             $upd = $pdo->prepare("UPDATE evac_navigation_tracking
                                   SET status = 'arrived', updated_at = NOW()
                                   WHERE id = ?");
@@ -75,24 +75,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
     } elseif ($action === 'add_family') {
-        $headName   = trim($_POST['family_head_name'] ?? '');
-        $barangayId = (int)($_POST['barangay_id'] ?? 0);
-        $adults     = max(0, (int)($_POST['adults']   ?? 0));
-        $children   = max(0, (int)($_POST['children'] ?? 0));
-        $seniors    = max(0, (int)($_POST['seniors']  ?? 0));
-        $pwds       = max(0, (int)($_POST['pwds']     ?? 0));
-        $total      = $adults + $children + $seniors + $pwds;
+        $headName      = trim($_POST['family_head_name'] ?? '');
+        $contactNumber = trim($_POST['contact_number'] ?? '');
+        $birthday      = $_POST['birthday'] ?? '';
+        $barangayId    = (int)($_POST['barangay_id'] ?? 0);
+        $adults        = max(0, (int)($_POST['adults']   ?? 0));
+        $children      = max(0, (int)($_POST['children'] ?? 0));
+        $seniors       = max(0, (int)($_POST['seniors']  ?? 0));
+        $pwds          = max(0, (int)($_POST['pwds']     ?? 0));
+        $total         = $adults + $children + $seniors + $pwds;
 
-        if ($headName === '')  $errors[] = 'Head of family name is required.';
-        if (!$barangayId)      $errors[] = 'Barangay is required.';
-        if ($total <= 0)       $errors[] = 'Please specify at least one member.';
+        if ($headName === '')      $errors[] = 'Head of family name is required.';
+        if ($contactNumber === '') $errors[] = 'Contact number is required.';
+        if (empty($birthday))      $errors[] = 'Birthday is required.';
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthday)) $errors[] = 'Invalid birthday format (YYYY-MM-DD).';
+        if (!$barangayId)          $errors[] = 'Barangay is required.';
+        if ($total <= 0)           $errors[] = 'Please specify at least one member.';
 
         if (!$errors) {
             $stmt = $pdo->prepare("INSERT INTO evac_registrations
-                (center_id, family_head_name, barangay_id, adults, children, seniors, pwds, total_members, created_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$centerId, $headName, $barangayId,
-                            $adults, $children, $seniors, $pwds, $total, $user['id']]);
+                (center_id, family_head_name, contact_number, birthday, barangay_id, adults, children, seniors, pwds, total_members, created_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $centerId, $headName, $contactNumber, $birthday, $barangayId,
+                $adults, $children, $seniors, $pwds, $total, $user['id']
+            ]);
 
             refresh_center_status($centerId);
             header('Location: manage_center.php?id=' . $centerId);
@@ -131,8 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ── App arrivals: citizens navigating TO this center (not yet arrived) ────
-// Join citizen_household so we get their pre-filled family counts
+// ── App arrivals query (unchanged) ─────────────────────────────────────────
 $appArrivalsStmt = $pdo->prepare("
     SELECT
         nt.id          AS tracking_id,
@@ -158,7 +164,7 @@ $appArrivalsStmt = $pdo->prepare("
 $appArrivalsStmt->execute([$centerId]);
 $appArrivals = $appArrivalsStmt->fetchAll();
 
-// Reload registrations and occupancy
+// Registrations with new columns (contact_number, birthday)
 $regsStmt = $pdo->prepare("SELECT r.*, b.name AS barangay_name
                            FROM evac_registrations r
                            JOIN barangays b ON b.id = r.barangay_id
@@ -184,7 +190,7 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* ── App Arrivals Section ──────────────────────────────────────────────── */
+/* ── App Arrivals Section (unchanged) ─────────────────────────────────────── */
 .arrival-queue-empty {
     display: flex;
     align-items: center;
@@ -197,7 +203,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
 }
 .arrival-queue-empty svg { flex-shrink: 0; opacity: .5; }
 
-/* Check-in toast */
 .checkin-toast {
     display: flex;
     align-items: center;
@@ -217,7 +222,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
     100%    { opacity: 0; height: 0; padding: 0; margin: 0; overflow: hidden; }
 }
 
-/* Arrival cards grid */
 .app-arrivals-grid {
     display: flex;
     flex-direction: column;
@@ -297,7 +301,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
 }
 .app-badge-nav svg { width: 11px; height: 11px; }
 
-/* Member stepper rows inside the card */
 .app-arrival-members {
     padding: 0 16px 14px;
     display: grid;
@@ -361,7 +364,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
     text-align: center;
 }
 
-/* Card footer: total + record button */
 .app-arrival-footer {
     display: flex;
     align-items: center;
@@ -407,7 +409,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
 .btn-record-arrival:active { transform: scale(.97); }
 .btn-record-arrival svg { width: 15px; height: 15px; flex-shrink: 0; }
 
-/* Profile match indicator */
 .profile-match {
     display: flex;
     align-items: center;
@@ -426,7 +427,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
     color: #854d0e;
 }
 
-/* Section badge: how many are en route */
 .en-route-badge {
     display: inline-flex;
     align-items: center;
@@ -443,7 +443,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
 </head>
 <body>
 
-<!-- Overlay for drawer -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeMenu()"></div>
 
 <div class="layout">
@@ -503,7 +502,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
         </div>
     </aside>
 
-    <!-- BOTTOM NAV -->
     <nav class="bottom-nav" aria-label="Mobile navigation">
         <div class="bottom-nav-inner">
             <a href="index.php" class="bottom-nav-item">
@@ -534,9 +532,7 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
         </div>
     </nav>
 
-    <!-- MAIN -->
     <div class="main">
-
         <header class="topbar">
             <div class="topbar-brand">
                 <div class="topbar-logo" aria-hidden="true">
@@ -556,10 +552,9 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
         </header>
 
         <main class="dashboard">
-
             <h1 class="page-heading">Manage <span><?php echo htmlspecialchars($center['name']); ?></span></h1>
 
-            <!-- ── CENTER STATUS ──────────────────────────────────────── -->
+            <!-- Center Status Card (unchanged) -->
             <section class="card">
                 <div class="card-header">
                     <div class="card-header-icon">
@@ -594,13 +589,10 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                 </div>
             </section>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 APP ARRIVALS — citizens en route via the citizen app
-            ══════════════════════════════════════════════════════════ -->
+            <!-- App Arrivals Section (unchanged) -->
             <section class="card">
                 <div class="card-header">
                     <div class="card-header-icon" style="background:linear-gradient(135deg,#f97316,#ea580c);">
-                        <!-- Navigation / location arrow icon -->
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="3 11 22 2 13 21 11 13 3 11"/>
                         </svg>
@@ -615,7 +607,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                 </div>
 
                 <div class="card-body">
-
                     <?php if ($justCheckedIn): ?>
                     <div class="checkin-toast">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -635,8 +626,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                             $profileTotal = (int)$a['total_members'];
                         ?>
                         <div class="app-arrival-card" id="arrival-card-<?php echo (int)$a['tracking_id']; ?>">
-
-                            <!-- Header: person info + en-route badge -->
                             <div class="app-arrival-card-header">
                                 <div class="app-arrival-person">
                                     <div class="app-arrival-avatar"><?php echo htmlspecialchars($initial); ?></div>
@@ -658,7 +647,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                                 </span>
                             </div>
 
-                            <!-- Member steppers — pre-filled from citizen_household -->
                             <form method="post"
                                   id="form-arrival-<?php echo (int)$a['tracking_id']; ?>"
                                   onsubmit="return confirmArrival(this)">
@@ -695,7 +683,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                                     <?php endforeach; ?>
                                 </div>
 
-                                <!-- Footer: total + record button -->
                                 <div class="app-arrival-footer">
                                     <div class="app-total-wrap">
                                         <div class="app-total-num"
@@ -703,10 +690,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                                         <div class="app-total-label">&nbsp;total physically present</div>
                                     </div>
 
-                                    <?php
-                                    // Show a small indicator if coordinator hasn't changed anything yet
-                                    // (values still match the profile)
-                                    ?>
                                     <span class="profile-match match-ok"
                                           id="match-<?php echo (int)$a['tracking_id']; ?>">
                                         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -723,7 +706,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                                     </button>
                                 </div>
 
-                                <!-- Store original profile total as data attribute for JS comparison -->
                                 <input type="hidden"
                                        id="profile-total-<?php echo (int)$a['tracking_id']; ?>"
                                        value="<?php echo $profileTotal; ?>"
@@ -731,17 +713,15 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                                        data-children="<?php echo (int)$a['children']; ?>"
                                        data-seniors="<?php echo (int)$a['seniors']; ?>"
                                        data-pwds="<?php echo (int)$a['pwds']; ?>">
-
                             </form>
                         </div>
                         <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
-
                 </div>
             </section>
 
-            <!-- ── ADD FAMILY FORM (walk-ins) ─────────────────────────── -->
+            <!-- ── ADD WALK‑IN FAMILY (with Contact Number & Birthday) ── -->
             <section class="card">
                 <div class="card-header">
                     <div class="card-header-icon">
@@ -766,6 +746,21 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                         <input type="text" name="family_head_name" required
                                value="<?php echo htmlspecialchars($_POST['family_head_name'] ?? ''); ?>">
                     </label>
+
+                    <!-- New fields: Contact Number and Birthday -->
+                    <div class="grid-2">
+                        <label class="form-label">
+                            Contact Number
+                            <input type="tel" name="contact_number" required
+                                   value="<?php echo htmlspecialchars($_POST['contact_number'] ?? ''); ?>"
+                                   placeholder="e.g., 09171234567">
+                        </label>
+                        <label class="form-label">
+                            Birthday (of family head)
+                            <input type="date" name="birthday" required
+                                   value="<?php echo htmlspecialchars($_POST['birthday'] ?? ''); ?>">
+                        </label>
+                    </div>
 
                     <label class="form-label">
                         Barangay
@@ -806,7 +801,7 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                 </form>
             </section>
 
-            <!-- ── REGISTRATIONS TABLE + MOBILE CARDS ─────────────────── -->
+            <!-- Registrations Table + Mobile Cards (unchanged display) -->
             <section class="card">
                 <div class="card-header">
                     <div class="card-header-icon">
@@ -823,13 +818,13 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                         No families have been registered yet.
                     </div>
                 <?php else: ?>
-
-                    <!-- DESKTOP TABLE -->
                     <div class="table-wrap">
                         <table class="table">
                             <thead>
                                 <tr>
                                     <th>Head</th>
+                                    <th>Contact</th>
+                                    <th>Birthday</th>
                                     <th>Barangay</th>
                                     <th>Adults</th>
                                     <th>Children</th>
@@ -842,6 +837,8 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                             <?php foreach ($registrations as $r): ?>
                                 <tr>
                                     <td class="cell-head"><?php echo htmlspecialchars($r['family_head_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($r['contact_number'] ?? ''); ?></td>
+                                    <td><?php echo !empty($r['birthday']) ? date('M d, Y', strtotime($r['birthday'])) : ''; ?></td>
                                     <td><?php echo htmlspecialchars($r['barangay_name']); ?></td>
 
                                     <?php foreach (['adults','children','seniors','pwds'] as $field): ?>
@@ -873,7 +870,6 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                         </table>
                     </div>
 
-                    <!-- MOBILE CARDS -->
                     <div class="reg-cards">
                         <?php foreach ($registrations as $r): ?>
                         <div class="reg-card">
@@ -881,6 +877,8 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                                 <div>
                                     <div class="reg-card-name"><?php echo htmlspecialchars($r['family_head_name']); ?></div>
                                     <div class="reg-card-barangay"><?php echo htmlspecialchars($r['barangay_name']); ?></div>
+                                    <div class="reg-card-contact">📞 <?php echo htmlspecialchars($r['contact_number'] ?? ''); ?></div>
+                                    <div class="reg-card-bday">🎂 <?php echo !empty($r['birthday']) ? date('M d, Y', strtotime($r['birthday'])) : ''; ?></div>
                                 </div>
                                 <div class="reg-card-total">
                                     <div class="reg-card-total-num"><?php echo (int)$r['total_members']; ?></div>
@@ -915,16 +913,13 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                         </div>
                         <?php endforeach; ?>
                     </div>
-
                 <?php endif; ?>
             </section>
-
         </main>
     </div>
 </div>
 
 <script>
-// ── Hamburger menu ──────────────────────────────────────────────────────────
 function openMenu() {
     document.getElementById('sidebar').classList.add('open');
     document.getElementById('drawerOverlay').classList.add('open');
@@ -937,10 +932,6 @@ function closeMenu() {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 
-// ── App arrival stepper ─────────────────────────────────────────────────────
-// Adjusts the displayed value, the hidden input, the running total,
-// and updates the "Matches profile" / "Count adjusted" indicator.
-
 function adjustVal(trackingId, field, delta) {
     const valEl = document.getElementById('val-' + trackingId + '-' + field);
     const hidEl = document.getElementById('hid-' + trackingId + '-' + field);
@@ -951,7 +942,6 @@ function adjustVal(trackingId, field, delta) {
     valEl.textContent = next;
     hidEl.value       = next;
 
-    // Recalculate total
     const fields   = ['adults', 'children', 'seniors', 'pwds'];
     let newTotal   = 0;
     fields.forEach(f => {
@@ -962,7 +952,6 @@ function adjustVal(trackingId, field, delta) {
     const totalEl = document.getElementById('total-' + trackingId);
     if (totalEl) totalEl.textContent = newTotal;
 
-    // Compare to original profile values
     const profileEl = document.getElementById('profile-total-' + trackingId);
     const matchEl   = document.getElementById('match-'         + trackingId);
     if (profileEl && matchEl) {
@@ -985,26 +974,14 @@ function adjustVal(trackingId, field, delta) {
 
         if (isMatch) {
             matchEl.className = 'profile-match match-ok';
-            matchEl.innerHTML = `
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-                    <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
-                Matches profile`;
+            matchEl.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Matches profile`;
         } else {
             matchEl.className = 'profile-match match-diff';
-            matchEl.innerHTML = `
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="8" x2="12" y2="12"/>
-                    <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                Count adjusted`;
+            matchEl.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Count adjusted`;
         }
     }
 }
 
-// ── Confirm before recording arrival ───────────────────────────────────────
 function confirmArrival(form) {
     const card    = form.closest('.app-arrival-card');
     const nameEl  = card.querySelector('.app-arrival-name');
@@ -1014,9 +991,6 @@ function confirmArrival(form) {
     return confirm('Record arrival for ' + name + ' — ' + total + ' person(s)?\n\nThis will mark them as arrived and add them to the occupancy count.');
 }
 
-// ── Auto-dismiss check-in toast ─────────────────────────────────────────────
-// The CSS animation already fades it out; this just removes it from the DOM
-// after the animation so it doesn't occupy space.
 const toast = document.querySelector('.checkin-toast');
 if (toast) {
     setTimeout(() => { toast.style.display = 'none'; }, 4200);
