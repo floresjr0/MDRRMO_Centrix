@@ -122,6 +122,51 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../asset/css/admin_evacuees.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        .evacuee-header-wrapper {
+            margin-bottom: 24px;
+        }
+        .alert-modern {
+            background: #E8F8F5;
+            border-left: 5px solid #2E7D32;
+            border-radius: 16px;
+            padding: 14px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            animation: fadeSlide 0.25s ease;
+        }
+        .alert-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1E4A2F;
+        }
+        .alert-content i { font-size: 20px; color: #2E7D32; }
+        .alert-close {
+            background: transparent;
+            border: none;
+            color: #7F8C8D;
+            cursor: pointer;
+            font-size: 18px;
+            width: 28px;
+            height: 28px;
+            border-radius: 40px;
+        }
+        .alert-close:hover { background: rgba(0,0,0,0.05); }
+        .management-header-card {
+            background: #FFFFFF;
+            border-radius: 28px;
+            padding: 24px 28px;
+            border: 1px solid #EDE7E7;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.04);
+        }
+    </style>
 </head>
 <body>
 <div class="app-wrapper">
@@ -201,24 +246,29 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
 
             <!-- Flash Messages -->
             <?php if (isset($_GET['archived'])): ?>
-            <div class="flash flash-success">
-                <i class="fas fa-check-circle"></i>
-                Successfully archived <strong><?php echo (int)$_GET['archived']; ?></strong> registration(s)
-                under <strong><?php echo htmlspecialchars($_GET['label'] ?? ''); ?></strong>.
-                All centers have been reset to Available.
-            </div>
-            <?php elseif (isset($_GET['error'])): ?>
-            <div class="flash flash-error">
-                <i class="fas fa-exclamation-circle"></i>
-                <?php
-                    $errors = [
-                        'label_required'      => 'Archive label is required.',
-                        'archive_failed'      => 'Archive failed. Please try again or check the server logs.',
-                        'nothing_to_archive'  => 'There are no active registrations to archive.',
-                    ];
-                    echo $errors[$_GET['error']] ?? 'An unknown error occurred.';
-                ?>
-            </div>
+            <div class="alert-modern" id="archiveSuccessAlert">
+                    <div class="alert-content">
+                        <i class="fas fa-check-circle"></i>
+                        <span>
+                            Successfully archived <strong><?php echo (int)$_GET['archived']; ?></strong> registration(s)
+                            under <strong><?php echo htmlspecialchars($_GET['label'] ?? ''); ?></strong>.
+                            All centers have been reset to Available.
+                        </span>
+                    </div>
+                    <button class="alert-close" id="closeAlertBtn"><i class="fas fa-times"></i></button>
+                </div>
+                <?php elseif (isset($_GET['error'])): ?>
+                <div class="flash flash-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?php
+                        $errors = [
+                            'label_required'      => 'Archive label is required.',
+                            'archive_failed'      => 'Archive failed. Please try again.',
+                            'nothing_to_archive'  => 'There are no active registrations to archive.',
+                        ];
+                        echo $errors[$_GET['error']] ?? 'An unknown error occurred.';
+                    ?>
+                </div>
             <?php endif; ?>
 
             <!-- Welcome Bar -->

@@ -104,6 +104,7 @@ body {
 .hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 .sidebar-overlay {
+  pointer-events: auto;
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.45);
@@ -114,7 +115,7 @@ body {
 }
 .sidebar-overlay.open {
   opacity: 1;
-  pointer-events: all;
+  pointer-events: none;
 }
 
 .sidebar-drawer {
