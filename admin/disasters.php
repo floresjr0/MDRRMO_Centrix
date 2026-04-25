@@ -267,10 +267,19 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                                                         <i class="fas fa-stop"></i>
                                                     </a>
                                                 <?php endif; ?>
-                                                <a href="disaster_delete.php?id=<?php echo (int)$d['id']; ?>"
+                                                <?php
+                                                $chk = $pdo->prepare("SELECT COUNT(*) FROM announcements WHERE disaster_id = ?");
+                                                $chk->execute([$d['id']]);
+                                                $hasLinked = $chk->fetchColumn() > 0;
+                                                ?>
+                                                <a href="<?php echo $hasLinked ? '#' : 'disaster_delete.php?id='.(int)$d['id']; ?>"
                                                 class="action-btn"
                                                 style="color: #D32F2F;"
-                                                onclick="return confirm('Delete this disaster?')">
+                                                onclick="<?php if ($hasLinked): ?>
+                                                    alert('Unable to Delete Disaster\n\nThis disaster is still linked to one or more announcements.\nPlease remove the associated announcements before deleting this disaster.'); return false;
+                                                <?php else: ?>
+                                                    return confirm('Delete this disaster?');
+                                                <?php endif; ?>">
                                                     <i class="fas fa-trash"></i>
                                                 </a>
                                             </td>
@@ -369,6 +378,11 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                     row.style.display = 'none';
                 }
             }
+        });
+        <?php endif; ?>
+        <?php if (!empty($_GET['blocked']) && $_GET['reason'] === 'announcement'): ?>
+        window.addEventListener('DOMContentLoaded', function() {
+            alert('Hindi ma-delete ang disaster na ito.\n\nMay mga announcement pa na naka-connect dito.\nI-delete muna ang mga related na announcement bago tanggalin ang disaster.');
         });
         <?php endif; ?>
     </script>

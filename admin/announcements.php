@@ -266,10 +266,14 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                                                 <a href="announcement_edit.php?id=<?php echo (int)$a['id']; ?>" class="action-btn">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
-                                                <a href="announcement_delete.php?id=<?php echo (int)$a['id']; ?>" 
-                                                   class="action-btn" 
-                                                   onclick="return confirm('Delete this announcement?')"
-                                                   style="color: #D32F2F;">
+                                               <a href="<?php echo !empty($a['disaster_id']) ? '#' : 'announcement_delete.php?id='.(int)$a['id']; ?>"
+                                                class="action-btn"
+                                                style="color: #D32F2F;"
+                                                onclick="<?php if (!empty($a['disaster_id'])): ?>
+                                                   alert('Unable to Delete Announcement\n\nThis announcement is currently linked to a disaster.\nPlease unlink the disaster from this announcement before deleting it.'); return false;
+                                                <?php else: ?>
+                                                    return confirm('Delete this announcement?');
+                                                <?php endif; ?>">
                                                     <i class="fas fa-trash"></i>
                                                 </a>
                                             </td>
@@ -372,6 +376,11 @@ $_badgeEvacuees      = (int)$pdo->query("SELECT COALESCE(SUM(total_members),0) F
                     row.style.display = '';
                 }
             }
+        });
+        <?php endif; ?>
+        <?php if (!empty($_GET['blocked']) && $_GET['reason'] === 'disaster'): ?>
+        window.addEventListener('DOMContentLoaded', function() {
+            alert('Hindi ma-delete ang announcement na ito.\n\nConnected pa ito sa isang disaster.\nI-edit muna ang announcement at alisin ang linked disaster bago ito tanggalin.');
         });
         <?php endif; ?>
     </script>
