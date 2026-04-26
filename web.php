@@ -55,20 +55,7 @@
       </div>
     </a>
     <div class="nav-buttons">
-<<<<<<< Updated upstream
-      <!-- "Continue to Website" button — links to the main portal -->
-      <!-- <a href="index.php" class="btn-website-header">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-        Continue to Website
-      </a> -->
-      <!-- Download App button -->
-      <button class="btn-login" id="downloadBtnHeader">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><line x1="4" y1="21" x2="20" y2="21"/></svg>
-        Download App
-      </button>
-=======
       <button class="btn-login" id="downloadBtnHeader" href="download.php">Download App</button>
->>>>>>> Stashed changes
     </div>
     <button class="menu-btn" onclick="openMobileMenu()">☰</button>
   </div>
@@ -91,18 +78,6 @@
         </h1>
         <p class="hero-desc">Mobile-based disaster alerts and evacuation guidance with real-time evacuation monitoring for San Ildefonso, Bulacan.</p>
         <div class="hero-buttons">
-<<<<<<< Updated upstream
-          <!-- Primary CTA: Download App -->
-          <button class="btn-primary-lg" id="downloadBtnHero">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><line x1="4" y1="21" x2="20" y2="21"/></svg>
-            Download App
-          </button>
-          <!-- Secondary CTA: Continue to Website -->
-          <a href="index.php" class="btn-outline-lg">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-            Continue to Website
-          </a>
-=======
           <!-- Download App button -->
           <button class="btn-primary-lg" id="downloadBtnHero" href="download.php">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
@@ -113,20 +88,19 @@
           </button>
 
           <!-- Continue Browsing button -->
-          <button class="btn-secondary-lg" id="continueBrowsingBtn" href="index.php">
+          <button class="btn-primary-lg" id="continueBrowsingBtn" href="index.php">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 8 16 12 12 16"/>
               <line x1="8" y1="12" x2="16" y2="12"/>
             </svg>
-            Continue Browsing
+            Use Web Portal
           </button>
         </div>
         <div class="stats">
           <div class="stat-item"><div class="stat-number">24/7</div><div class="stat-label">Operations Center</div></div>
           <div class="stat-item"><div class="stat-number">47</div><div class="stat-label">Barangays</div></div>
           <div class="stat-item"><div class="stat-number">12</div><div class="stat-label">Evac Centers</div></div>
->>>>>>> Stashed changes
         </div>
       </div>
       <div class="phone-container">
@@ -237,15 +211,11 @@ function closeMobileMenu() { document.getElementById('mobileMenu').classList.rem
 window.addEventListener('scroll', function() { const header = document.getElementById('header'); if (window.scrollY > 50) header.classList.add('scrolled'); else header.classList.remove('scrolled'); });
 
 function downloadAPK() {
-<<<<<<< Updated upstream
-  const apkPath = 'app/CENTRIX.apk';
-=======
   // Adjust the path to match your server structure
   const apkPath = 'download.php';   // relative to the current HTML file
   // Or use an absolute path: '/app/app.apk'
 
   // Create a temporary anchor element
->>>>>>> Stashed changes
   const link = document.createElement('a');
   link.href = apkPath;
   link.download = 'MDRRMO_San_Ildefonso.apk';
@@ -256,11 +226,6 @@ function downloadAPK() {
 
 document.addEventListener('DOMContentLoaded', () => {
   const headerBtn = document.getElementById('downloadBtnHeader');
-<<<<<<< Updated upstream
-  const heroBtn = document.getElementById('downloadBtnHero');
-  if (headerBtn) headerBtn.addEventListener('click', (e) => { e.preventDefault(); downloadAPK(); });
-  if (heroBtn) heroBtn.addEventListener('click', (e) => { e.preventDefault(); downloadAPK(); });
-=======
   const heroBtn   = document.getElementById('downloadBtnHero');
   const browseBtn = document.getElementById('continueBrowsingBtn');
 
@@ -288,7 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
->>>>>>> Stashed changes
 });
 
 const observer = new IntersectionObserver((entries) => { entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } }); }, { threshold: 0.08 });
