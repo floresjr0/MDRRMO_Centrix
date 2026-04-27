@@ -530,7 +530,7 @@ $isMedianCo = isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_A
     <div class="alert-banner alert-level-3" id="current-alerts"><div class="alert-icon">🌡️</div><div class="alert-text"><div class="alert-title">ALERTO SA INIT — Heat Index: <?php echo round($weather['heat_index']); ?>°C</div><div class="alert-sub">Uminom ng maraming tubig at iwasang lumabas · Manatiling ligtas</div></div><div class="alert-chevron">›</div></div>
     <?php if ($advice): ?><div class="readybag-card" onclick="openReadyBagModal()" role="button"><div class="readybag-tap-hint">Pindutin para makita ›</div><div class="readybag-icon">🎒</div><div><div class="readybag-title">Payo sa Ready Bag</div><div class="readybag-text"><?php echo htmlspecialchars(mb_substr($advice['message'],0,100)); ?>…</div></div></div><?php endif; ?>
     <?php else: ?>
-    <div class="alert-banner alert-none" id="current-alerts"><div class="alert-icon">✅</div><div class="alert-text"><div class="alert-title">Walang aktibong sakuna sa ngayon</div><div class="alert-sub">Manatiling handa at subaybayan ang mga update</div></div></div>
+    <div class="alert-banner alert-none" id="current-alerts"><div class="alert-icon"></div><div class="alert-text"><div class="alert-title">Walang aktibong sakuna sa ngayon</div><div class="alert-sub">Manatiling handa at subaybayan ang mga update</div></div></div>
     <?php endif; ?>
     <div class="section-header"><h2>Weather Forecast</h2></div>
     <?php if ($weather): ?>

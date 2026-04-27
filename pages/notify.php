@@ -5,7 +5,7 @@ if (!function_exists('db')) {
 
 if (!defined('ONESIGNAL_APP_ID')) {
     define('ONESIGNAL_APP_ID', '8704d450-f3b9-4bc8-a1a9-a376abd93131');
-    define('ONESIGNAL_API_KEY', 'os_v2_app_q4cniuhtxff4rinjun3kxwjrgfq4bqf3s7aewweja422gseetmlhk7u47navkumrqf66o4y6dkzo4do4pad7qgojuron3m54mfj5mfq');
+    define('ONESIGNAL_API_KEY', 'os_v2_app_q4cniuhtxff4rinjun3kxwjrghuj2f6jtdxesmv5lwmuho6rueefi3ulaffljiop2rwxz7puuggay2vzi5rcb6kvqmrrue5rzjyuchq');
 }
 
 if (!function_exists('sendOneSignalNotification')) {
@@ -101,7 +101,7 @@ if (!function_exists('maybeSendDisasterNotification')) {
 
         if ($hi < 38) return;
 
-        $level = $hi >= 42 ? 'extreme' : ($hi >= 40 ? 'high' : 'medium');
+        $level = $hi >= 40 ? 'extreme' : ($hi >= 38 ? 'minimum' : null);
         $key   = 'heat_' . $level . '_' . date('Ymd');
 
         if ((time() - ($lock[$key] ?? 0)) > 600) {
