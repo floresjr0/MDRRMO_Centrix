@@ -309,7 +309,7 @@ function closeMenu() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 
 // Auto-refresh expected counts via AJAX
-const AUTO_REFRESH_INTERVAL = 30000;
+const AUTO_REFRESH_INTERVAL = 3000;
 let refreshTimer = null;
 
 function refreshCounts() {

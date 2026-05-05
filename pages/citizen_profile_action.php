@@ -1,7 +1,7 @@
 <?php
 // pages/citizen_profile_action.php
 // GET  ?action=get   → returns current user profile + household
-// POST ?action=save  → saves name, contact, birthday, sex, household
+// POST ?action=save  → saves name fields, contact, birthday, sex, household
 
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/db.php';
@@ -16,7 +16,6 @@ $action = $_GET['action'] ?? '';
 // ── GET: return current profile + household ──────────────────────
 if ($action === 'get') {
 
-    // Fetch fresh user row (current_user() may be cached in session)
     $stmt = $pdo->prepare("
         SELECT u.*, b.name AS barangay_name
           FROM users u
@@ -26,21 +25,26 @@ if ($action === 'get') {
     $stmt->execute([$user['id']]);
     $freshUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Fetch household row
+    // Fetch household from family_profiles
     $hhStmt = $pdo->prepare("SELECT * FROM family_profiles WHERE user_id = ?");
     $hhStmt->execute([$user['id']]);
     $hh = $hhStmt->fetch(PDO::FETCH_ASSOC);
 
-    // Compute age from birthday if available
+    // Compute age
     $age = null;
     if (!empty($freshUser['birthday'])) {
-        $birthDate = new DateTime($freshUser['birthday']);
-        $today     = new DateTime();
-        $age       = (int)$birthDate->diff($today)->y;
+        $age = (int)(new DateTime($freshUser['birthday']))->diff(new DateTime())->y;
     }
 
     echo json_encode([
         'ok'             => true,
+        // Separate name fields (new columns)
+        'first_name'     => $freshUser['first_name']     ?? '',
+        'last_name'      => $freshUser['last_name']      ?? '',
+        'middle_name'    => $freshUser['middle_name']    ?? '',
+        'suffix'         => $freshUser['suffix']         ?? '',
+        // full_name is now a virtual generated column — still returned
+        // so any legacy code that reads it keeps working
         'full_name'      => $freshUser['full_name']      ?? '',
         'email'          => $freshUser['email']          ?? '',
         'contact_number' => $freshUser['contact_number'] ?? '',
@@ -75,17 +79,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
         exit;
     }
 
-    // ── Personal fields ──────────────────────────────────────────
-    $fullName      = trim($input['full_name']      ?? '');
+    // ── Name fields ──────────────────────────────────────────────
+    $firstName  = trim($input['first_name']  ?? '');
+    $lastName   = trim($input['last_name']   ?? '');
+    $middleName = trim($input['middle_name'] ?? '');
+    $suffix     = trim($input['suffix']      ?? '');
+
+    // Validate — first and last name are required
+    if (mb_strlen($firstName) < 1) {
+        echo json_encode(['ok' => false, 'error' => 'Mangyaring ilagay ang iyong pangalan (first name).']);
+        exit;
+    }
+    if (mb_strlen($lastName) < 1) {
+        echo json_encode(['ok' => false, 'error' => 'Mangyaring ilagay ang iyong apelyido (last name).']);
+        exit;
+    }
+
+    // ── Other personal fields ────────────────────────────────────
     $contactNumber = trim($input['contact_number'] ?? '');
     $birthdayRaw   = trim($input['birthday']       ?? '');
     $sex           = trim($input['sex']            ?? '');
-
-    // Validate name
-    if (mb_strlen($fullName) < 2) {
-        echo json_encode(['ok' => false, 'error' => 'Mangyaring ilagay ang iyong buong pangalan.']);
-        exit;
-    }
 
     // Validate contact number — allow empty or Philippine formats
     if ($contactNumber !== '' && !preg_match('/^(\+63|0)[0-9]{9,10}$/', $contactNumber)) {
@@ -93,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
         exit;
     }
 
-    // Validate birthday — must be a real date and not in the future
+    // Validate birthday
     $birthdaySQL = null;
     if ($birthdayRaw !== '') {
         $parsed = DateTime::createFromFormat('Y-m-d', $birthdayRaw);
@@ -105,7 +118,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
             echo json_encode(['ok' => false, 'error' => 'Hindi maaaring hinaharap ang petsa ng kaarawan.']);
             exit;
         }
-        // Must be at least 1 year old (basic sanity check)
         $age = (int)(new DateTime())->diff($parsed)->y;
         if ($age > 120) {
             echo json_encode(['ok' => false, 'error' => 'Ang naibigay na petsa ng kaarawan ay mukhang hindi tama.']);
@@ -115,8 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
     }
 
     // Validate sex
-    $allowedSex = ['male', 'female', 'prefer_not_to_say', ''];
-    if (!in_array($sex, $allowedSex, true)) {
+    if (!in_array($sex, ['male', 'female', 'prefer_not_to_say', ''], true)) {
         echo json_encode(['ok' => false, 'error' => 'Hindi wastong halaga ng kasarian.']);
         exit;
     }
@@ -136,10 +147,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
     try {
         $pdo->beginTransaction();
 
-        // Update users table — including birthday and sex
+        // ── Update users table with split name columns ────────────
         $stmt = $pdo->prepare("
             UPDATE users
-               SET full_name      = :name,
+               SET first_name     = :first_name,
+                   last_name      = :last_name,
+                   middle_name    = :middle_name,
+                   suffix         = :suffix,
                    contact_number = :contact,
                    birthday       = :birthday,
                    sex            = :sex,
@@ -147,14 +161,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
              WHERE id = :uid
         ");
         $stmt->execute([
-            ':name'     => $fullName,
-            ':contact'  => $contactNumber ?: null,
-            ':birthday' => $birthdaySQL,
-            ':sex'      => $sex ?: null,
-            ':uid'      => $user['id'],
+            ':first_name'  => $firstName,
+            ':last_name'   => $lastName,
+            ':middle_name' => $middleName ?: null,
+            ':suffix'      => $suffix     ?: null,
+            ':contact'     => $contactNumber ?: null,
+            ':birthday'    => $birthdaySQL,
+            ':sex'         => $sex ?: null,
+            ':uid'         => $user['id'],
         ]);
 
-        // Upsert family_profiles (household)
+        // ── Upsert family_profiles (household) ───────────────────
         $hhStmt = $pdo->prepare("
             INSERT INTO family_profiles
                 (user_id, adults, children, seniors, pwds, total_members)
@@ -176,18 +193,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
             ':total'    => $total,
         ]);
 
-        // Also update any active evacuation_intention so coordinator
-        // sees updated household count immediately
+        // ── Also sync citizen_household (coordinator reads this) ──
+        // This is the table the coordinator side queries for live counts.
+        $pdo->prepare("
+            INSERT INTO citizen_household
+                (user_id, adults, children, seniors, pwds, total_members)
+            VALUES (:uid, :adults, :children, :seniors, :pwds, :total)
+            ON DUPLICATE KEY UPDATE
+                adults        = VALUES(adults),
+                children      = VALUES(children),
+                seniors       = VALUES(seniors),
+                pwds          = VALUES(pwds),
+                total_members = VALUES(total_members),
+                updated_at    = NOW()
+        ")->execute([
+            ':uid'      => $user['id'],
+            ':adults'   => $adults,
+            ':children' => $children,
+            ':seniors'  => $seniors,
+            ':pwds'     => $pwds,
+            ':total'    => $total,
+        ]);
+
+        // ── Update active evacuation_intention so coordinator
+        //    sees the new count in real-time ──────────────────────
         $pdo->prepare("
             UPDATE evacuation_intentions
                SET household_size = ?,
+                   adults         = ?,
+                   children       = ?,
+                   seniors        = ?,
+                   pwds           = ?,
                    updated_at     = NOW()
              WHERE user_id = ? AND status = 'going'
-        ")->execute([$total, $user['id']]);
+        ")->execute([$total, $adults, $children, $seniors, $pwds, $user['id']]);
 
         $pdo->commit();
 
-        // Compute age for response
         $ageResp = null;
         if ($birthdaySQL) {
             $ageResp = (int)(new DateTime())->diff(new DateTime($birthdaySQL))->y;

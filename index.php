@@ -12,10 +12,9 @@ $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $email    = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    // $lat      = $_POST['lat'] ?? null;
-    // $lng      = $_POST['lng'] ?? null;
+    $email       = trim($_POST['email'] ?? '');
+    $password    = $_POST['password'] ?? '';
+    $fingerprint = trim($_POST['device_fingerprint'] ?? '');
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = 'A valid email is required.';
@@ -24,10 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($password === '') {
         $errors[] = 'Password is required.';
     }
-
-    // if (!$lat || !$lng) {
-    //     $errors[] = 'Location access is required to login.';
-    // }
 
     if (!$errors) {
 
@@ -54,11 +49,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $errors[] = 'This access is only for residents of San Ildefonso, Bulacan.';
 
+        } elseif ($user['role'] === 'admin') {
+
+            // ============================================================
+            // ADMIN ONLY: Device Binding Security (Methods 1, 2 & 3)
+            // ============================================================
+
+            $cookieToken = $_COOKIE['mdrrmo_device_token'] ?? '';
+
+            if ((int)$user['is_device_trusted'] === 1) {
+
+                // --- Device already registered: verify token + fingerprint ---
+                $tokenMatch       = !empty($cookieToken) && hash_equals($user['device_token'], $cookieToken);
+                $fingerprintMatch = !empty($fingerprint) && hash_equals($user['device_fingerprint'], $fingerprint);
+
+                if (!$tokenMatch || !$fingerprintMatch) {
+
+                    // Log unauthorized attempt
+                    error_log(
+                        "[MDRRMO SECURITY] Unauthorized device login attempt" .
+                        " | Admin: {$user['email']}" .
+                        " | IP: {$_SERVER['REMOTE_ADDR']}" .
+                        " | Time: " . date('Y-m-d H:i:s') .
+                        " | Token match: " . ($tokenMatch ? 'YES' : 'NO') .
+                        " | Fingerprint match: " . ($fingerprintMatch ? 'YES' : 'NO')
+                    );
+
+                    // Optional: email alert to admin
+                    // mail(
+                    //     $user['email'],
+                    //     '[MDRRMO ALERT] Unauthorized Admin Login Attempt',
+                    //     "Someone tried to access the admin panel from an unrecognized device.\n\n" .
+                    //     "Time: " . date('Y-m-d H:i:s') . "\n" .
+                    //     "IP Address: {$_SERVER['REMOTE_ADDR']}\n\n" .
+                    //     "If this was you, please use your registered device or request a device reset."
+                    // );
+
+                    $errors[] = 'Unauthorized device detected. Access is restricted to the registered device only.';
+
+                } else {
+
+                    // Trusted device matched — allow login and refresh cookie
+                    $_SESSION['user_id'] = $user['id'];
+
+                    setcookie('mdrrmo_device_token', $user['device_token'], [
+                        'expires'  => time() + (30 * 24 * 60 * 60), // 30 days
+                        'path'     => '/',
+                        'secure'   => false, // Set to TRUE when deployed with HTTPS
+                        'httponly' => true,
+                        'samesite' => 'Strict'
+                    ]);
+
+                    redirect_by_role();
+                }
+
+            } else {
+
+                // --- First time admin login: register this device ---
+                $newToken = bin2hex(random_bytes(32)); // 64-char cryptographically secure token
+
+                $upd = $pdo->prepare("UPDATE users SET
+                    device_token         = ?,
+                    device_fingerprint   = ?,
+                    device_registered_at = NOW(),
+                    is_device_trusted    = 1
+                    WHERE id = ?");
+                $upd->execute([$newToken, $fingerprint, $user['id']]);
+
+                setcookie('mdrrmo_device_token', $newToken, [
+                    'expires'  => time() + (30 * 24 * 60 * 60), // 30 days
+                    'path'     => '/',
+                    'secure'   => false, // Set to TRUE when deployed with HTTPS
+                    'httponly' => true,
+                    'samesite' => 'Strict'
+                ]);
+
+                $_SESSION['user_id'] = $user['id'];
+
+                // Store a flag so the admin sees a "Device Registered" notice on dashboard
+                $_SESSION['device_just_registered'] = true;
+
+                redirect_by_role();
+            }
+
         } else {
 
+            // Citizens and coordinators: normal login, no device check
             $_SESSION['user_id'] = $user['id'];
             redirect_by_role();
-
         }
     }
 }
@@ -73,10 +151,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./asset/css/userlogin.css">
-<style>
-
-
-</style>
 </head>
 <body>
 
@@ -189,6 +263,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <a href="#">Forgot Password?</a>
         </div>
 
+        <!-- Device fingerprint hidden input (auto-filled by JS) -->
+        <input type="hidden" name="device_fingerprint" id="mob-device-fingerprint" value="">
+
         <input type="hidden" name="lat" id="lat">
         <input type="hidden" name="lng" id="lng">
 
@@ -213,22 +290,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <!-- CENTERED CARD -->
   <div class="dt-card">
 
-    <!-- LEFT: Branding — pills removed, logo/name/hashtag enlarged and centered -->
+    <!-- LEFT: Branding -->
     <div class="dt-card-left">
 
-      <!-- Seal — enlarged to 180px -->
       <div class="dt-seal-wrap">
         <img src="./img/mdrrmo.png" alt="MDRRMO Seal"
              onerror="this.style.display='none'">
       </div>
 
-      <!-- Agency name — enlarged to 64px -->
       <div class="dt-agency">MDRRMO</div>
-
-      <!-- Hashtag tagline -->
       <div class="dt-tagline">BidaAngLagingHanda</div>
-
-      <!-- Bottom badge -->
       <div class="dt-bottom-badge">Municipal Government of San Ildefonso</div>
 
     </div><!-- /.dt-card-left -->
@@ -280,6 +351,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <a href="#">Forgot Password?</a>
         </div>
 
+        <!-- Device fingerprint hidden input (auto-filled by JS) -->
+        <input type="hidden" name="device_fingerprint" id="dt-device-fingerprint" value="">
+
         <input type="hidden" name="lat">
         <input type="hidden" name="lng">
 
@@ -309,25 +383,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
 
   /* ================================================
+     DEVICE FINGERPRINTING (Methods 1 & 2)
+     Generates a unique browser/device fingerprint
+     and fills all hidden device_fingerprint inputs.
+     ================================================ */
+
+  async function generateFingerprint() {
+    try {
+      var components = [
+        navigator.userAgent        || '',
+        navigator.language         || '',
+        (screen.width  || 0) + 'x' + (screen.height || 0),
+        (screen.colorDepth         || 0).toString(),
+        new Date().getTimezoneOffset().toString(),
+        (navigator.hardwareConcurrency || 0).toString(),
+        navigator.platform         || ''
+      ];
+
+      // Canvas fingerprint (Method 1 — visual rendering differs per device/GPU/OS)
+      try {
+        var canvas = document.createElement('canvas');
+        var ctx    = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font         = '14px Arial';
+        ctx.fillStyle    = '#f35a00';
+        ctx.fillRect(120, 1, 60, 20);
+        ctx.fillStyle    = '#002a5e';
+        ctx.fillText('MDRRMO-device-fp', 2, 2);
+        ctx.fillStyle    = 'rgba(180,80,20,0.7)';
+        ctx.fillText('SanIldefonso2026', 4, 17);
+        components.push(canvas.toDataURL());
+      } catch (e) {
+        components.push('canvas-unavailable');
+      }
+
+      // Hash all components together with SHA-256
+      var raw        = components.join('|||');
+      var encoded    = new TextEncoder().encode(raw);
+      var hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
+      var hashArray  = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+
+    } catch (e) {
+      // Fallback: use a simpler string if SubtleCrypto is unavailable
+      return (navigator.userAgent + screen.width + screen.height + navigator.language)
+        .split('').reduce(function(a,c){ return ((a<<5)-a)+c.charCodeAt(0)|0; }, 0)
+        .toString(16);
+    }
+  }
+
+  // Fill fingerprint into all forms as soon as DOM is ready
+  document.addEventListener('DOMContentLoaded', async function() {
+    var fp = await generateFingerprint();
+    var inputs = document.querySelectorAll('input[name="device_fingerprint"]');
+    inputs.forEach(function(el){ el.value = fp; });
+  });
+
+
+  /* ================================================
      SPLASH ONCE — show only on first visit per
-     browser session. Once dismissed it is stored
-     in sessionStorage so navigating to login/signup
-     and back will NOT replay the splash until the
-     browser tab/window is fully closed and reopened.
+     browser session.
      ================================================ */
 
   var SPLASH_KEY = 'mdrrmo_splash_shown';
   var splashAlreadySeen = sessionStorage.getItem(SPLASH_KEY) === '1';
 
   if (splashAlreadySeen) {
-    /* Skip splash — jump straight to login */
     var splashEl = document.getElementById('splash');
     if (splashEl) splashEl.style.display = 'none';
 
     var loginEl = document.getElementById('login-page');
     if (loginEl) {
       loginEl.classList.add('visible');
-      /* Animate logo + card immediately */
       requestAnimationFrame(function() {
         setTimeout(function() {
           var lr = document.getElementById('logoRow');
@@ -342,7 +469,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       });
     }
   }
-  /* If not yet seen, splash is visible by default — nothing extra needed */
 
 
   /* ================================================
@@ -362,7 +488,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   var startTime = null;
   var rafId     = null;
 
-  /* Only run the canvas animation when splash is actually shown */
   if (!splashAlreadySeen && ctx) {
     setTimeout(function() {
       startTime = performance.now();
@@ -439,7 +564,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   function goToLogin() {
     if (rafId) cancelAnimationFrame(rafId);
 
-    /* Mark splash as seen for the rest of this browser session */
     sessionStorage.setItem(SPLASH_KEY, '1');
 
     document.getElementById('splash').classList.add('exit');
@@ -465,7 +589,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }, 420);
   }
 
-  /* Auto-dismiss splash after 8.5s if user hasn't tapped */
   if (!splashAlreadySeen) {
     setTimeout(goToLogin, 8500);
   }
@@ -540,8 +663,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   /* ================================================
      SHARED: Eye / password toggle
-     Works for both mobile (#mob-password) and
-     desktop (#dt-password) via data-target attr.
      ================================================ */
   document.querySelectorAll('.toggle-password').forEach(function(button) {
     button.addEventListener('click', function(e) {
@@ -554,10 +675,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       var isPassword = input.getAttribute('type') === 'password';
       input.setAttribute('type', isPassword ? 'text' : 'password');
 
-      /* Swap SVG between eye-open and eye-slash */
       var svg = this.querySelector('.eye-icon');
       if (isPassword) {
-        /* Switched to visible — show eye-slash (password revealed) */
         svg.innerHTML =
           '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8' +
           'a18.45 18.45 0 0 1 5.06-5.94' +
@@ -567,7 +686,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           '<line x1="1" y1="1" x2="23" y2="23"/>';
         this.setAttribute('aria-label', 'Hide password');
       } else {
-        /* Switched to hidden — show eye-open */
         svg.innerHTML =
           '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>' +
           '<circle cx="12" cy="12" r="3"/>';
@@ -576,8 +694,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     });
   });
 
-
-  /* ================================================
+    /* ================================================
      GEOLOCATION (kept inactive — uncomment to enable)
      ================================================
 

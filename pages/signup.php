@@ -16,16 +16,23 @@ $errors = [];
 $barangays = $pdo->query("SELECT id, name FROM barangays WHERE is_active = 1 ORDER BY name")->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $fullName   = trim($_POST['full_name'] ?? '');
-    $email      = trim($_POST['email'] ?? '');
-    $password   = $_POST['password'] ?? '';
+    $firstName  = trim($_POST['first_name']  ?? '');
+    $lastName   = trim($_POST['last_name']   ?? '');
+    $middleName = trim($_POST['middle_name'] ?? '');   // optional
+    $suffix     = trim($_POST['suffix']      ?? '');   // optional
+    $email      = trim($_POST['email']       ?? '');
+    $password   = $_POST['password']         ?? '';
     $confirm    = $_POST['confirm_password'] ?? '';
     $barangayId = (int)($_POST['barangay_id'] ?? 0);
     $houseNo    = trim($_POST['house_number'] ?? '');
     $terms      = isset($_POST['terms']);
 
-    if ($fullName === '') {
-        $errors[] = 'Full name is required.';
+    // ── Validation ──────────────────────────────────────────
+    if ($firstName === '') {
+        $errors[] = 'First name is required.';
+    }
+    if ($lastName === '') {
+        $errors[] = 'Last name is required.';
     }
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = 'A valid email is required.';
@@ -47,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        // Ensure barangay exists and is active (extra safety)
+        // Ensure barangay exists and is active
         $stmt = $pdo->prepare("SELECT id FROM barangays WHERE id = ? AND is_active = 1");
         $stmt->execute([$barangayId]);
         if (!$stmt->fetch()) {
@@ -68,16 +75,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
         $otp          = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $otpHash      = password_hash($otp, PASSWORD_DEFAULT);
-        $expiresAt    = date('Y-m-d H:i:s', time() + 15 * 60); // 15 minutes
+        $expiresAt    = date('Y-m-d H:i:s', time() + 15 * 60);
+
+        // Build display name for the OTP email
+        $displayName = trim($firstName . ' ' . $lastName);
 
         $pdo->beginTransaction();
         try {
-            $stmt = $pdo->prepare("INSERT INTO users (full_name, email, password_hash, role, barangay_id, house_number, is_email_verified, otp_code_hash, otp_expires_at)
-                                   VALUES (?, ?, ?, 'citizen', ?, ?, 0, ?, ?)");
-            $stmt->execute([$fullName, $email, $passwordHash, $barangayId, $houseNo, $otpHash, $expiresAt]);
+            $stmt = $pdo->prepare("
+                INSERT INTO users
+                    (first_name, last_name, middle_name, suffix,
+                     email, password_hash, role,
+                     barangay_id, house_number,
+                     is_email_verified, otp_code_hash, otp_expires_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'citizen', ?, ?, 0, ?, ?)
+            ");
+            $stmt->execute([
+                $firstName,
+                $lastName,
+                $middleName !== '' ? $middleName : null,
+                $suffix     !== '' ? $suffix     : null,
+                $email,
+                $passwordHash,
+                $barangayId,
+                $houseNo,
+                $otpHash,
+                $expiresAt,
+            ]);
 
-            // Send OTP (currently logged to otp_test.log)
-            send_otp_email($email, $fullName, $otp);
+            send_otp_email($email, $displayName, $otp);
 
             $pdo->commit();
 
@@ -88,6 +114,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Account creation failed. Please try again.';
         }
     }
+}
+
+// Helper to preserve POST values safely
+function old(string $key, string $default = ''): string {
+    return htmlspecialchars($_POST[$key] ?? $default);
 }
 ?>
 <!DOCTYPE html>
@@ -100,12 +131,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<!-- All styles are inline below — no external CSS needed -->
-<style>
-  
-
-
-</style>
 </head>
 <body>
 
@@ -137,14 +162,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <!-- ── WHITE CARD ── -->
   <div class="card" id="card">
-
     <div class="card-scroll">
 
       <?php if ($errors): ?>
       <div class="auth-errors">
         <ul>
           <?php foreach ($errors as $err): ?>
-            <li><?php echo htmlspecialchars($err); ?></li>
+            <li><?= htmlspecialchars($err) ?></li>
           <?php endforeach; ?>
         </ul>
       </div>
@@ -152,37 +176,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <form method="post" class="auth-form" id="signupForm">
 
+        <!-- ── Personal Information ── -->
         <div class="section-divider"><span>Personal Information</span></div>
 
+        <!-- First Name -->
         <div class="field">
-          <label class="field-label" for="full_name">Full Name <span class="req">*</span></label>
-          <input type="text" id="full_name" name="full_name" required
-                 placeholder="Juan Dela Cruz"
-                 value="<?php echo htmlspecialchars($_POST['full_name'] ?? ''); ?>">
+          <label class="field-label" for="first_name">First Name <span class="req">*</span></label>
+          <input type="text" id="first_name" name="first_name" required
+                 placeholder="Juan"
+                 value="<?= old('first_name') ?>">
         </div>
 
+        <!-- Middle Name (optional) -->
         <div class="field">
-          <label class="field-label" for="barangay_id">Barangay <span class="req">*</span></label>
+          <label class="field-label" for="middle_name">
+            Middle Name <span class="optional">(optional)</span>
+          </label>
+          <input type="text" id="middle_name" name="middle_name"
+                 placeholder="Santos"
+                 value="<?= old('middle_name') ?>">
+        </div>
+
+        <!-- Last Name -->
+        <div class="field">
+          <label class="field-label" for="last_name">Last Name <span class="req">*</span></label>
+          <input type="text" id="last_name" name="last_name" required
+                 placeholder="Dela Cruz"
+                 value="<?= old('last_name') ?>">
+        </div>
+
+        <!-- Suffix (optional) -->
+        <div class="field">
+          <label class="field-label" for="suffix">
+            Suffix <span class="optional">(optional)</span>
+          </label>
           <div class="select-wrap">
-            <select id="barangay_id" name="barangay_id" required>
-              <option value="">Select Barangay</option>
-              <?php foreach ($barangays as $b): ?>
-                <option value="<?php echo (int)$b['id']; ?>"
-                  <?php echo isset($_POST['barangay_id']) && (int)$_POST['barangay_id'] === (int)$b['id'] ? 'selected' : ''; ?>>
-                  <?php echo htmlspecialchars($b['name']); ?>
+            <select id="suffix" name="suffix">
+              <option value="">— None —</option>
+              <?php foreach (['Jr.','Sr.','II','III','IV','V'] as $sfx): ?>
+                <option value="<?= $sfx ?>" <?= old('suffix') === $sfx ? 'selected' : '' ?>>
+                  <?= $sfx ?>
                 </option>
               <?php endforeach; ?>
             </select>
           </div>
         </div>
 
+        <!-- Barangay -->
+        <div class="field">
+          <label class="field-label" for="barangay_id">Barangay <span class="req">*</span></label>
+          <div class="select-wrap">
+            <select id="barangay_id" name="barangay_id" required>
+              <option value="">Select Barangay</option>
+              <?php foreach ($barangays as $b): ?>
+                <option value="<?= (int)$b['id'] ?>"
+                  <?= (isset($_POST['barangay_id']) && (int)$_POST['barangay_id'] === (int)$b['id']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($b['name']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+
+        <!-- House Number -->
         <div class="field">
           <label class="field-label" for="house_number">House Number <span class="req">*</span></label>
           <input type="text" id="house_number" name="house_number" required
                  placeholder="e.g. 123"
-                 value="<?php echo htmlspecialchars($_POST['house_number'] ?? ''); ?>">
+                 value="<?= old('house_number') ?>">
         </div>
 
+        <!-- Detected Address (read-only) -->
         <div class="field">
           <label class="field-label" for="address">Detected Address</label>
           <input type="text" id="address" name="detected_address" readonly
@@ -192,29 +256,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="hidden" id="lat">
         <input type="hidden" id="lng">
 
+        <!-- ── Account Information ── -->
         <div class="section-divider" style="margin-top:0.5rem;"><span>Account Information</span></div>
 
         <div class="field">
           <label class="field-label" for="email">Email <span class="req">*</span></label>
           <input type="email" id="email" name="email" required
                  placeholder="juandelacruz@gmail.com"
-                 value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+                 value="<?= old('email') ?>">
         </div>
 
-        <!-- Password field — right-side eye icon only -->
+        <!-- Password -->
         <div class="field">
           <label class="field-label" for="password">Password <span class="req">*</span></label>
           <div class="pw-wrap">
             <input type="password" id="password" name="password" required minlength="8"
                    placeholder="At least 8 characters">
             <button type="button" class="pw-toggle" data-target="password" aria-label="Toggle password visibility">
-              <!-- Eye icon (shown when password is hidden) -->
               <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <!-- Eye-off icon (shown when password is visible) -->
               <svg class="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                    style="display:none;">
@@ -225,20 +288,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
         </div>
 
-        <!-- Confirm Password field — right-side eye icon only -->
+        <!-- Confirm Password -->
         <div class="field">
           <label class="field-label" for="confirm_password">Confirm Password <span class="req">*</span></label>
           <div class="pw-wrap">
             <input type="password" id="confirm_password" name="confirm_password" required minlength="8"
                    placeholder="Repeat password">
             <button type="button" class="pw-toggle" data-target="confirm_password" aria-label="Toggle confirm password visibility">
-              <!-- Eye icon (shown when password is hidden) -->
               <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <!-- Eye-off icon (shown when password is visible) -->
               <svg class="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                    style="display:none;">
@@ -249,17 +310,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
         </div>
 
-        <!-- Terms checkbox -->
+        <!-- Terms -->
         <div class="checkbox-field">
           <input type="checkbox" name="terms" id="terms" value="1"
-                 <?php echo isset($_POST['terms']) ? 'checked' : ''; ?>>
+                 <?= isset($_POST['terms']) ? 'checked' : '' ?>>
           <label for="terms">
             I confirm that I am a resident of San Ildefonso, Bulacan and agree to MDRRMO's data policy.
           </label>
         </div>
 
       </form>
-    </div>
+    </div><!-- /.card-scroll -->
 
     <div class="card-footer">
       <button type="submit" form="signupForm" class="btn-signup">Sign Up</button>
@@ -276,32 +337,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
      ================================================ -->
 <div id="desktop-page">
 
-  <!-- CENTERED CARD -->
   <div class="dt-card">
 
-    <!-- LEFT: Branding (pills removed; logo, name & hashtag enlarged and centered) -->
+    <!-- LEFT: Branding -->
     <div class="dt-card-left">
-
-      <!-- Seal — enlarged -->
       <div class="dt-seal-wrap">
         <img src="../img/mdrrmo.png" alt="MDRRMO Seal"
              onerror="this.style.display='none'">
       </div>
-
-      <!-- Agency name — larger -->
       <div class="dt-agency">MDRRMO</div>
-
-      <!-- Tagline / hashtag — slightly larger -->
       <div class="dt-tagline">#BidaAngLagingHanda</div>
-
-      <!-- Bottom credit badge -->
       <div class="dt-bottom-badge">Municipal Government of San Ildefonso</div>
-
-    </div><!-- /.dt-card-left -->
+    </div>
 
     <!-- RIGHT: Signup Form -->
     <div class="dt-card-right">
-
       <div class="dt-form-scroll">
 
         <div class="dt-form-header">
@@ -314,7 +364,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="dt-errors">
           <ul>
             <?php foreach ($errors as $err): ?>
-              <li><?php echo htmlspecialchars($err); ?></li>
+              <li><?= htmlspecialchars($err) ?></li>
             <?php endforeach; ?>
           </ul>
         </div>
@@ -326,35 +376,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
           <div class="dt-fields-grid">
 
-            <div class="dt-field dt-field-full">
-              <label for="dt-full_name">Full Name *</label>
-              <input type="text" id="dt-full_name" name="full_name" required
-                     placeholder="Juan Dela Cruz"
-                     value="<?php echo htmlspecialchars($_POST['full_name'] ?? ''); ?>">
+            <!-- First Name -->
+            <div class="dt-field">
+              <label for="dt-first_name">First Name *</label>
+              <input type="text" id="dt-first_name" name="first_name" required
+                     placeholder="Juan"
+                     value="<?= old('first_name') ?>">
             </div>
 
+            <!-- Last Name -->
             <div class="dt-field">
-              <label for="dt-barangay_id">Barangay *</label>
+              <label for="dt-last_name">Last Name *</label>
+              <input type="text" id="dt-last_name" name="last_name" required
+                     placeholder="Dela Cruz"
+                     value="<?= old('last_name') ?>">
+            </div>
+
+            <!-- Middle Name (optional) — half width -->
+            <div class="dt-field">
+              <label for="dt-middle_name">
+                Middle Name <span class="dt-optional">(optional)</span>
+              </label>
+              <input type="text" id="dt-middle_name" name="middle_name"
+                     placeholder="Santos"
+                     value="<?= old('middle_name') ?>">
+            </div>
+
+            <!-- Suffix (optional) — half width -->
+            <div class="dt-field">
+              <label for="dt-suffix">
+                Suffix <span class="dt-optional">(optional)</span>
+              </label>
               <div class="dt-select-wrap">
-                <select id="dt-barangay_id" name="barangay_id" required>
-                  <option value="">Select Barangay</option>
-                  <?php foreach ($barangays as $b): ?>
-                    <option value="<?php echo (int)$b['id']; ?>"
-                      <?php echo isset($_POST['barangay_id']) && (int)$_POST['barangay_id'] === (int)$b['id'] ? 'selected' : ''; ?>>
-                      <?php echo htmlspecialchars($b['name']); ?>
+                <select id="dt-suffix" name="suffix">
+                  <option value="">— None —</option>
+                  <?php foreach (['Jr.','Sr.','II','III','IV','V'] as $sfx): ?>
+                    <option value="<?= $sfx ?>" <?= old('suffix') === $sfx ? 'selected' : '' ?>>
+                      <?= $sfx ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
               </div>
             </div>
 
+            <!-- Barangay -->
+            <div class="dt-field">
+              <label for="dt-barangay_id">Barangay *</label>
+              <div class="dt-select-wrap">
+                <select id="dt-barangay_id" name="barangay_id" required>
+                  <option value="">Select Barangay</option>
+                  <?php foreach ($barangays as $b): ?>
+                    <option value="<?= (int)$b['id'] ?>"
+                      <?= (isset($_POST['barangay_id']) && (int)$_POST['barangay_id'] === (int)$b['id']) ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($b['name']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            </div>
+
+            <!-- House Number -->
             <div class="dt-field">
               <label for="dt-house_number">House Number *</label>
               <input type="text" id="dt-house_number" name="house_number" required
                      placeholder="e.g. 123"
-                     value="<?php echo htmlspecialchars($_POST['house_number'] ?? ''); ?>">
+                     value="<?= old('house_number') ?>">
             </div>
 
+            <!-- Detected Address -->
             <div class="dt-field dt-field-full">
               <label for="dt-address">Detected Address</label>
               <input type="text" id="dt-address" name="detected_address" readonly
@@ -374,23 +463,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <label for="dt-email">Email *</label>
               <input type="email" id="dt-email" name="email" required
                      placeholder="juandelacruz@gmail.com"
-                     value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+                     value="<?= old('email') ?>">
             </div>
 
-            <!-- Desktop: Password field — right-side eye icon only -->
+            <!-- Password -->
             <div class="dt-field">
               <label for="dt-password">Password *</label>
               <div class="dt-pw-wrap">
                 <input type="password" id="dt-password" name="password" required minlength="8"
                        placeholder="At least 8 characters">
                 <button type="button" class="dt-pw-toggle" data-target="dt-password" aria-label="Toggle password visibility">
-                  <!-- Eye icon (shown when password is hidden) -->
                   <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
-                  <!-- Eye-off icon (shown when password is visible) -->
                   <svg class="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                        style="display:none;">
@@ -401,20 +488,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               </div>
             </div>
 
-            <!-- Desktop: Confirm Password field — right-side eye icon only -->
+            <!-- Confirm Password -->
             <div class="dt-field">
               <label for="dt-confirm_password">Confirm Password *</label>
               <div class="dt-pw-wrap">
                 <input type="password" id="dt-confirm_password" name="confirm_password" required minlength="8"
                        placeholder="Repeat password">
                 <button type="button" class="dt-pw-toggle" data-target="dt-confirm_password" aria-label="Toggle confirm password visibility">
-                  <!-- Eye icon (shown when password is hidden) -->
                   <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
-                  <!-- Eye-off icon (shown when password is visible) -->
                   <svg class="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                        style="display:none;">
@@ -427,10 +512,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
           </div><!-- /.dt-fields-grid -->
 
-          <!-- Terms checkbox -->
+          <!-- Terms -->
           <div class="dt-checkbox-field">
             <input type="checkbox" name="terms" id="dt-terms" value="1"
-                   <?php echo isset($_POST['terms']) ? 'checked' : ''; ?>>
+                   <?= isset($_POST['terms']) ? 'checked' : '' ?>>
             <label for="dt-terms">
               I confirm that I am a resident of San Ildefonso, Bulacan and agree to MDRRMO's data policy.
             </label>
@@ -439,7 +524,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
       </div><!-- /.dt-form-scroll -->
 
-      <!-- Fixed footer -->
       <div class="dt-card-footer">
         <button type="submit" form="dtSignupForm" class="dt-btn-signup">Create Account</button>
         <p class="dt-login-link">Already have an account? <a href="../index.php">Login</a></p>
@@ -449,7 +533,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   </div><!-- /.dt-card -->
 
-  <!-- Status bar -->
   <div class="dt-status-bar">
     <span><span class="dt-status-dot"></span>System Online</span>
     <span>·</span>
@@ -460,7 +543,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
 <script>
-
   /* ================================================
      MOBILE: Entrance animations
      ================================================ */
@@ -495,9 +577,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       var rpl = document.createElement('span');
       rpl.style.cssText =
         'position:absolute;border-radius:50%;pointer-events:none;' +
-        'width:'  + sz + 'px;height:' + sz + 'px;' +
-        'left:'   + (e.clientX - r.left - sz / 2) + 'px;' +
-        'top:'    + (e.clientY - r.top  - sz / 2) + 'px;' +
+        'width:' + sz + 'px;height:' + sz + 'px;' +
+        'left:' + (e.clientX - r.left - sz / 2) + 'px;' +
+        'top:'  + (e.clientY - r.top  - sz / 2) + 'px;' +
         'background:rgba(255,255,255,0.20);' +
         'transform:scale(0);opacity:1;' +
         'transition:transform 0.55s ease,opacity 0.55s ease;';
@@ -519,9 +601,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       var rpl = document.createElement('span');
       rpl.style.cssText =
         'position:absolute;border-radius:50%;pointer-events:none;' +
-        'width:'  + sz + 'px;height:' + sz + 'px;' +
-        'left:'   + (e.clientX - r.left - sz / 2) + 'px;' +
-        'top:'    + (e.clientY - r.top  - sz / 2) + 'px;' +
+        'width:' + sz + 'px;height:' + sz + 'px;' +
+        'left:' + (e.clientX - r.left - sz / 2) + 'px;' +
+        'top:'  + (e.clientY - r.top  - sz / 2) + 'px;' +
         'background:rgba(255,255,255,0.18);' +
         'transform:scale(0);opacity:1;' +
         'transition:transform 0.55s ease,opacity 0.55s ease;';
@@ -535,42 +617,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   /* ================================================
-     PASSWORD TOGGLE — shared handler for mobile & desktop
-     Works for both .pw-toggle and .dt-pw-toggle buttons.
-     Toggles the input type between "password" and "text",
-     and swaps the eye / eye-off SVG icons accordingly.
-     The button stays permanently in the DOM — it never
-     disappears regardless of whether the field has a value.
+     PASSWORD TOGGLE — shared for mobile & desktop
      ================================================ */
   document.querySelectorAll('.pw-toggle, .dt-pw-toggle').forEach(function (toggleBtn) {
     toggleBtn.addEventListener('click', function () {
-      var targetId  = this.getAttribute('data-target');
-      var inputEl   = document.getElementById(targetId);
+      var targetId   = this.getAttribute('data-target');
+      var inputEl    = document.getElementById(targetId);
       var iconEye    = this.querySelector('.icon-eye');
       var iconEyeOff = this.querySelector('.icon-eye-off');
 
       if (!inputEl) return;
 
       if (inputEl.type === 'password') {
-        /* Show password */
-        inputEl.type    = 'text';
+        inputEl.type             = 'text';
         iconEye.style.display    = 'none';
         iconEyeOff.style.display = 'block';
         this.setAttribute('aria-label', 'Hide password');
       } else {
-        /* Hide password */
-        inputEl.type    = 'password';
+        inputEl.type             = 'password';
         iconEye.style.display    = 'block';
         iconEyeOff.style.display = 'none';
         this.setAttribute('aria-label', 'Show password');
       }
 
-      /* Keep focus on the input after toggling */
       inputEl.focus();
     });
   });
 
-  // /* ================================================
+   // /* ================================================
   //    GEOLOCATION — shared for both mobile and desktop
   //    ================================================ */
   // const allowedMunicipality = "San Ildefonso";
@@ -627,6 +701,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   // }
 
   // detectLocation();
+
 
 </script>
 </body>
