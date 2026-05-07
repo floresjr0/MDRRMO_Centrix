@@ -90,13 +90,31 @@ $barColor = $pct >= 100 ? '#dc2626' : ($pct >= 75 ? '#d97706' : '#16a34a');
         <nav class="sidebar-nav">
             <div class="nav-label">Navigation</div>
             <a href="index.php" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><polyline points="9 21 9 12 15 12 15 21"/></svg></span>Dashboard</a>
-            <a href="index.php" class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 21V9h6v12"/><path d="M3 9h18"/></svg></span>Centers</a>
+            <a href="center_walkin.php?id=<?php echo $centerId; ?>" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></span> Walk-in</a>
+            <a href="center_app_arrivals.php?id=<?php echo $centerId; ?>" class="nav-item"><span class="nav-icon"> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg></span> Arrivals</a>
+            <a href="center_registrations.php?id=<?php echo $centerId; ?>" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span> Registrations</a>
         </nav>
         <div class="sidebar-status"><span class="status-dot-green"></span>SYSTEM ONLINE</div>
-        <div class="sidebar-footer"><a href="../pages/logout.php" class="logout-btn"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log Out</a></div>
+        <div class="sidebar-footer">
+            <a href="../pages/logout.php" class="logout-btn">
+                <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Log Out
+            </a>
+            <!-- Collaboration logos -->
+            <div class="sidebar-collab">
+                <img src="../img/mdrrmo.png" alt="Partner 2">
+                <img src="../img/basc.png" alt="Partner 1">
+                <img src="../img/ics.jpg" alt="Partner 3">
+            </div>
+
+            <!-- Copyright text -->
+            <div class="sidebar-copy">
+                © 2026 MDRRMOxBASC_ICS. All rights reserved.
+            </div>
+        </div>
     </aside>
 
-    <!-- BOTTOM NAVIGATION (5 items, "Registrations" active) -->
+    <!-- BOTTOM NAVIGATION – 4 items (Logout removed) -->
     <nav class="bottom-nav">
         <div class="bottom-nav-inner">
             <a href="index.php" class="bottom-nav-item">
@@ -117,11 +135,6 @@ $barColor = $pct >= 100 ? '#dc2626' : ($pct >= 75 ? '#d97706' : '#16a34a');
             <a href="center_registrations.php?id=<?php echo $centerId; ?>" class="bottom-nav-item active">
                 <span class="bottom-nav-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
                 Registrations
-                <span class="bottom-nav-dot"></span>
-            </a>
-            <a href="../pages/logout.php" class="bottom-nav-item">
-                <span class="bottom-nav-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
-                Logout
                 <span class="bottom-nav-dot"></span>
             </a>
         </div>

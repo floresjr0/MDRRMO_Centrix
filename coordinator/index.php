@@ -58,6 +58,7 @@ foreach ($breakdownRows as $row) {
 $totalExpected  = array_sum(array_column($centers, 'expected_count'));
 $totalCenters   = count($centers);
 $activeCenters  = count(array_filter($centers, fn($c) => $c['status'] !== 'closed'));
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -114,21 +115,38 @@ $activeCenters  = count(array_filter($centers, fn($c) => $c['status'] !== 'close
                 </span>
                 Dashboard
             </a>
+            <a href="center_walkin.php?id=<?php echo $centerId; ?>" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></span> Walk-in</a>
+            <a href="center_app_arrivals.php?id=<?php echo $centerId; ?>" class="nav-item"><span class="nav-icon"> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg></span> Arrivals</a>
+            <a href="center_registrations.php?id=<?php echo $centerId; ?>" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span> Registrations</a>
         </nav>
 
         <div class="sidebar-status">
             <span class="status-dot-green"></span>
             SYSTEM ONLINE
         </div>
+
+        <!-- SIDEBAR FOOTER WITH LOGOUT + LOGOS + COPYRIGHT -->
         <div class="sidebar-footer">
             <a href="../pages/logout.php" class="logout-btn">
                 <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 Log Out
             </a>
+
+            <!-- Collaboration logos (replace with actual partner images) -->
+            <div class="sidebar-collab">
+                <img src="../img/mdrrmo.png" alt="Partner 2">
+                <img src="../img/basc.png" alt="Partner 1">
+                <img src="../img/ics.jpg" alt="Partner 3">
+            </div>
+
+            <!-- Copyright text -->
+            <div class="sidebar-copy">
+                © 2026 MDRRMOxBASC_ICS. All rights reserved.
+            </div>
         </div>
     </aside>
 
-    <!-- BOTTOM NAVIGATION – 5 items, Dashboard active -->
+    <!-- BOTTOM NAVIGATION – 4 items (Logout removed) -->
     <nav class="bottom-nav">
         <div class="bottom-nav-inner">
             <a href="index.php" class="bottom-nav-item active">
@@ -149,11 +167,6 @@ $activeCenters  = count(array_filter($centers, fn($c) => $c['status'] !== 'close
             <a href="<?php echo $firstCenterId ? 'center_registrations.php?id=' . $firstCenterId : '#'; ?>" class="bottom-nav-item">
                 <span class="bottom-nav-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
                 Registrations
-                <span class="bottom-nav-dot"></span>
-            </a>
-            <a href="../pages/logout.php" class="bottom-nav-item">
-                <span class="bottom-nav-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
-                Logout
                 <span class="bottom-nav-dot"></span>
             </a>
         </div>
