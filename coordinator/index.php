@@ -211,17 +211,17 @@ $activeCenters  = count(array_filter($centers, fn($c) => $c['status'] !== 'close
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="4" r="2"/><path d="M10 9h4l1 5-3 1v5"/><path d="M10 9l-1 5 3 1"/></svg></div>
-                    <div><div class="stat-val" id="total-expected"><?php echo $totalExpected; ?></div><div class="stat-label">Expected Evacuees (en route, incl. households)</div></div>
+                    <div><div class="stat-val" id="total-expected"><?php echo $totalExpected; ?></div><div class="stat-label">Inaasahang Evacuees (papunta na, kasama ang households/pamilya)</div></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-                    <div><div class="stat-val"><?php echo $activeCenters; ?></div><div class="stat-label">Active / Open Centers</div></div>
+                    <div><div class="stat-val"><?php echo $activeCenters; ?></div><div class="stat-label">Mga Active / Bukas na Center</div></div>
                 </div>
             </div>
 
             <!-- CENTER LIST -->
             <div class="section-header">
-                <div class="section-title">Center Overview</div>
+                <div class="section-title">Impormasyon ng Center</div>
                 <span class="last-updated" id="last-updated">Auto‑refreshes every 30s</span>
             </div>
 
@@ -255,14 +255,14 @@ $activeCenters  = count(array_filter($centers, fn($c) => $c['status'] !== 'close
                             <span class="status-badge status-<?php echo htmlspecialchars($statusSlug); ?>"><?php echo htmlspecialchars($c['status']); ?></span>
                             <span class="expected-pill <?php echo $pillClass; ?>" id="pill-<?php echo $centerId; ?>">
                                 <span class="pill-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="4" r="2"/><path d="M10 9h4l1 5-3 1v5"/><path d="M10 9l-1 5 3 1"/></svg></span>
-                                <span class="pill-count pill-val"><?php echo $expected; ?></span> expected
+                                <span class="pill-count pill-val"><?php echo $expected; ?></span> Posibleng Dumating
                             </span>
                             <a href="center_app_arrivals.php?id=<?php echo $centerId; ?>" class="btn-manage">Manage <svg viewBox="0 0 16 16"><polyline points="6 3 11 8 6 13"/></svg></a>
                         </div>
 
                         <?php if ($maxCap > 0): ?>
                         <div class="capacity-row">
-                            <span class="capacity-label">Capacity</span>
+                            <span class="capacity-label">Kapasidad</span>
                             <div class="cap-bar-track"><div class="cap-bar <?php echo $capClass; ?>" id="capbar-<?php echo $centerId; ?>" style="width:<?php echo $capPct; ?>%"></div></div>
                             <span class="capacity-pct" id="cappct-<?php echo $centerId; ?>"><?php echo $expected; ?> / <?php echo $maxCap; ?> (<?php echo $capPct; ?>%)</span>
                         </div>

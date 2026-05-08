@@ -202,16 +202,16 @@ $justCheckedIn = isset($_GET['checkin']) && $_GET['checkin'] == '1';
                     <div class="info-row"><strong>Barangay</strong> <?php echo htmlspecialchars($center['barangay_name']); ?></div>
                     <div class="info-row"><strong>Status</strong> <span class="status-pill status-<?php echo strtolower(preg_replace('/\s+/', '-', $center['status'])); ?>"><?php echo htmlspecialchars($center['status']); ?></span></div>
                     <div class="occ-bar-wrap"><div class="occ-bar-label"><span>Occupancy</span><span><?php echo $occ['current']; ?> / <?php echo $occ['max']; ?> people (<?php echo $pct; ?>%)</span></div><div class="occ-bar-track"><div class="occ-bar-fill" style="width:<?php echo min(100,$pct); ?>%; background:<?php echo $barColor; ?>;"></div></div></div>
-                    <p class="occ-note">When capacity reaches 100%, status is set to <strong>full</strong> and new arrivals should be redirected.</p>
+                    <p class="occ-note">Kapag 100% na ang capacity ng center, automatic itong mase-set sa <strong>“Full”</strong> ang status nito at ang mga citizen na magro-route pa lang ay automatic na ire-reroute sa ibang available na center.</p>
                 </div>
             </section>
 
             <!-- App Arrivals Section -->
             <section class="card">
-                <div class="card-header"><div class="card-header-icon" style="background:linear-gradient(135deg,#f97316,#ea580c);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg></div><h2>Citizens en Route</h2><?php if ($appArrivals): ?><span class="en-route-badge" style="margin-left:auto;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg><?php echo count($appArrivals); ?> en route</span><?php endif; ?></div>
+                <div class="card-header"><div class="card-header-icon" style="background:linear-gradient(135deg,#f97316,#ea580c);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg></div><h2>Citizen na Papunta</h2><?php if ($appArrivals): ?><span class="en-route-badge" style="margin-left:auto;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg><?php echo count($appArrivals); ?> en route</span><?php endif; ?></div>
                 <div class="card-body">
                     <?php if ($justCheckedIn): ?><div class="checkin-toast"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Evacuee recorded successfully!</div><?php endif; ?>
-                    <?php if (!$appArrivals): ?><div class="arrival-queue-empty"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>No citizens are currently navigating to this center via the app.</div><?php else: ?>
+                    <?php if (!$appArrivals): ?><div class="arrival-queue-empty"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Walang citizen na kasalukuyang papunta sa center na ito.</div><?php else: ?>
                     <div class="app-arrivals-grid">
                         <?php foreach ($appArrivals as $a): $initial = mb_strtoupper(mb_substr($a['full_name'], 0, 1)); $profileTotal = (int)$a['total_members']; ?>
                         <div class="app-arrival-card" id="arrival-card-<?php echo (int)$a['tracking_id']; ?>">

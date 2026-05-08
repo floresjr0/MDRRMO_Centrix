@@ -148,6 +148,7 @@ html, body { min-height: 100%; background: var(--bg); font-family: var(--font); 
 .occ-bar-label { display: flex; justify-content: space-between; font-size: 0.72rem; font-weight: 600; color: var(--text-muted); }
 .occ-bar-track { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
 .occ-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+.occ-note { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; }
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .table { width: 100%; border-collapse: collapse; font-size: 0.82rem; min-width: 560px; }
 .table thead tr { background: var(--surface-2); border-bottom: 1px solid var(--border); }

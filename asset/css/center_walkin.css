@@ -125,7 +125,7 @@ html, body { min-height: 100%; background: var(--bg); font-family: var(--font); 
 .occ-bar-label { display: flex; justify-content: space-between; font-size: 0.72rem; font-weight: 600; color: var(--text-muted); }
 .occ-bar-track { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
 .occ-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
-
+.occ-note { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; }
 .form-body { padding: 1.25rem 1.4rem 1.4rem; display: flex; flex-direction: column; gap: 1rem; }
 .form-label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
 .form-label input, .form-label select { font-family: var(--font); font-size: 0.88rem; font-weight: 500; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 0.58rem 0.85rem; outline: none; transition: border-color 0.15s, box-shadow 0.15s, background 0.15s; width: 100%; }
