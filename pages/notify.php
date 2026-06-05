@@ -12,16 +12,16 @@ if (!function_exists('sendOneSignalNotification')) {
     function sendOneSignalNotification(string $title, string $body, array $data = []): bool {
         if (!function_exists('curl_init')) return false;
 
-       $payload = [
-    'app_id'            => ONESIGNAL_APP_ID,
-    'included_segments' => ['All'],  // ← change from 'Subscribed Users' to 'All'
-    'target_channel'    => 'push',
-    'headings'          => ['en' => $title],
-    'contents'          => ['en' => $body],
-    'data'              => $data,
-    'priority'          => 10,
-    'ttl'               => 3600,
-];
+        $payload = [
+            'app_id'            => ONESIGNAL_APP_ID,
+            'included_segments' => ['All'],
+            'target_channel'    => 'push',
+            'headings'          => ['en' => $title],
+            'contents'          => ['en' => $body],
+            'data'              => $data,
+            'priority'          => 10,
+            'ttl'               => 3600,
+        ];
 
         $ch = curl_init('https://onesignal.com/api/v1/notifications');
         curl_setopt_array($ch, [
@@ -42,31 +42,46 @@ if (!function_exists('sendOneSignalNotification')) {
         error_log("OneSignal HTTP: $httpCode | Response: $response");
 
         return ($httpCode === 200);
-    }  // ← correct closing brace for function
-}  // ← correct closing brace for if
+    }
+}
 
 if (!function_exists('maybeSendDisasterNotification')) {
     function maybeSendDisasterNotification(PDO $pdo): void {
+
+        // ── Race condition guard: only one PHP process at a time ──
         $lockFile = sys_get_temp_dir() . '/mdrrmo_notif_lock.json';
-        $lock = file_exists($lockFile)
+        $mutexFile = sys_get_temp_dir() . '/mdrrmo_notif_mutex.lock';
+
+        $mutex = fopen($mutexFile, 'c');
+        if (!$mutex || !flock($mutex, LOCK_EX | LOCK_NB)) {
+            // Another request is already inside this function — skip silently
+            if ($mutex) fclose($mutex);
+            return;
+        }
+
+        // Read sent-notification log (keys we have already sent)
+        $sent = file_exists($lockFile)
             ? (json_decode(file_get_contents($lockFile), true) ?? [])
             : [];
 
+        $fired = false;
+
         // ── Priority 1: Active disaster ──
-        $stmt    = $pdo->query("SELECT * FROM disasters WHERE status = 'ongoing' ORDER BY level DESC, started_at DESC LIMIT 1");
+        $stmt     = $pdo->query("SELECT * FROM disasters WHERE status = 'ongoing' ORDER BY level DESC, started_at DESC LIMIT 1");
         $disaster = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($disaster) {
-            $key      = 'disaster_' . $disaster['id'];
-            $lastSent = $lock[$key] ?? 0;
+            // Key encodes the disaster ID AND its current level.
+            // If the level is upgraded (e.g. Signal 1 → Signal 2) a new notification fires.
+            $key = 'disaster_' . $disaster['id'] . '_level_' . (int)$disaster['level'];
 
-            if ((time() - $lastSent) > 600) {
+            if (empty($sent[$key])) {   // ← only send if never sent before
                 $types  = ['typhoon'=>'Bagyo','flood'=>'Baha','earthquake'=>'Lindol','heat'=>'Init','landslide'=>'Landslide','fire'=>'Sunog'];
                 $levels = [1=>'Mababa',2=>'Katamtaman',3=>'Mataas',4=>'Sukdulan'];
-                $tl    = $types[$disaster['type']] ?? ucfirst($disaster['type']);
-                $ll    = $levels[(int)$disaster['level']] ?? 'Signal #'.$disaster['level'];
-                $title = "⚠️ MDRRMO Alert: {$tl} Signal #{$disaster['level']}";
-                $body  = "{$ll} na antas ng panganib. " . mb_substr($disaster['description'] ?? 'Manatiling alerto at sundin ang mga tagubilin.', 0, 100);
+                $tl     = $types[$disaster['type']] ?? ucfirst($disaster['type']);
+                $ll     = $levels[(int)$disaster['level']] ?? 'Signal #'.$disaster['level'];
+                $title  = "⚠️ MDRRMO Alert: {$tl} Signal #{$disaster['level']}";
+                $body   = "{$ll} na antas ng panganib. " . mb_substr($disaster['description'] ?? 'Manatiling alerto at sundin ang mga tagubilin.', 0, 100);
 
                 if (sendOneSignalNotification($title, $body, [
                     'type'          => 'disaster',
@@ -74,19 +89,31 @@ if (!function_exists('maybeSendDisasterNotification')) {
                     'disaster_type' => $disaster['type'],
                     'disaster_id'   => (int)$disaster['id'],
                 ])) {
-                    $lock[$key] = time();
-                    file_put_contents($lockFile, json_encode($lock));
+                    $sent[$key] = time();   // mark as permanently sent
+                    $fired = true;
                 }
             }
+
+            if ($fired) file_put_contents($lockFile, json_encode($sent));
+            flock($mutex, LOCK_UN);
+            fclose($mutex);
             return;
         }
 
-        // ── Priority 2: Heat index ──
+        // ── Priority 2: Heat index (once per danger-level per calendar day) ──
         $cacheFile = sys_get_temp_dir() . '/mdrrmo_weather.json';
-        if (!file_exists($cacheFile)) return;
+        if (!file_exists($cacheFile)) {
+            flock($mutex, LOCK_UN);
+            fclose($mutex);
+            return;
+        }
 
         $weatherData = json_decode(file_get_contents($cacheFile), true);
-        if (empty($weatherData['main'])) return;
+        if (empty($weatherData['main'])) {
+            flock($mutex, LOCK_UN);
+            fclose($mutex);
+            return;
+        }
 
         $t  = (float)$weatherData['main']['temp'];
         $rh = (float)$weatherData['main']['humidity'];
@@ -99,13 +126,22 @@ if (!function_exists('maybeSendDisasterNotification')) {
                 + 0.00072546*($t*$rh*$rh) - 0.000003582*($t*$t*$rh*$rh);
         }
 
-        if ($hi < 38) return;
+        if ($hi >= 40) {
+            $level = 'extreme';
+        } elseif ($hi >= 38) {
+            $level = 'high';
+        } else {
+            // Below threshold — nothing to send
+            flock($mutex, LOCK_UN);
+            fclose($mutex);
+            return;
+        }
 
-        $level = $hi >= 40 ? 'extreme' : ($hi >= 38 ? 'minimum' : null);
-        $key   = 'heat_' . $level . '_' . date('Ymd');
+        // Key is date + level: fires once per level per day at most
+        $key = 'heat_' . $level . '_' . date('Ymd');
 
-        if ((time() - ($lock[$key] ?? 0)) > 600) {
-            $ll    = ['medium'=>'Katamtaman','high'=>'Mataas','extreme'=>'Sukdulan'][$level];
+        if (empty($sent[$key])) {   // ← only send if not yet sent today for this level
+            $ll    = ['high' => 'Mataas', 'extreme' => 'Sukdulan'][$level];
             $title = "🌡️ Heat Alert: {$ll} na panganib sa init";
             $body  = "Heat Index: " . round($hi, 1) . "°C sa San Ildefonso, Bulacan. Uminom ng maraming tubig at iwasang lumabas sa tanghali.";
 
@@ -114,9 +150,13 @@ if (!function_exists('maybeSendDisasterNotification')) {
                 'level'      => $level,
                 'heat_index' => round($hi, 1),
             ])) {
-                $lock[$key] = time();
-                file_put_contents($lockFile, json_encode($lock));
+                $sent[$key] = time();
+                $fired = true;
             }
         }
+
+        if ($fired) file_put_contents($lockFile, json_encode($sent));
+        flock($mutex, LOCK_UN);
+        fclose($mutex);
     }
 }
